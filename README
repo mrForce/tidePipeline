@@ -1,0 +1,53 @@
+
+Things to do:
+
+0. Initialize project
+python tPipeInitialize.py project
+
+1. Add species to project
+python tPipeAddSpecies.py project  Human
+
+2. Print species
+
+Without HLA: python tPipeListSpecies.py project
+
+With HLA: python tPipeListSpecies.py project --showHLA
+
+2. Add HLA to project
+python tPipeAddHLA.py project HLA-A0201 1
+
+3. List HLAs:
+
+For all species: python tPipeListHLA.py project
+
+For a single species: python tPipeListHLA.py  project  1
+
+4. Add FASTA files to the project 
+python tPipeAddFASTA.py project proteins.fasta "The mouse proteome"
+
+5. List FASTA files in the project
+python tPipeListFASTA.py project
+       ID ------ Name --- path
+       1   |     The mouse proteome  | proteins.fasta
+
+6. Create peptide lists from a FASTA file
+python tPipeCreatePeptideList.py project 1 8 9 10 11
+
+7. Run a peptide list through NetMHC, and filter by rank
+python tPipeNetMHC.py project 1  0.02 1
+
+Note that this will store the results of the NetMHC run -- if you call it again with a different rank cutoff, it will re-use the stored NetMHC scores.
+
+8. Create a Tide Index
+
+9. Add MGF file
+
+10. List MGF files
+
+11. Do Tide search
+
+12. Run percolator
+
+13. Get results of percolator or Tide searches
+
+14. Execute a given bash script, and store results in a special place? I think this would be a good idea, but I'm not 100% sure how this will work in practice.
