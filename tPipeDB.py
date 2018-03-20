@@ -21,7 +21,7 @@ tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('
 class Species(Base):
     __tablename__ = 'Species'
     idSpecies = Column('idSpecies', Integer, primary_key=True)
-    SpeciesName = Column('SpeciesName', String)
+    SpeciesName = Column('SpeciesName', String, unique=True)
 
     hlas = relationship('HLA',
                        secondary=species_hla,
@@ -34,7 +34,7 @@ class Species(Base):
 class HLA(Base):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
-    HLAName = Column('HLAName', String)
+    HLAName = Column('HLAName', String, unique=True)
     species = relationship('Species',
                        secondary=species_hla,
                        back_populates='hlas')
@@ -45,17 +45,16 @@ class HLA(Base):
 class MGFfile(Base):
     __tablename__ = 'MGFfile'
     idMGFfile = Column('idMGFfile', Integer, primary_key=True)
-    MGFName = Column('MGFName', String)
-    MGFPath = Column('MGFPath', String)
-
+    MGFName = Column('MGFName', String, unique=True)
+    MGFPath = Column('MGFPath', String, unique=True)
     def __repr__(self):
         return 'MGF File found at: ' + self.MGFPath
 
 class FASTA(Base):
     __tablename__ = 'FASTA'
     idFASTA = Column('idFASTA', Integer, primary_key=True)
-    Name = Column('Name', String)
-    FASTAPath = Column('FASTAPath',  String)
+    Name = Column('Name', String, unique=True)
+    FASTAPath = Column('FASTAPath',  String, unique=True)
     Comment = Column('Comment', String)
 
     def __repr__(self):
@@ -64,6 +63,7 @@ class FASTA(Base):
 class PeptideList(Base):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
+    userPeptideListID = Column('userPeptideListID', Integer, unique=True)
     idFASTA = Column('idFASTA', Integer, ForeignKey('FASTA.idFASTA'))
     PeptideListPath = Column('PeptideListPath', String)
     #Just a string of integers seperated by spaces. 
@@ -99,7 +99,7 @@ class TideIndex(Base):
     idTideIndex = Column('idTideIndex', Integer, primary_key=True)
     TideIndexPath = Column('TideIndexPath', String)
     TideIndexOptions = Column('TideIndexOptions', BLOB)
-
+    
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = tideindex_filteredNetMHC, back_populates = 'tideindices')
     peptidelists = relationship('PeptideList', secondary= tideindex_peptidelists, back_populates = 'tideindices')
 
@@ -134,6 +134,8 @@ class Command(Base):
     executionDateTime = Column('executionDateTime', DateTime, default=datetime.datetime.utcnow)
     commandString = Column('commandString', String)
     executionSuccess = Column('executionSuccess', Integer, default=0)
+    def __repr__(self):
+        return str(self.idCommand) + ' | ' + self.executionDateTime.strftime('%A %d, %B %Y') + ' | ' + self.commandString + ' | ' + str(self.executionSuccess)
 def init_session(db_path):
     engine = create_engine('sqlite:///' + db_path)
     Base.metadata.create_all(engine)

@@ -17,7 +17,7 @@ print('project folder: ' + project_folder)
 species = args.species[0]
 
 print('species: ' + species)
-project = tPipeProject.Project(project_folder)
+project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
 
 project.add_species(species)
 project.commit()

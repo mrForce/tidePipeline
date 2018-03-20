@@ -1,6 +1,8 @@
 Things to do:
 
-0. Record commands sent to project
+All of the commands that add to a table should print the ID of what they added to stdout.
+
+0. Record commands sent to project -- done
 
 0. Initialize project -- DONE
 python tPipeInitialize.py project
