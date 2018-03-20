@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_engine, Float, BLOB
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_engine, Float, BLOB, DateTime
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-
+import datetime
 Base = declarative_base()
 
 
@@ -14,6 +14,10 @@ peptidelist_netmhc = Table('peptidelist_netmhc', Base.metadata,
                            Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True),
                            Column('netmhc_id', ForeignKey('NetMHC.idNetMHC'), primary_key=True)                    
 )
+
+tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+
+tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 class Species(Base):
     __tablename__ = 'Species'
     idSpecies = Column('idSpecies', Integer, primary_key=True)
@@ -65,6 +69,8 @@ class PeptideList(Base):
     #Just a string of integers seperated by spaces. 
     lengths = Column('lengths', String)
     netmhcs = relationship('NetMHC', secondary=peptidelist_netmhc, back_populates='peptidelists')
+
+    tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath
 
@@ -72,7 +78,7 @@ class PeptideList(Base):
 class NetMHC(Base):
     __tablename__ = 'NetMHC'
     idNetMHC = Column('idNetMHC', Integer, primary_key = True)
-    peptidelists = relationship('HLA',
+    peptidelists = relationship('PeptideList',
                         secondary=peptidelist_netmhc,
                         back_populates='netmhcs')
     idHLA = Column('idHLA', Integer, ForeignKey('HLA.idHLA'))
@@ -87,15 +93,16 @@ class FilteredNetMHC(Base):
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
     idNetMHC = Column('idNetMHC', Integer, ForeignKey('NetMHC.idNetMHC'))
     RankCutoff = Column('RankCutoff', Float)
-
+    tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
 class TideIndex(Base):
     __tablename__ = 'TideIndex'
     idTideIndex = Column('idTideIndex', Integer, primary_key=True)
     TideIndexPath = Column('TideIndexPath', String)
     TideIndexOptions = Column('TideIndexOptions', BLOB)
 
-    filteredNetMHCs = relationship('FilteredNetMHC')
-    peptidelists = relationship('PeptideList')
+    filteredNetMHCs = relationship('FilteredNetMHC', secondary = tideindex_filteredNetMHC, back_populates = 'tideindices')
+    peptidelists = relationship('PeptideList', secondary= tideindex_peptidelists, back_populates = 'tideindices')
+
     
 class TideSearch(Base):
     __tablename__ = 'TideSearch'
@@ -120,19 +127,28 @@ class Percolator(Base):
     pepXMLPath = Column('pepXMLPath', String)
     logPath = Column('logPath', String)
 
+
+class Command(Base):
+    __tablename__ = 'Command'
+    idCommand = Column('idCommand', Integer, primary_key=True)
+    executionDateTime = Column('executionDateTime', DateTime, default=datetime.datetime.utcnow)
+    commandString = Column('commandString', String)
+    executionSuccess = Column('executionSuccess', Integer, default=0)
 def init_session(db_path):
     engine = create_engine('sqlite:///' + db_path)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
     return session
+
+
 """
 engine = create_engine('sqlite://', echo=True)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
 session = Session()
-human = Species(SpeciesName = 'human')
+ human = Species(SpeciesName = 'human')
 common_hla = HLA(HLAName = 'HLA A*0101', species=[human])
 abc_hypersens = HLA(HLAName = 'HLA B*5701', species=[human])
 session.add(human)

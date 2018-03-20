@@ -11,10 +11,18 @@ class ProjectPathAlreadyExistsError(Error):
         return self.message
 
 class Project:
-    def __init__(self, project_path):
+    def __init__(self, project_path, command):
         self.project_path = project_path
         self.db_session = tPipeDB.init_session(os.path.join(project_path, 'database.db'))
+        #I'm going to need to take in the command, 
 
+    def add_species(self, species_name):
+        species = tPipeDB.Species(SpeciesName = species_name)
+        self.db_session.add(species)
+    def commit(self):
+        self.db_session.commit()
+
+    
     @staticmethod
     def createEmptyProject(project_path):
         if os.path.exists(project_path):
@@ -25,5 +33,6 @@ class Project:
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             return Project(project_path)
-            
+
+
 
