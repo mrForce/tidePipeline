@@ -4,6 +4,7 @@ from Bio import SeqIO
 import glob
 import re
 import shutil
+from fileFunctions import *
 class Error(Exception):
     pass
 
@@ -22,7 +23,12 @@ class FileDoesNotExistError(Error):
         self.message = 'File with path: ' + filepath + ' does not exist'
     def __repr__(self):
         return self.message
-    
+class FASTAWithNameDoesNotExistError(Error):
+    def __init__(self, name):
+        self.message = 'There is no FASTA entry with the name: ' + name
+
+    def __repr__(self):
+        return self.message
 class HLAWithNameExistsError(Error):
     def __init__(self, hla_name):
         self.message = 'There is already an HLA with the name: ' + hla_name
@@ -78,10 +84,30 @@ class Project:
         self.command = tPipeDB.Command(commandString = command)
         self.db_session.add(self.command)
         self.db_session.commit()
-        
-    def list_fasta_files(self):
-        files_list = glob.glob(os.path.join(self.project_path, 'FASTA', '*'))
+
+    
+    def add_peptide_list(self, name, length, fasta_name):
+        fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).all()
+        if len(fasta_row) == 0:
+            raise FASTAWithNameDoesNotExistError(fasta_name)
+        fasta_row = fasta_row[0]
+        fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
+        peptide_filename = fasta_filename + '_' + str(length) + '.txt'
+        peptide_list_path = os.path.join('peptides', peptide_filename)
+        if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):                    
+            peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)        
+            write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
+        peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+        self.db_session.add(peptide_list)
+        self.db_session.commit()
+
+    def list_files(self, folder):
+        files_list = glob.glob(os.path.join(self.project_path, folder, '*'))
         return list(filter(lambda x: os.path.isfile(x), files_list))
+    def list_fasta_files(self):
+        return self.list_files('FASTA')
+    def list_peptide_list_files(self):
+        return self.list_files('peptides')
     def list_fasta_db(self):
         rows = self.db_session.query(tPipeDB.FASTA).all()
         fastas = []

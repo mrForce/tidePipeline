@@ -62,7 +62,7 @@ class PeptideList(Base):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
     peptideListName = Column('peptideListName', String, unique=True)
-    idFASTA = Column('idFASTA', Integer, ForeignKey('FASTA.idFASTA'))
+    idFASTA = Column(Integer, ForeignKey('FASTA.idFASTA'))
     fasta = relationship('FASTA', back_populates='peptide_lists')
     PeptideListPath = Column('PeptideListPath', String)
     #Just a string of integers seperated by spaces. 
