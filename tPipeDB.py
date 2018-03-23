@@ -4,11 +4,11 @@ from sqlalchemy.ext.declarative import declarative_base
 import datetime
 Base = declarative_base()
 
-
+"""
 species_hla = Table('species_hla', Base.metadata,
      Column('species_id', ForeignKey('Species.idSpecies'), primary_key=True),
      Column('HLA_id', ForeignKey('HLA.idHLA'), primary_key=True)
-)
+)"""
 
 peptidelist_netmhc = Table('peptidelist_netmhc', Base.metadata,
                            Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True),
@@ -23,9 +23,7 @@ class Species(Base):
     idSpecies = Column('idSpecies', Integer, primary_key=True)
     SpeciesName = Column('SpeciesName', String, unique=True)
 
-    hlas = relationship('HLA',
-                       secondary=species_hla,
-                       back_populates='species')
+    hlas = relationship('HLA', back_populates='species')
     def __repr__(self):
         return 'Species: ' + self.SpeciesName
 
@@ -35,9 +33,9 @@ class HLA(Base):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
     HLAName = Column('HLAName', String, unique=True)
-    species = relationship('Species',
-                       secondary=species_hla,
-                       back_populates='hlas')
+    #a single HLA should only be associated with one species
+    species_id = Column('species_id', ForeignKey('Species.idSpecies'))
+    species = relationship('Species', back_populates='hlas')
     def __repr__(self):
         return 'MHC ' + self.HLAName + ' from species: ' + self.species[0].SpeciesName
 

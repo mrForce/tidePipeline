@@ -72,6 +72,29 @@ class Project:
             
             species.append({'id': row.idSpecies, 'name': row.SpeciesName, 'hla':hla  })
         return species
+
+    def list_hla(self, species_name=None, species_id=None):
+        if species_name:
+            species_row = self.db_session.query(tPipeDB.Species).filter_by(SpeciesName=species_name).first()
+            if species_row:
+                species_id = species_row.idSpecies
+            else:
+                raise NoSuchSpeciesError(species_name)
+        query = self.db_session.query(tPipeDB.HLA)
+        if species_id:
+            query = query.filter_by(species_id=species_id)
+        rows = query.all()
+        hlas = []
+        for row in rows:
+            hla = {'name': row.HLAName, 'id': str(row.idHLA)}
+            if row.species:
+                hla['species_id'] = str(row.species.idSpecies)
+                hla['species_name'] = row.species.SpeciesName
+            else:
+                hla['species_id'] = 'None'
+                hla['species_name'] = 'None'
+            hlas.append(hla)
+        return hlas
     def add_hla(self, hla_name, species, speciesIsID):
         species_rows = []
         if speciesIsID:
@@ -91,7 +114,7 @@ class Project:
         hla_rows = self.db_session.query(tPipeDB.HLA).filter_by(HLAName = hla_name).all()
         if len(hla_rows) > 0:
             raise HLAWithNameExistsError(hla_name)
-        hla = tPipeDB.HLA(HLAName = hla_name, species = species_rows)
+        hla = tPipeDB.HLA(HLAName = hla_name, species_id = species_rows[0].idSpecies)
         self.db_session.add(hla)
         self.db_session.commit()
         return hla.idHLA

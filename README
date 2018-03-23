@@ -21,18 +21,21 @@ With HLA: python tPipeListSpecies.py project --showHLA
 python tPipeAddHLA.py project HLA-A0201 1
 
 
-3. List HLAs -- should be able to refer to species by either name or ID:
+3. List HLAs -- should be able to refer to species by either name or ID: -- DONE!
 
 For all species: python tPipeListHLA.py project
 
 For a single species: python tPipeListHLA.py  project  1
 
+3. Fix all many-to-many relationships that are wrong
 
 NOTE: For referring to FASTA files, Peptide lists, and NetMHC results, we should let the user enter their own ID (as a secondary ID).
 
 4. Add FASTA files to the project 
 python tPipeAddFASTA.py project proteins.fasta "The mouse proteome"
 
+
+4. Rename the tPipeListCommands (to make it clear that it is about command history).
 
 5. List FASTA files in the project
 python tPipeListFASTA.py project
