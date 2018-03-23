@@ -27,11 +27,11 @@ For all species: python tPipeListHLA.py project
 
 For a single species: python tPipeListHLA.py  project  1
 
-3. Fix all many-to-many relationships that are wrong
+3. Fix all many-to-many relationships that are wrong -- there don't appear to be any wrong ones remaining
 
 NOTE: For referring to FASTA files, Peptide lists, and NetMHC results, we should let the user enter their own ID (as a secondary ID).
 
-4. Add FASTA files to the project 
+4. Add FASTA files to the project -- done
 python tPipeAddFASTA.py project proteins.fasta "The mouse proteome"
 
 
