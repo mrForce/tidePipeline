@@ -3,7 +3,7 @@ import tPipeProject
 import argparse
 import sys
 
-parser = argparse.ArgumentParser(description='List commands')
+parser = argparse.ArgumentParser(description='This is for listing the history of commands')
 
 parser.add_argument('project_folder', help='The location of the project folder', nargs=1)
 
