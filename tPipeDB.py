@@ -54,18 +54,19 @@ class FASTA(Base):
     Name = Column('Name', String, unique=True)
     FASTAPath = Column('FASTAPath',  String, unique=True)
     Comment = Column('Comment', String)
-
+    peptide_lists = relationship('PeptideList', back_populates='fasta')
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
 
 class PeptideList(Base):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
-    userPeptideListID = Column('userPeptideListID', Integer, unique=True)
+    peptideListName = Column('peptideListName', String, unique=True)
     idFASTA = Column('idFASTA', Integer, ForeignKey('FASTA.idFASTA'))
+    fasta = relationship('FASTA', back_populates='peptide_lists')
     PeptideListPath = Column('PeptideListPath', String)
     #Just a string of integers seperated by spaces. 
-    lengths = Column('lengths', String)
+    length = Column('length', Integer)
     netmhcs = relationship('NetMHC', secondary=peptidelist_netmhc, back_populates='peptidelists')
 
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')

@@ -82,6 +82,15 @@ class Project:
     def list_fasta_files(self):
         files_list = glob.glob(os.path.join(self.project_path, 'FASTA', '*'))
         return list(filter(lambda x: os.path.isfile(x), files_list))
+    def list_fasta_db(self):
+        rows = self.db_session.query(tPipeDB.FASTA).all()
+        fastas = []
+        for row in rows:
+            fasta = {'id': row.idFASTA, 'name': row.Name, 'comment': row.Comment, 'path': row.FASTAPath, 'peptide_lists': []}
+            for pList in row.peptide_lists:
+                fasta['peptide_lists'].append({'name': pList.peptideListName, 'length': pList.length})
+            fastas.append(fasta)
+        return fastas
     def add_species(self, species_name):
         species = tPipeDB.Species(SpeciesName = species_name)
         self.db_session.add(species)

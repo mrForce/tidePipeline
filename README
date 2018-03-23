@@ -39,10 +39,10 @@ python tPipeAddFASTA.py project proteins.fasta "The mouse proteome"
 
 5. Validate project integrity before and after running command, and create backup. --done
 
-5. List FASTA files in the project
+5. List FASTA files in the project -- done 
 python tPipeListFASTA.py project
-       ID ------ Name --- path
-       1   |     The mouse proteome  | proteins.fasta
+       ID | Name | Comment | path
+       1   |     The mouse proteome  | | mouse.fasta
 
 6. Create peptide lists from a FASTA file -- should be able to refer to FASTA file by either name or ID
 python tPipeCreatePeptideList.py project 1 8 9 10 11
