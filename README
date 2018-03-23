@@ -11,13 +11,13 @@ python tPipeInitialize.py project
 python tPipeAddSpecies.py project  Human
 
 
-2. Print species
+2. Print species -- done
 
 Without HLA: python tPipeListSpecies.py project
 
 With HLA: python tPipeListSpecies.py project --showHLA
 
-2. Add HLA to project -- should be able to refer to species by either name or ID
+2. Add HLA to project -- should be able to refer to species by either name or ID --done
 python tPipeAddHLA.py project HLA-A0201 1
 
 

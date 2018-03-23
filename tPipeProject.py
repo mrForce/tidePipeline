@@ -10,6 +10,38 @@ class ProjectPathAlreadyExistsError(Error):
     def __repr(self):
         return self.message
 
+
+class HLAWithNameExistsError(Error):
+    def __init__(self, hla_name):
+        self.message = 'There is already an HLA with the name: ' + hla_name
+    def __repr__(self):
+        return self.message
+class NoSuchSpeciesError(Error):
+    def __init__(self, species_name):
+        self.message = 'There is no species with the name: ' + species_name
+    def __repr__(self):
+        return self.message
+class MultipleSpeciesWithSameNameError(Error):
+    def __init__(self, species_name):
+        self.message = 'There are multiple species with the name: ' + species_name
+    def __repr__(self):
+        return self.message
+class NoSpeciesWithNameError(Error):
+    def __init__(self, species_name):
+        self.message = 'There are no species with the name: ' + species_name
+    def __repr__(self):
+        return self.message
+class NoSpeciesWithIDError(Error):
+    def __init__(self, species_id):
+        self.message = 'There are no species with the ID: ' + str(species_id)
+    def __repr__(self):
+        return self.message
+class MultipleSpeciesWithSameIDError(Error):
+    def __init__(self, species_id):
+        self.message = 'There are multiple species with the ID: ' + species_id
+    def __repr__(self):
+        return self.message
+
 class Project:
     def __init__(self, project_path, command):
         self.project_path = project_path
@@ -32,16 +64,40 @@ class Project:
             commands.append(row)
         return commands
     def get_species(self):
-
         species = []
         for row in self.db_session.query(tPipeDB.Species):
             hla = []
             for hla_row in row.hlas:
                 hla.append(hla_row.HLAName)
             
-            species.append({'id': row.idSpecies, 'name': SpeciesName, 'hla':hla  })
+            species.append({'id': row.idSpecies, 'name': row.SpeciesName, 'hla':hla  })
         return species
-    def add_hla(self, name, species_name):
+    def add_hla(self, hla_name, species, speciesIsID):
+        species_rows = []
+        if speciesIsID:
+            species_rows = self.db_session.query(tPipeDB.Species).filter_by(idSpecies=species).all()
+            if len(species_rows) == 0:
+                raise NoSpeciesWithIDError(species)
+            elif len(species_rows) > 1:
+                raise MultipleSpeciesWithSameIDError(species)
+        else:        
+            species_rows = self.db_session.query(tPipeDB.Species).filter_by(SpeciesName=species).all()
+            print(species_rows)
+            print(len(species_rows))
+            if len(species_rows) > 1:
+                raise MultipleSpeciesWithSameNameError(species)
+            elif len(species_rows) == 0:
+                raise NoSpeciesWithNameError(species)
+        hla_rows = self.db_session.query(tPipeDB.HLA).filter_by(HLAName = hla_name).all()
+        if len(hla_rows) > 0:
+            raise HLAWithNameExistsError(hla_name)
+        hla = tPipeDB.HLA(HLAName = hla_name, species = species_rows)
+        self.db_session.add(hla)
+        self.db_session.commit()
+        return hla.idHLA
+
+        
+        
         
     @staticmethod
     def createEmptyProject(project_path):
