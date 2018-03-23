@@ -27,7 +27,7 @@ if args.FASTAComment:
     comment = args.FASTAComment[0]
 
 project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
-
+project.begin_command_session()
 project.add_fasta_file(args.FASTAPath[0], name, comment)
-project.commit()
-#project.commit()
+project.end_command_session()
+

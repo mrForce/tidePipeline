@@ -59,6 +59,18 @@ class NotProperFASTAFileError(Error):
         self.message = 'The file at found at: ' + path + ' could not be parsed as a FASTA file'
     def __repr__(self):
         return self.message
+class FASTAMissingError(Error):
+    def __init__(self, fasta_id, fasta_name, path):
+        self.message = 'The row in the FASTA table, with id: ' + str(fasta_id) + ' and name: ' + str(fasta_name) + ' points to a FASTA file with path: ' + path + ', but this file does not exist.'
+    def __repr__(self):
+        return self.message
+
+class OperationsLockedError(Error):
+    def __init__(self):
+        self.message = 'The operation lock file (operation_lock) exists, so we cannot do anything with this project at the moment'
+    def __repr__(self):
+        return self.message
+    
 class Project:
     def __init__(self, project_path, command):
         self.project_path = project_path
@@ -66,17 +78,71 @@ class Project:
         self.command = tPipeDB.Command(commandString = command)
         self.db_session.add(self.command)
         self.db_session.commit()
-
+        
     def list_fasta_files(self):
         files_list = glob.glob(os.path.join(self.project_path, 'FASTA', '*'))
         return list(filter(lambda x: os.path.isfile(x), files_list))
     def add_species(self, species_name):
         species = tPipeDB.Species(SpeciesName = species_name)
         self.db_session.add(species)
-    def commit(self):
+    def validate_project_integrity(self, ignore_operation_lock = False):
+        """
+        Returns true if the project is valid. Otherwise it raises an error. That is:
+        1) The lock file doesn't exist (operation_lock)
+        3) All FASTA file paths in the FASTA table are found in the FASTA folder
+        (and I'll add other criteria here as I expand the command set)
+        
+        """
+        if (not ignore_operation_lock) and os.path.isfile(os.path.join(self.project_path, 'operation_lock')):
+            raise OperationsLockedError()
+        fasta_rows = self.db_session.query(tPipeDB.FASTA).all()
+        for row in fasta_rows:
+            path = row.FASTAPath
+            if not os.path.isfile(os.path.join(self.project_path, path)):
+                raise FASTAMissingError(row.idFASTA, row.Name, row.FASTAPath)
+        return True
+    def lock_operations(self):
+        with open(os.path.join(self.project_path, 'operation_lock'), 'w') as f:
+            pass
+    def unlock_operations(self):
+        os.remove(os.path.join(self.project_path, 'operation_lock'))
+    def mark_invalid(self):
+        with open(os.path.join(self.project_path, 'project_invalid'), 'w') as f:
+            pass
+    def remove_invalid_mark(self):
+        os.remove(os.path.join(self.project_path, 'project_invalid'))
+    def begin_command_session(self):
+        """
+        Validate project integrity, create operation lock
+        """
+        self.validate_project_integrity()
+        current_place = os.getcwd()
+        os.chdir(self.project_path)
+        shutil.make_archive('backup', 'gztar')
+        os.chdir(current_place)
+        self.lock_operations()
+    def end_command_session(self):
+        """
+        Validate project integrity (ignoring the operation lock). If project does not have integrity, then rollback project.
+
+        If it does have integrity, then remove operation lock, and remove backup"""
+        
         self.command.executionSuccess = 1
         
         self.db_session.commit()
+
+        try:
+            self.validate_project_integrity(ignore_operation_lock = True)
+        except Error as e:
+            #rollback
+            print('Doing the operations caused the project to become invalid; here is the error')
+            print(e)
+            print('There is a backup file: ' + os.path.join(self.project_path, 'backup.tar.gz') + ' That you can use to revert the changes to bring the project into a valid state. Just unpack it. If you didn\'t do anything unusualy, then please file a bug report')
+            sys.exit(1)
+        else:
+            self.unlock_operations()
+            os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
+            
     def add_fasta_file(self, path, name, comment):
         """
         Steps:

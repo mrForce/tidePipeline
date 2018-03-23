@@ -27,6 +27,6 @@ print('hla: ' + args.HLA)
 print('speciesID: ' + str(args.speciesID))
 print('not doing anything')
 project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
-
+project.begin_command_session()
 project.add_hla(args.HLA, species, args.speciesID)
-#project.commit()
+project.end_command_session()

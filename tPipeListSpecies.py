@@ -18,6 +18,7 @@ project_folder = args.project_folder[0]
 
 
 project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project.begin_command_session()
 print('ID | Species Name')
 for t in project.get_species():
     print(str(t['id']) + ' | ' + t['name'])
@@ -25,4 +26,4 @@ for t in project.get_species():
         for hla in t['hla']:
             print('\t' + hla)
         
-project.commit()
+project.end_command_session()

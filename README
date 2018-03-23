@@ -35,7 +35,9 @@ NOTE: For referring to FASTA files, Peptide lists, and NetMHC results, we should
 python tPipeAddFASTA.py project proteins.fasta "The mouse proteome"
 
 
-4. Rename the tPipeListCommands (to make it clear that it is about command history).
+4. Rename the tPipeListCommands (to make it clear that it is about command history). -- done
+
+5. Validate project integrity before and after running command, and create backup. --done
 
 5. List FASTA files in the project
 python tPipeListFASTA.py project

@@ -18,6 +18,6 @@ species = args.species[0]
 
 print('species: ' + species)
 project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
-
+project.begin_command_session()
 project.add_species(species)
-project.commit()
+project.end_command_session()
