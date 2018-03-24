@@ -1,10 +1,13 @@
 import tPipeDB
 import sys
+import tempfile
 import os
 from Bio import SeqIO
+from NetMHC import *
 import glob
 import re
 import shutil
+import uuid
 from fileFunctions import *
 class Error(Exception):
     pass
@@ -77,12 +80,68 @@ class OperationsLockedError(Error):
         self.message = 'The operation lock file (operation_lock) exists, so we cannot do anything with this project at the moment'
     def __repr__(self):
         return self.message
+class NoSuchPeptideListError(Error):
+    def __init__(self, peptide_list_name):
+        self.message = 'There is no row in the PeptideList table with the name: ' + peptide_list_name
+
+    def __repr__(self):
+        return self.message
+
+class NoSuchHLAError(Error):
+    def __init__(self, hla_name):
+        self.message = 'There is no HLA with the name: ' + hla_Name
+    def __repr__(self):
+        return self.message
 
 class PeptideListFileMissingError(Error):
     def __init__(self, peptide_list_id, peptide_list_name, path):
         self.message = 'The row in the PeptideList table, with id: ' + str(peptide_list_id) + ' and name: ' + str(peptide_list_name) + ' points to a peptide file with path: ' + path + ', but this file does not exist.'
     def __repr__(self):
         return self.message
+
+class TideIndexFailedError(Error):
+    def __init__(self, command):
+        self.message = 'The tide-index command: ' + command + ' with non-zero exit code'
+    def __repr__(self):
+        return self.message
+class TideIndexRunner:
+    def __init__(self, tide_index_options):
+        #tide_index_options is a dictionary.
+        self.tide_index_options = tide_index_options
+        
+    @staticmethod
+    def get_tide_index_options():
+        return {'--clip-nterm-methionine': {'choices':['T', 'F']}, '--isotopic-mass': {'choices': ['average', 'mono']}, '--max-length': {'type': int}, '--max-mass': {'type':str}, '--min-length': {'type':int}, '--min-mass': {'type':str}, '--cterm-peptide-mods-spec': {'type': str}, '--max-mods': {'type': int}, '--min-mods': {'type':int}, '--mod-precision': {'type':int}, '--mods-spec': {'type': str}, '--nterm-peptide-mods-spec': {'type':str}, '--allow-dups': {'choices': ['T', 'F']}, '--decoy-format': {'choices': ['none', 'shuffle', 'peptide-reverse', 'protein-reverse']}, '--keep-terminal-aminos': {'choices': ['N', 'C', 'NC', 'none']}, '--seed': {'type':str}, '--custom-enzyme': {'type': str}, '--digestion': {'choices': ['full-digest', 'partial-digest', 'non-specific-digest']}, '--enzyme': {'choices': ['no-enzyme', 'trypsin', 'trypsin/p', 'chymotrypsin', 'elactase', 'clostripain', 'cyanogen-bromide', 'iodosobenzoat', 'proline-endopeptidase', 'staph-protease', 'asp-n', 'lys-c', 'lys-n', 'arg-c', 'glu-c', 'pepsin-a', 'elastase-trypsin-chymotrypsin', 'custom-enzyme']}, '--missed-cleavages': {'type': int}}
+    @staticmethod
+    def convert_cmdline_option_to_column_name(option):
+        converter = {'clip-nterm-methionine': 'clip_nterm_methionine', 'isotopic-mass': 'isotopic_mass', 'max-length': 'max_length', 'max-mass': 'max_mass', 'min-length': 'min_length', 'min-mass': 'min_mass', 'cterm-peptide-mods-spec': 'cterm_peptide_mods_spec', 'max-mods': 'max_mods', 'min-mods':'min_mods', 'mod-precision': 'mod_precision', 'mods-spec': 'mods_spec', 'nterm-peptide-mods-spec': 'nterm_peptide_mods_spec', 'allow-dups': 'allow_dups', 'decoy-format': 'decoy_format', 'keep-terminal-aminos': 'keep_terminal_aminos', 'seed': 'seed', 'custom-enzyme': 'custom_enzyme', 'digestion': 'digestion', 'enzyme': 'enzyme', 'missed-cleavages': 'missed_cleavages'}
+        if option in converter:
+            return converter[option]
+        else:
+            return None
+    def run_index_create_row(self, fasta_path, output_directory, index_filename):
+        #first, need to create the tide-index command
+        command = ['crux', 'tide-index']
+        for k,v in self.tide_index_options:
+            command.append('--' + k)
+            command.append(v)
+        command.append('--output-dir')
+        command.append(output_directory)
+        command.append(fasta_path)
+        command.append(index_filename)
+        try:
+            p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise TideIndexFailedError(' '.join(command))
+        column_arguments = {}
+        for k, v in self.tide_index_options:
+            column_name = TideIndexRunner.convert_cmdline_option_to_column_name(k)
+            if column_name:
+                column_arguments[column_name] = v
+            else:
+                print('The key: ' + k + ' does not correspond to a valid column in the TideIndex table')
+        return tPipeDB.TideIndex(**column_arguments)
+
 
 class Project:
     def __init__(self, project_path, command):
@@ -92,7 +151,72 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
-    
+        
+    def create_tide_index(peptide_list_names, netmhc_filters, tide_index_runner):
+        """
+        peptide_list_names is a list of strings, where each is the name of a PeptideList
+
+        Each netmhc filter is a tuple of the form (HLA_name, peptide list name, rank cutoff)
+        
+        tide_index_runner is an instance of the TideIndexRunner class
+        """
+        temp_files = []
+        for hla, pln, rank_cutoff in netmhc_filters:
+            idNetMHC, pep_score_path = self.run_netmhc(pln, hla)
+            with open(os.path.join(self.project_path, pep_score_path), 'r') as f:
+                tp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+                temp_files.append(tp)
+                for line in f:
+                    line_parts = line.split(',')
+                    if len(line_parts) == 2:
+                        rank = float(line_parts[1])
+                        if rank <= rank_cutoff:
+                            tp.write(line_parts[0] + '\n')
+        files = []
+        for pln in peptide_list_names:
+            row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName=pln).first()
+            if row:
+                files.append(os.path.join(self.project_path, row.PeptideListPath))
+            else:
+                raise NoSuchPeptideListError(pln)
+        for x in temp_files:
+            files.append(x.name)
+            x.close()
+        temp_fasta = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        subprocess.run(['bash_scripts/join_peptides_to_fasta.sh'] + files + [temp_fasta.name])
+        
+        
+        
+        
+        
+    def run_netmhc(self, peptide_list_name, hla_name):
+        """
+        This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (idNetMHC, PeptideScorePath)
+        
+        If there isn't, then it runs NetMHC, inserts a row into the table, and returns (idNetMHC, PeptideScorePath)               
+        """
+        peptide_list_row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName=peptide_list_Name).first()
+        if peptide_list_row is None:
+            raise NoSuchPeptideListError(peptide_list_name)
+        hla_row = self.db_session.query(tPipeDB.HLA).filter_by(HLAName=hla_name).first()
+        if hla_row is None:
+            raise NoSuchHLAError(hla_name)
+        netmhc_row = self.db_session.query(tPipeDB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
+        if netmhc_row:
+            return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
+        else:
+            netmhc_output_filename = str(uuid.uuid4().hex)
+            while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename, '-parsed')):
+                netmhc_output_filename = str(uuid.uuid4().hex)
+            call_netmhc(hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename))
+            parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
+            netmhc_row = tPipeDB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=output_path, PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
+            self.db_session.add(netmhc_row)
+            self.db_session.commit()
+            return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
+
+    def generate_tide_index(self, peptide_list_names, netmhc_runs, tide_index_options):
+        pass
     def add_peptide_list(self, name, length, fasta_name):
         fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).all()
         if len(fasta_row) == 0:

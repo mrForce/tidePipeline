@@ -10,10 +10,6 @@ species_hla = Table('species_hla', Base.metadata,
      Column('HLA_id', ForeignKey('HLA.idHLA'), primary_key=True)
 )"""
 
-peptidelist_netmhc = Table('peptidelist_netmhc', Base.metadata,
-                           Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True),
-                           Column('netmhc_id', ForeignKey('NetMHC.idNetMHC'), primary_key=True)                    
-)
 
 tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
@@ -67,7 +63,6 @@ class PeptideList(Base):
     PeptideListPath = Column('PeptideListPath', String)
     #Just a string of integers seperated by spaces. 
     length = Column('length', Integer)
-    netmhcs = relationship('NetMHC', secondary=peptidelist_netmhc, back_populates='peptidelists')
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath
@@ -76,9 +71,7 @@ class PeptideList(Base):
 class NetMHC(Base):
     __tablename__ = 'NetMHC'
     idNetMHC = Column('idNetMHC', Integer, primary_key = True)
-    peptidelists = relationship('PeptideList',
-                        secondary=peptidelist_netmhc,
-                        back_populates='netmhcs')
+    peptidelistID = Column('peptideListID', Integer, ForeignKey('PeptideList.idPeptideList'))
     idHLA = Column('idHLA', Integer, ForeignKey('HLA.idHLA'))
     #Raw output of NetMHC
     NetMHCOutputPath = Column('NetMHCOutputPath', String)
@@ -95,9 +88,30 @@ class FilteredNetMHC(Base):
 class TideIndex(Base):
     __tablename__ = 'TideIndex'
     idTideIndex = Column('idTideIndex', Integer, primary_key=True)
+    #the name of the index is given by the user
+    TideIndexName = Column('TideIndexName', String, unique=True)
     TideIndexPath = Column('TideIndexPath', String)
-    TideIndexOptions = Column('TideIndexOptions', BLOB)
-    
+    clip_nterm_methionine = Column(Integer)
+    isotopic_mass = Column(String)
+    max_length = Column(Integer)
+    #max and min mass are really floats -- but I'm not sure about the precision of Sqlite, so I'll just store them as strings
+    max_mass = Column(String)
+    min_length = Column(Integer)
+    min_mass = Column(String)
+    cterm_peptide_mods_spec = Column(String)
+    max_mods = Column(Integer)
+    min_mods = Column(Integer)
+    mod_precision = Column(Integer)
+    mods_spec = Column(String)
+    nterm_peptide_mods_spec = Column(String)
+    allow_dups = Column(Integer)
+    decoy_format = Column(String)
+    keep_terminal_aminos = Column(String)
+    seed = Column(String)
+    custom_enzyme = Column(String)
+    digestion = Column(String)
+    enzyme = Column(String)
+    missing_cleavages = Column(Integer)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = tideindex_filteredNetMHC, back_populates = 'tideindices')
     peptidelists = relationship('PeptideList', secondary= tideindex_peptidelists, back_populates = 'tideindices')
 

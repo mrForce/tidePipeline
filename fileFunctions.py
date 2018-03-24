@@ -1,4 +1,6 @@
 from Bio import SeqIO
+import re
+import subprocess
 
 def extract_peptides(fasta_path, length):
     peptides = set()
@@ -16,3 +18,16 @@ def write_peptides(file_path, peptide_set):
     with open(file_path, 'w') as f:
         for x in peptide_list:
             f.write(x + '\n')
+def parse_netmhc(output_file):
+    regex = re.compile('^(\s+[^\s]+){2}(\s+(?P<peptide>[A-Z]+))(\s+[^\s]+){10}(\s+(?P<rank>[0-9]{1,2}\.[0-9]+))')
+    results = []
+    with open(output_file, 'r') as f:
+        for line in f:
+            match = regex.match(line)
+            if match:
+                results.append((match.group('peptide'), float(match.group('rank'))))
+    return results
+
+def call_netmhc(hla, peptide_file_path, output_path):
+    with open(output_path, 'w') as f:
+        subprocess.run(['netmhc', '-a', hla, '-f', peptide_file_path, '-p'], stdout=f)
