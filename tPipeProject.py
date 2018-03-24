@@ -1,4 +1,5 @@
 import tPipeDB
+import sys
 import os
 from Bio import SeqIO
 import glob
@@ -76,7 +77,13 @@ class OperationsLockedError(Error):
         self.message = 'The operation lock file (operation_lock) exists, so we cannot do anything with this project at the moment'
     def __repr__(self):
         return self.message
-    
+
+class PeptideListFileMissingError(Error):
+    def __init__(self, peptide_list_id, peptide_list_name, path):
+        self.message = 'The row in the PeptideList table, with id: ' + str(peptide_list_id) + ' and name: ' + str(peptide_list_name) + ' points to a peptide file with path: ' + path + ', but this file does not exist.'
+    def __repr__(self):
+        return self.message
+
 class Project:
     def __init__(self, project_path, command):
         self.project_path = project_path
@@ -131,9 +138,9 @@ class Project:
         """
         Returns true if the project is valid. Otherwise it raises an error. That is:
         1) The lock file doesn't exist (operation_lock)
-        3) All FASTA file paths in the FASTA table are found in the FASTA folder
+        2) All FASTA file paths in the FASTA table are found in the FASTA folder
         (and I'll add other criteria here as I expand the command set)
-        
+        3) All peptide list files are present
         """
         if (not ignore_operation_lock) and os.path.isfile(os.path.join(self.project_path, 'operation_lock')):
             raise OperationsLockedError()
@@ -142,6 +149,11 @@ class Project:
             path = row.FASTAPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
                 raise FASTAMissingError(row.idFASTA, row.Name, row.FASTAPath)
+        peptide_list_rows = self.db_session.query(tPipeDB.PeptideList).all()
+        for row in peptide_list_rows:
+            path = row.PeptideListPath
+            if not os.path.isfile(os.path.join(self.project_path, path)):
+                raise PeptideListFileMissingError(row.idPeptideList, row.peptideListName, row.PeptideListPath)
         return True
     def lock_operations(self):
         with open(os.path.join(self.project_path, 'operation_lock'), 'w') as f:
@@ -178,7 +190,7 @@ class Project:
         except Error as e:
             #rollback
             print('Doing the operations caused the project to become invalid; here is the error')
-            print(e)
+            print(sys.exc_info()[0])
             print('There is a backup file: ' + os.path.join(self.project_path, 'backup.tar.gz') + ' That you can use to revert the changes to bring the project into a valid state. Just unpack it. If you didn\'t do anything unusualy, then please file a bug report')
             sys.exit(1)
         else:
