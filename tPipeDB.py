@@ -68,7 +68,6 @@ class PeptideList(Base):
     #Just a string of integers seperated by spaces. 
     length = Column('length', Integer)
     netmhcs = relationship('NetMHC', secondary=peptidelist_netmhc, back_populates='peptidelists')
-
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath

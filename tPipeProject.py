@@ -101,6 +101,13 @@ class Project:
         self.db_session.add(peptide_list)
         self.db_session.commit()
 
+    def list_peptide_lists(self):
+        peptide_lists = []
+        peptide_list_rows = self.db_session.query(tPipeDB.PeptideList).all()
+        for row in peptide_list_rows:
+            peptide_list = {'id': row.idPeptideList, 'name': row.peptideListName, 'FASTAName': row.fasta.Name, 'FASTAPath': row.fasta.FASTAPath, 'length': int(row.length), 'path': row.PeptideListPath}
+            peptide_lists.append(peptide_list)
+        return peptide_lists
     def list_files(self, folder):
         files_list = glob.glob(os.path.join(self.project_path, folder, '*'))
         return list(filter(lambda x: os.path.isfile(x), files_list))
