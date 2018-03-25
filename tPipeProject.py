@@ -119,32 +119,36 @@ class TideIndexRunner:
             return converter[option]
         else:
             return None
-    def run_index_create_row(self, fasta_path, output_directory, index_filename):
+    def run_index_create_row(self, fasta_path, output_directory_tide, output_directory_db, index_filename):
         #first, need to create the tide-index command
         command = ['crux', 'tide-index']
-        for k,v in self.tide_index_options:
-            command.append('--' + k)
-            command.append(v)
+        for k,v in self.tide_index_options.items():
+            if k and v:
+                command.append('--' + k)
+                command.append(v)
         command.append('--output-dir')
-        command.append(output_directory)
+        command.append(output_directory_tide)
         command.append(fasta_path)
-        command.append(index_filename)
+        command.append(os.path.join(output_directory_tide, index_filename))
+        print('command')
+        print(' '.join(command))
         try:
             p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideIndexFailedError(' '.join(command))
         column_arguments = {}
-        for k, v in self.tide_index_options:
+        for k, v in self.tide_index_options.items():
             column_name = TideIndexRunner.convert_cmdline_option_to_column_name(k)
             if column_name:
                 column_arguments[column_name] = v
-        column_arguments['TideIndexPath'] = os.path.join(output_directory, index_filename)
+        column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
         return tPipeDB.TideIndex(**column_arguments)
 
 
 class Project:
     def __init__(self, project_path, command):
         self.project_path = project_path
+        print('project path: ' + project_path)
         self.db_session = tPipeDB.init_session(os.path.join(project_path, 'database.db'))
         self.command = tPipeDB.Command(commandString = command)
         self.db_session.add(self.command)
@@ -165,7 +169,8 @@ class Project:
             netmhc_filters = []
         if peptide_list_names is None:
             peptide_list_names = []
-        for hla, pln, rank_cutoff in netmhc_filters:            
+        for pln, hla, rank_cutoff in netmhc_filters:
+            rank_cutoff = float(rank_cutoff)
             idNetMHC, pep_score_path = self.run_netmhc(pln, hla)
             row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff=rank_cutoff).first()
             if row is None:
@@ -203,7 +208,7 @@ class Project:
             output_directory_name = str(uuid.uuid4().hex)
             output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         
-        row = tide_index_runner.run_index_create_row(temp_fasta.name, os.path.join('tide_indices', output_directory_name), 'index')
+        row = tide_index_runner.run_index_create_row(temp_fasta.name, output_directory_path, os.path.join('tide_indices', output_directory_name), 'index')
         row.TideIndexName = tide_index_name
         #now we must must set the relationships for peptidelists and filteredNetMHCs
         row.peptidelists = peptide_list_rows
@@ -218,7 +223,7 @@ class Project:
         
         If there isn't, then it runs NetMHC, inserts a row into the table, and returns (idNetMHC, PeptideScorePath)               
         """
-        peptide_list_row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName=peptide_list_Name).first()
+        peptide_list_row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
         if peptide_list_row is None:
             raise NoSuchPeptideListError(peptide_list_name)
         hla_row = self.db_session.query(tPipeDB.HLA).filter_by(HLAName=hla_name).first()
@@ -233,7 +238,7 @@ class Project:
                 netmhc_output_filename = str(uuid.uuid4().hex)
             call_netmhc(hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename))
             parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
-            netmhc_row = tPipeDB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=output_path, PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
+            netmhc_row = tPipeDB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
             self.db_session.add(netmhc_row)
             self.db_session.commit()
             return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)

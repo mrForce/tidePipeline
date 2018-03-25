@@ -5,7 +5,7 @@ import time
 def parse_netmhc(netmhc_output_path, parse_output_path):
     regex = re.compile('^(\s+[^\s]+){2}(\s+(?P<peptide>[A-Z]+))(\s+[^\s]+){10}(\s+(?P<rank>[0-9]{1,2}\.[0-9]+))')
     results = []
-    with open(output_file, 'r') as f:
+    with open(netmhc_output_path, 'r') as f:
         with open(parse_output_path, 'w') as g:
             for line in f:
                 match = regex.match(line)
@@ -14,12 +14,12 @@ def parse_netmhc(netmhc_output_path, parse_output_path):
 
 def get_num_lines(filepath):
     wc_process = subprocess.run(['wc', filepath], stdout=subprocess.PIPE)
-    return int(wc.stdout.decode().split()[0])
+    return int(wc_process.stdout.decode().split()[0])
 def call_netmhc(hla, peptide_file_path, output_path):
     num_peptides = get_num_lines(peptide_file_path)
     with open(output_path, 'w') as f:
         start_time = time.time()
-        netmhc_process = subprocess.Popen(['netmhc', '-a', hla, '-f', peptide_file_path, '-p'], stdout=f)
+        netmhc_process = subprocess.Popen(['/usr/bin/netmhc', '-a', hla, '-f', peptide_file_path, '-p'], stdout=f)
         progress = 0.0
         while netmhc_process.poll() is None:
            time.sleep(10)
