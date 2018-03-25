@@ -138,8 +138,7 @@ class TideIndexRunner:
             column_name = TideIndexRunner.convert_cmdline_option_to_column_name(k)
             if column_name:
                 column_arguments[column_name] = v
-            else:
-                print('The key: ' + k + ' does not correspond to a valid column in the TideIndex table')
+        column_arguments['TideIndexPath'] = os.path.join(output_directory, index_filename)
         return tPipeDB.TideIndex(**column_arguments)
 
 
@@ -152,7 +151,7 @@ class Project:
         self.db_session.commit()
 
         
-    def create_tide_index(peptide_list_names, netmhc_filters, tide_index_runner):
+    def create_tide_index(self, peptide_list_names, netmhc_filters, tide_index_runner, tide_index_name):
         """
         peptide_list_names is a list of strings, where each is the name of a PeptideList
 
@@ -161,8 +160,19 @@ class Project:
         tide_index_runner is an instance of the TideIndexRunner class
         """
         temp_files = []
-        for hla, pln, rank_cutoff in netmhc_filters:
+        filtered_netmhc_rows = []
+        if netmhc_filters is None:
+            netmhc_filters = []
+        if peptide_list_names is None:
+            peptide_list_names = []
+        for hla, pln, rank_cutoff in netmhc_filters:            
             idNetMHC, pep_score_path = self.run_netmhc(pln, hla)
+            row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff=rank_cutoff).first()
+            if row is None:
+                row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff=rank_cutoff)
+                self.db_session.add(row)
+                self.db_session.commit()
+            filtered_netmhc_rows.append(row)
             with open(os.path.join(self.project_path, pep_score_path), 'r') as f:
                 tp = tempfile.NamedTemporaryFile(mode='w', delete=False)
                 temp_files.append(tp)
@@ -173,20 +183,33 @@ class Project:
                         if rank <= rank_cutoff:
                             tp.write(line_parts[0] + '\n')
         files = []
+        peptide_list_rows = []
         for pln in peptide_list_names:
             row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName=pln).first()
             if row:
                 files.append(os.path.join(self.project_path, row.PeptideListPath))
+                peptide_list_rows.append(row)
             else:
                 raise NoSuchPeptideListError(pln)
         for x in temp_files:
             files.append(x.name)
             x.close()
         temp_fasta = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        temp_fasta.close()
         subprocess.run(['bash_scripts/join_peptides_to_fasta.sh'] + files + [temp_fasta.name])
+        output_directory_name = str(uuid.uuid4().hex)
+        output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
+        while os.path.isfile(output_directory_path) or os.path.isdir(output_directory_path):
+            output_directory_name = str(uuid.uuid4().hex)
+            output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         
-        
-        
+        row = tide_index_runner.run_index_create_row(temp_fasta.name, os.path.join('tide_indices', output_directory_name), 'index')
+        row.TideIndexName = tide_index_name
+        #now we must must set the relationships for peptidelists and filteredNetMHCs
+        row.peptidelists = peptide_list_rows
+        row.filteredNetMHCs = filtered_netmhc_rows
+        self.db_session.add(row)
+        self.db_session.commit()
         
         
     def run_netmhc(self, peptide_list_name, hla_name):
