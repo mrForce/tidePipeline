@@ -108,7 +108,8 @@ class TideIndexRunner:
     def __init__(self, tide_index_options):
         #tide_index_options is a dictionary.
         self.tide_index_options = tide_index_options
-        
+
+
     @staticmethod
     def get_tide_index_options():
         return {'--clip-nterm-methionine': {'choices':['T', 'F']}, '--isotopic-mass': {'choices': ['average', 'mono']}, '--max-length': {'type': int}, '--max-mass': {'type':str}, '--min-length': {'type':int}, '--min-mass': {'type':str}, '--cterm-peptide-mods-spec': {'type': str}, '--max-mods': {'type': int}, '--min-mods': {'type':int}, '--mod-precision': {'type':int}, '--mods-spec': {'type': str}, '--nterm-peptide-mods-spec': {'type':str}, '--allow-dups': {'choices': ['T', 'F']}, '--decoy-format': {'choices': ['none', 'shuffle', 'peptide-reverse', 'protein-reverse']}, '--keep-terminal-aminos': {'choices': ['N', 'C', 'NC', 'none']}, '--seed': {'type':str}, '--custom-enzyme': {'type': str}, '--digestion': {'choices': ['full-digest', 'partial-digest', 'non-specific-digest']}, '--enzyme': {'choices': ['no-enzyme', 'trypsin', 'trypsin/p', 'chymotrypsin', 'elactase', 'clostripain', 'cyanogen-bromide', 'iodosobenzoat', 'proline-endopeptidase', 'staph-protease', 'asp-n', 'lys-c', 'lys-n', 'arg-c', 'glu-c', 'pepsin-a', 'elastase-trypsin-chymotrypsin', 'custom-enzyme']}, '--missed-cleavages': {'type': int}}
@@ -154,7 +155,23 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
-        
+    def get_tide_indices(self):
+        rows = self.db_session.query(tPipeDB.TideIndex).all()
+        indices = []
+        for row in rows:
+            index = {'name': row.TideIndexName, 'id': str(row.idTideIndex), 'path':row.TideIndexPath, 'peptide_lists':[], 'filteredNetMHCs':[]}
+            for l in row.peptidelists:
+                index['peptide_lists'].append({'name': l.peptideListName, 'length': str(l.length), 'fasta_name': l.fasta.Name})
+            for n in row.filteredNetMHCs:
+                netmhc = self.db_session.query(tPipeDB.NetMHC).filter_by(idNetMHC=n.idNetMHC).first()
+                if netmhc:
+                    peptide_list_row = self.db_session.query(tPipeDB.PeptideList).filter_by(idPeptideList=netmhc.peptidelistID).first()
+                    hla_row = self.db_session.query(tPipeDB.HLA).filter_by(idHLA=netmhc.idHLA).first()
+                    if peptide_list_row and hla_row:
+                        index['filteredNetMHCs'].append({'hla': hla_row.HLAName, 'name': peptide_list_row.peptideListName, 'length': str(peptide_list_row.length), 'fasta_name': peptide_list_row.fasta.Name})
+            indices.append(index)
+        return indices
+
     def create_tide_index(self, peptide_list_names, netmhc_filters, tide_index_runner, tide_index_name):
         """
         peptide_list_names is a list of strings, where each is the name of a PeptideList
