@@ -107,6 +107,7 @@ class TideIndex(Base):
     nterm_peptide_mods_spec = Column(String)
     allow_dups = Column(Integer)
     decoy_format = Column(String)
+    decoy_generator = Column(String)
     keep_terminal_aminos = Column(String)
     seed = Column(String)
     custom_enzyme = Column(String)
