@@ -11,7 +11,12 @@ import uuid
 from fileFunctions import *
 class Error(Exception):
     pass
-
+class MGFFileMissingError(Error):
+    def __init__(self, idMGFfile, name, path):
+        self.message = 'MGF file with ID: ' + str(idMGFfile) + ' and name: ' + name + ' and path: ' + path + ' is missing'
+    def __repr__(self):
+        return self.message
+    
 class ProjectPathAlreadyExistsError(Error):
     def __init__(self, project_folder):
         self.message = 'Project folder ' + project_folder + ' already exists.'
@@ -99,6 +104,13 @@ class PeptideListFileMissingError(Error):
     def __repr__(self):
         return self.message
 
+class MGFNameMustBeUniqueError(Error):
+    def __init__(self, name):
+        self.message = 'There\'s already an MGF file with the name: ' + name
+
+    def __repr__(self):
+        return self.message
+    
 class TideIndexFailedError(Error):
     def __init__(self, command):
         self.message = 'The tide-index command: ' + command + ' with non-zero exit code'
@@ -155,6 +167,16 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+    def add_mgf_file(self, path, name):
+        row = self.db_session.query(tPipeDB.MGFfile).filter_by(MGFName = name).first()
+        if row:
+            raise MGFNameMustBeUniqueError(name)
+        else:
+            newpath = self.copy_file('MGF', path)
+            mgf_record = tPipeDB.MGFfile(MGFName = name, MGFPath = newpath)
+            self.db_session.add(mgf_record)
+            self.db_session.commit()
+            return fasta_record.idMGFfile    
     def get_tide_indices(self):
         rows = self.db_session.query(tPipeDB.TideIndex).all()
         indices = []
@@ -300,6 +322,14 @@ class Project:
                 fasta['peptide_lists'].append({'name': pList.peptideListName, 'length': pList.length})
             fastas.append(fasta)
         return fastas
+    def list_mgf_db(self):
+        rows = self.db_session.query(tPipeDB.MGFfile).all()        
+        mgfs = []
+        for row in rows:
+            mgf = {'id': row.idMGFfile, 'name': row.MGFName, 'path': row.MGFPath}
+            mgfs.append(mgf)
+        return mgfs
+
     def add_species(self, species_name):
         species = tPipeDB.Species(SpeciesName = species_name)
         self.db_session.add(species)
@@ -323,6 +353,11 @@ class Project:
             path = row.PeptideListPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
                 raise PeptideListFileMissingError(row.idPeptideList, row.peptideListName, row.PeptideListPath)
+        mgf_rows = self.db_session.query(tPipeDB.MGFfile).all()
+        for row in mgf_rows:
+            path = row.MGFPath
+            if not os.path.isfile(os.path.join(self.project_path, path)):
+                raise MGFFileMissingError(row.idMGFfile, row.MGFName, row.MGFPath)
         return True
     def lock_operations(self):
         with open(os.path.join(self.project_path, 'operation_lock'), 'w') as f:
@@ -365,7 +400,31 @@ class Project:
         else:
             self.unlock_operations()
             os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
-            
+    def copy_file(self, subfolder, path):
+        files = self.list_files(subfolder)
+        tails = [os.path.split(x)[1] for x in files]
+        path_tail = os.path.split(path)[1]
+        newpath= os.path.join(subfolder, path_tail)
+        if path_tail in tails:
+            max_version = 0
+            """
+            Let's say we add a FASTA file with the filename thing.fasta to our database 3 times.
+
+            The first time, thing.fasta will be copied into the FASTA folder, and left with the filename "thing.fasta"
+            The second time, a "-1" will be appended to the filename, to make "thing.fasta-1"
+            The third time, a "-2" will be appended to the filename, to make "thing.fasta-2"
+            """
+            pattern = re.compile(re.escape(path_tail) + '-(?P<version>[0-9]*)')
+            for tail in tails:
+                match = pattern.match(tail)
+                if match:
+                    if len(match.group('version')) > 0:
+                        version = int(match.group('version'))
+                        if version > max_version:
+                           max_version = version
+            newpath = os.path.join(subfolder, path_tail + '-' + str(max_version + 1))
+        shutil.copy(path, os.path.join(self.project_path, newpath))
+        return newpath
     def add_fasta_file(self, path, name, comment):
         """
         Steps:
@@ -388,29 +447,7 @@ class Project:
         except:
             raise NotProperFASTAFileError(path)
         #step 3 done
-        fasta_files = self.list_fasta_files()
-        fasta_file_tails = [os.path.split(x)[1] for x in fasta_files]
-        path_tail = os.path.split(path)[1]
-        newpath= os.path.join('FASTA', path_tail)
-        if path_tail in fasta_file_tails:
-            max_version = 0
-            """
-            Let's say we add a FASTA file with the filename thing.fasta to our database 3 times.
-
-            The first time, thing.fasta will be copied into the FASTA folder, and left with the filename "thing.fasta"
-            The second time, a "-1" will be appended to the filename, to make "thing.fasta-1"
-            The third time, a "-2" will be appended to the filename, to make "thing.fasta-2"
-            """
-            pattern = re.compile(re.escape(path_tail) + '-(?P<version>[0-9]*)')
-            for tail in fasta_file_tails:
-                match = pattern.match(tail)
-                if match:
-                    if len(match.group('version')) > 0:
-                        version = int(match.group('version'))
-                        if version > max_version:
-                           max_version = version
-            newpath = os.path.join('FASTA', path_tail + '-' + str(max_version + 1))
-        shutil.copy(path, os.path.join(self.project_path, newpath))
+        newpath = self.copy_file('FASTA', path)
         #did step 4
         fasta_record = tPipeDB.FASTA(Name = name, FASTAPath = newpath, Comment = comment)
         self.db_session.add(fasta_record)

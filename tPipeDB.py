@@ -40,7 +40,7 @@ class MGFfile(Base):
     __tablename__ = 'MGFfile'
     idMGFfile = Column('idMGFfile', Integer, primary_key=True)
     MGFName = Column('MGFName', String, unique=True)
-    MGFPath = Column('MGFPath', String, unique=True)
+    MGFPath = Column('MGFPath', String)
     def __repr__(self):
         return 'MGF File found at: ' + self.MGFPath
 
