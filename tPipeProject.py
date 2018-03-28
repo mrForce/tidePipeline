@@ -104,6 +104,12 @@ class PeptideListFileMissingError(Error):
     def __repr__(self):
         return self.message
 
+class MGFRowDoesNotExistError(Error):
+    def __init__(self, name):
+        self.message = 'There is no MGF file with the name: ' + name
+
+    def __repr__(self):
+        return self.message
 class MGFNameMustBeUniqueError(Error):
     def __init__(self, name):
         self.message = 'There\'s already an MGF file with the name: ' + name
@@ -113,9 +119,55 @@ class MGFNameMustBeUniqueError(Error):
     
 class TideIndexFailedError(Error):
     def __init__(self, command):
-        self.message = 'The tide-index command: ' + command + ' with non-zero exit code'
+        self.message = 'The tide-search command ended: ' + command + ' with non-zero exit code'
     def __repr__(self):
         return self.message
+
+
+class NoSuchTideIndexError(Error):
+    def __init__(self, name):
+        self.message = 'There is no tide index with the name: ' + name
+    def __repr__(self):
+        return self.message
+class TideSearchFailedError(Error):
+    def __init__(self, command):
+        self.message = 'The tide-search command ended: ' + command + ' with non-zero exit code'
+    def __repr__(self):
+        return self.message
+
+class TideSearchNameMustBeUniqueError(Error):
+    def __init__(self, name):
+        self.message = 'There is already a Tide Search with the name: ' + name
+    def __repr__(self):
+        return self.message
+
+class TideSearchRunner:
+    def __init__(self, tide_search_options):
+        self.tide_search_options = tide_search_options
+    @staticmethod
+    def get_tide_search_options():
+        return {'--mod-precision': {'type':int}, '--auto-precursor-window': {'choices': ['false', 'warn', 'fail']}, '--max-precursor-charge': {'type': int}, '--precursor-window': {'type': float}, '--precursor-window-type': {'choices': ['mass', 'mz', 'ppm']}, '--auto-mz-bin-width': {'choices': ['false', 'warn', 'fail']}, '--compute-sp': {'choices': ['T', 'F']}, '--deisotope': {'type': float}, '--exact-p-value': {'choices':['T', 'F']}, '--isotope-error': {'type': str}, '--min-peaks': {'type': int}, '--mz-bin-offset': {'type': float}, '--mz-bin-width': {'type': float}, '--peptide-centric-search': {'choices': ['T', 'F']}, '--score-function': {'choices': ['xcorr', 'residue-evidence', 'both']}, '--fragment-tolerance': {'type': float}, '--evidence-granularity': {'type': int}, '--remove-precursor-peak': {'choices': ['T', 'F']}, '--remove-precursor-tolerance': {'type': float}, '--scan-number': {'type': str}, '--skip-processing': {'choices': ['T', 'F']}, '--spectrum-charge': {'choices': ['1', '2', '3', 'all']}, '--spectrum-max-mz': {'type': float}, '--spectrum-min-mz': {'type': float}, '--use-flanking-peaks': {'choices': ['T', 'F']}, '--use-neutral-loss-peaks': {'choices': ['T', 'F']}, '--num-threads': {'type': int}, '--pm-charge': {'type': int}, '--pm-max-frag-mz': {'type': float}, '--pm-max-precursor-delta-ppm': {'type': float}, '--pm-max-precursor-mz': {'type': float}, '--pm-max-scan-seperation': {'type': int}, '--pm-min-common-frag-peaks': {'type': int}, '--pm-min-frag-mz': {'type': float}, '--pm-min-peak-pairs': {'type': int}, '--pm-min-precursor-mz': {'type': float}, '--pm-min-scan-frag-peaks': {'type': int}, '--pm-pair-top-n-frag-peaks': {'type': int}, '--pm-top-n-frag-peaks': {'type': int}, '--concat': {'choices': ['T', 'F']}, '--file-column': {'choices': ['T', 'F']}, '--fileroot': {'type': str}, '--mass-precision': {'type': int}, '--mzid-output': {'choices': ['T', 'F']}, '--precision': {'type': int}, '--spectrum-parser': {'choices': ['pwiz', 'mstoolkit']}, '--store-spectra': {'type': str}, '--top-match': {'type': int}, '--use-z-line': {'choices': ['T', 'F']}}
+
+    #change the options here
+    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, options, project_path, tide_search_row_name):        
+        """ First, decide the filename """
+        param_filename = str(uuid.uuid4().hex) + '-param.txt'
+        while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
+            param_filename = str(uuid.uuid4().hex) + '-param.txt'
+        with open(os.path.join(project_path, 'tide_param_files', param_filename)) as f:        
+            for k, v in options.values():
+                f.write(k + '=' + str(v) + '\n')
+        spectra_file = os.path.join(project_path, 'MGF', mgf_row.MGFPath)
+        index_filename = os.path.join(project_path, 'tide_indices', index_row.TideIndexPath)
+        command = ['crux', 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
+        try:
+            p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise TideSearchFailedError(' '.join(command))
+        search_row = tPipeDB.TideSearch(idTideIndex = index_row.idTideIndex, idMGF=mgf_row.idMGFfile, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), TideSearchName=tide_search_row_name)
+        return search_row
+
+        
 class TideIndexRunner:
     def __init__(self, tide_index_options):
         #tide_index_options is a dictionary.
@@ -167,6 +219,27 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+    def run_tide_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options):
+        mgf_row = self.db_session.query(tPipeDB.MGFFile).filter_by(MGFName = mgf_name).first()
+        tide_index_row = self.db_session.query(tPipeDB.TideIndex).filter_by(TideIndexName=tide_index_name).first()
+        tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName=tide_search_name).first()
+        if mgf_row and tide_index_row and (tide_search_row is None):
+            directory_name = str(uuid.uuid4().hex)
+            full_directory_path = os.path.join(self.project_path, 'tide_search_results', directory_name)
+            while os.path.isfile(full_directory_path) or os.path.isdir(full_directory_path):
+                directory_name = str(uuid.uuid4().hex)
+                full_directory_path= os.path.join(self.project_path, 'tide_search_results', directory_name)
+            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), options, self.project_path, tide_search_name)
+
+            self.db_session.add(row)
+            self.db_session.commit()
+        else:
+            if mgf_row is None:
+                raise MGFRowDoesNotExistError(mgf_name)
+            if tide_index_row is None:
+                raise NoSuchTideIndexError(tide_index_name) 
+            if tide_search_row:
+                raise TideSearchNameMustBeUniqueError(tide_search_name)
     def add_mgf_file(self, path, name):
         row = self.db_session.query(tPipeDB.MGFfile).filter_by(MGFName = name).first()
         if row:
@@ -523,7 +596,7 @@ class Project:
             raise ProjectPathAlreadyExistsError(project_path)
         else:
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc']
+            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files']
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             return Project(project_path)

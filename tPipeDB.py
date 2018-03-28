@@ -122,8 +122,8 @@ class TideSearch(Base):
     __tablename__ = 'TideSearch'
     idTideSearch = Column('idTideSearch', Integer, primary_key=True)
     idTideIndex = Column('idTideIndex', Integer, ForeignKey('TideIndex.idTideIndex'))
+    TideSearchName = Column('TideSearchName', String)
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
-    numMatches = Column('numMatches', Integer)
     targetPath = Column('targetPath', String)
     decoyPath = Column('decoyPath', String)
     paramsPath = Column('paramsPath', String)
