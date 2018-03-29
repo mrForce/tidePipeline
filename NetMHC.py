@@ -1,7 +1,8 @@
 import re
+import os
 import subprocess
 import time
-
+import shutil
 def parse_netmhc(netmhc_output_path, parse_output_path):
     regex = re.compile('^(\s+[^\s]+){2}(\s+(?P<peptide>[A-Z]+))(\s+[^\s]+){10}(\s+(?P<rank>[0-9]{1,2}\.[0-9]+))')
     results = []
@@ -17,16 +18,32 @@ def get_num_lines(filepath):
     return int(wc_process.stdout.decode().split()[0])
 def call_netmhc(hla, peptide_file_path, output_path):
     num_peptides = get_num_lines(peptide_file_path)
+    """
+    We need to split the file (into 2000 line files), because it seems that NetMHC has a hard time handling large files. It's not open source, so I'm not entirely sure why, and I don't really have a good way to investigate it.
+
+    
+    """
+    peptide_file_name = os.path.split(peptide_file_path)[1]
+    os.makedirs(peptide_file_path + '-parts')
+    folder = peptide_file_path + '-parts')
+    new_peptide_path = os.path.join(folder, peptide_file_name)
+    shutil.copyfile(peptide_file_path, new_peptide_path)
+    files_before = set(os.listdir(folder))
+    subprocess.run(['split', '-l', '5000', new_peptide_path])
+    os.remove(new_peptide_path)
+    start_timte = time.time()
     with open(output_path, 'w') as f:
-        start_time = time.time()
-        netmhc_process = subprocess.Popen(['/usr/bin/netmhc', '-a', hla, '-f', peptide_file_path, '-p'], stdout=f)
+        files = list(set(os.listdir(folder)) - files_before)
         progress = 0.0
-        while netmhc_process.poll() is None:
-           time.sleep(10)
-           num_peptides_processed = max(get_num_lines(output_path) - 5, 0)
-           new_progress = 100.0*num_peptides_processed/num_peptides
-           if new_progress - progress >= 1.0:
-               time_taken = time.time() - start_time
-               eta = 1.0*time_taken/num_peptides_processed*(num_peptides - num_peptides_processed)
-               progress = new_progress
-               print('Progress: ' + str(progress) + '% eta: ' + str(eta) + ' seconds')
+        num_files = len(files)
+        i = 0
+        progress = 0.0
+        for filename in files:
+            subprocess.run(['/usr/bin/netmhc', '-a', hla, '-f', filename, '-p'], stdout=f)
+            i += 1
+            new_progress = 100.0*i/num_files
+            if new_progress - progress >= 1.0:
+                time_taken = time.time() - start_time
+                eta = 1.0*time_taken/num_peptides_processed*(num_peptides - num_peptides_processed)
+                progress = new_progress
+                print('Progress: ' + str(progress) + '% eta: ' + str(eta) + ' seconds')

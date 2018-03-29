@@ -284,6 +284,7 @@ class Project:
             peptide_list_names = []
         for pln, hla, rank_cutoff in netmhc_filters:
             rank_cutoff = float(rank_cutoff)
+            print('going to run netmhc')
             idNetMHC, pep_score_path = self.run_netmhc(pln, hla)
             row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff=rank_cutoff).first()
             if row is None:
