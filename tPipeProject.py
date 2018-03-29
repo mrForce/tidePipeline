@@ -368,7 +368,8 @@ class Project:
         peptide_filename = fasta_filename + '_' + str(length) + '.txt'
         peptide_list_path = os.path.join('peptides', peptide_filename)
         if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
-            subprocess.run(['cpp/fasta_to_peptide_list', os.path.join(self.project_path, fasta_row.FASTAPath), os.path.join(self.project_path, peptide_list_path), str(length)])
+            peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
+            write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
         peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
         self.db_session.add(peptide_list)
         self.db_session.commit()

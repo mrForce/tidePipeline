@@ -25,31 +25,32 @@ def call_netmhc(hla, peptide_file_path, output_path):
     """
     peptide_file_name = os.path.split(peptide_file_path)[1]
     os.makedirs(peptide_file_path + '-parts')
+    f = open(output_path, 'w')
     folder = peptide_file_path + '-parts'
     new_peptide_path = os.path.join(folder, peptide_file_name)
     shutil.copyfile(peptide_file_path, new_peptide_path)
     cwd = os.getcwd()
     os.chdir(folder)
-    files_before  = os.listdir()
+    files_before  = set(os.listdir())
     print('Going to run split on: ' + peptide_file_name + ' inside of: ' + os.getcwd())
     subprocess.run(['split', '-l', '5000', peptide_file_name])
     os.remove(peptide_file_name)
     start_time = time.time()
-    with open(output_path, 'w') as f:
-        files = list(set(os.listdir()) - files_before)
-        progress = 0.0
-        num_files = len(files)
-        i = 0
-        progress = 0.0
-        for filename in files:
-            print('going to run netmhc fromt: ' + os.getcwd() + ' on file: ' + filename)
-            
-            subprocess.run(['/usr/bin/netmhc', '-a', hla, '-f', filename, '-p'], stdout=f)
-            i += 1
-            new_progress = 100.0*i/num_files
-            if new_progress - progress >= 1.0:
-                time_taken = time.time() - start_time
-                eta = 1.0*time_taken/num_peptides_processed*(num_peptides - num_peptides_processed)
-                progress = new_progress
-                print('Progress: ' + str(progress) + '% eta: ' + str(eta) + ' seconds')
+    files = list(set(os.listdir()) - files_before)
+    progress = 0.0
+    num_files = len(files)
+    i = 0
+    progress = 0.0
+    for filename in files:
+        print('going to run netmhc fromt: ' + os.getcwd() + ' on file: ' + filename)
+        
+        subprocess.run(['/usr/bin/netmhc', '-a', hla, '-f', filename, '-p'], stdout=f)
+        i += 1
+        new_progress = 100.0*i/num_files
+        if new_progress - progress >= 1.0:
+            time_taken = time.time() - start_time
+            eta = 1.0*time_taken/i*(num_files - i)
+            progress = new_progress
+            print('Progress: ' + str(progress) + '% eta: ' + str(eta) + ' seconds')
+    f.close()
     os.chdir(cwd)
