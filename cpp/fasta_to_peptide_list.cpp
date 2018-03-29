@@ -20,6 +20,7 @@ int main(int argc, char* argv[]){
   int line_length;
   int j;
   std::string temp;
+  unsigned long long num_peptides = 0;
   char new_protein = true;
   if(inFile.is_open() && outFile.is_open()){
     while(std::getline(inFile, line)){
@@ -32,6 +33,8 @@ int main(int argc, char* argv[]){
 	    j = 0;
 	    while(j <= line_length - len){
 	      peptides.insert(line.substr(j, len));
+	      //std::cout << line.substr(j, len) << std::endl;
+	      //num_peptides++;
 	      j++;
 	    }
 	    if(line_length >= len){
@@ -48,6 +51,8 @@ int main(int argc, char* argv[]){
 		combined.append(temp.substr(j, std::string::npos));
 		combined.append(line.substr(0, 1 + j));
 		peptides.insert(combined);
+		//num_peptides++;
+		//std::cout << combined << std::endl;
 		j++;
 	      }
 	      j = 0;
@@ -72,7 +77,7 @@ int main(int argc, char* argv[]){
     inFile.close();
     for(std::set<std::string>::iterator it = peptides.begin(); it != peptides.end(); ++it){
       outFile << *it << std::endl;
-    }
+      }
     outFile.close();
   }
   return 0;
