@@ -25,12 +25,16 @@ def call_netmhc(hla, peptide_file_path, output_path):
     """
     peptide_file_name = os.path.split(peptide_file_path)[1]
     os.makedirs(peptide_file_path + '-parts')
-    folder = peptide_file_path + '-parts')
+    folder = peptide_file_path + '-parts'
     new_peptide_path = os.path.join(folder, peptide_file_name)
     shutil.copyfile(peptide_file_path, new_peptide_path)
-    files_before = set(os.listdir(folder))
-    subprocess.run(['split', '-l', '5000', new_peptide_path])
+    cwd = os.getcwd()
+    os.chdir(folder)
+    files_before = set(os.listdir('.'))
+    
+    subprocess.run(['split', '-l', '5000', peptide_file_name])
     os.remove(new_peptide_path)
+    os.chdir(cwd)
     start_timte = time.time()
     with open(output_path, 'w') as f:
         files = list(set(os.listdir(folder)) - files_before)
