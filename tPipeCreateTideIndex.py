@@ -14,15 +14,13 @@ parser.add_argument('--peptideList', help='Name of a PeptideList to include in t
 parser.add_argument('--netMHCFilter', help='Follow this with a PeptideList name, HLA, and rank cutoff', nargs=3, action='append')
 
 for k, v in tPipeProject.TideIndexRunner.get_tide_index_options().items():
-    print(k)
-    print(v)
     parser.add_argument(k, **v)
 
 
 args = parser.parse_args()
 project_folder = args.project_folder
 print('project folder: ' + project_folder)
-if len(args.peptideList) == 0 and len(args.netMHCFilter) == 0:
+if args.peptideList is None and args.netMHCFilter is None:
     print('you need to specify at least one netMHCFilter or peptideList')
 else:
     project = tPipeProject.Project(project_folder, ' '.join(sys.argv))

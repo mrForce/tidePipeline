@@ -9,6 +9,7 @@ import re
 import shutil
 import uuid
 from fileFunctions import *
+CRUX_BINARY = '~/crux_install/bin/crux'
 class Error(Exception):
     pass
 class MGFFileMissingError(Error):
@@ -159,7 +160,7 @@ class TideSearchRunner:
                 f.write(k + '=' + str(v) + '\n')
         spectra_file = os.path.join(project_path, 'MGF', mgf_row.MGFPath)
         index_filename = os.path.join(project_path, 'tide_indices', index_row.TideIndexPath)
-        command = ['crux', 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
+        command = [CRUX_BINARY, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
         try:
             p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
@@ -176,7 +177,7 @@ class TideIndexRunner:
 
     @staticmethod
     def get_tide_index_options():
-        return {'--clip-nterm-methionine': {'choices':['T', 'F']}, '--isotopic-mass': {'choices': ['average', 'mono']}, '--max-length': {'type': int}, '--max-mass': {'type':str}, '--min-length': {'type':int}, '--min-mass': {'type':str}, '--cterm-peptide-mods-spec': {'type': str}, '--max-mods': {'type': int}, '--min-mods': {'type':int}, '--mod-precision': {'type':int}, '--mods-spec': {'type': str}, '--nterm-peptide-mods-spec': {'type':str}, '--allow-dups': {'choices': ['T', 'F']}, '--decoy-format': {'choices': ['none', 'shuffle', 'peptide-reverse', 'protein-reverse']}, 'decoy-generator': {'type':str}, '--keep-terminal-aminos': {'choices': ['N', 'C', 'NC', 'none']}, '--seed': {'type':str}, '--custom-enzyme': {'type': str}, '--digestion': {'choices': ['full-digest', 'partial-digest', 'non-specific-digest']}, '--enzyme': {'choices': ['no-enzyme', 'trypsin', 'trypsin/p', 'chymotrypsin', 'elactase', 'clostripain', 'cyanogen-bromide', 'iodosobenzoat', 'proline-endopeptidase', 'staph-protease', 'asp-n', 'lys-c', 'lys-n', 'arg-c', 'glu-c', 'pepsin-a', 'elastase-trypsin-chymotrypsin', 'custom-enzyme']}, '--missed-cleavages': {'type': int}}
+        return {'--clip-nterm-methionine': {'choices':['T', 'F']}, '--isotopic-mass': {'choices': ['average', 'mono']}, '--max-length': {'type': int}, '--max-mass': {'type':str}, '--min-length': {'type':int}, '--min-mass': {'type':str}, '--cterm-peptide-mods-spec': {'type': str}, '--max-mods': {'type': int}, '--min-mods': {'type':int}, '--mod-precision': {'type':int}, '--mods-spec': {'type': str}, '--nterm-peptide-mods-spec': {'type':str}, '--allow-dups': {'choices': ['T', 'F']}, '--decoy-format': {'choices': ['none', 'shuffle', 'peptide-reverse', 'protein-reverse']}, '--decoy-generator': {'type':str}, '--keep-terminal-aminos': {'choices': ['N', 'C', 'NC', 'none']}, '--seed': {'type':str}, '--custom-enzyme': {'type': str}, '--digestion': {'choices': ['full-digest', 'partial-digest', 'non-specific-digest']}, '--enzyme': {'choices': ['no-enzyme', 'trypsin', 'trypsin/p', 'chymotrypsin', 'elactase', 'clostripain', 'cyanogen-bromide', 'iodosobenzoat', 'proline-endopeptidase', 'staph-protease', 'asp-n', 'lys-c', 'lys-n', 'arg-c', 'glu-c', 'pepsin-a', 'elastase-trypsin-chymotrypsin', 'custom-enzyme']}, '--missed-cleavages': {'type': int}}
     @staticmethod
     def convert_cmdline_option_to_column_name(option):
         converter = {'clip-nterm-methionine': 'clip_nterm_methionine', 'isotopic-mass': 'isotopic_mass', 'max-length': 'max_length', 'max-mass': 'max_mass', 'min-length': 'min_length', 'min-mass': 'min_mass', 'cterm-peptide-mods-spec': 'cterm_peptide_mods_spec', 'max-mods': 'max_mods', 'min-mods':'min_mods', 'mod-precision': 'mod_precision', 'mods-spec': 'mods_spec', 'nterm-peptide-mods-spec': 'nterm_peptide_mods_spec', 'allow-dups': 'allow_dups', 'decoy-format': 'decoy_format', 'decoy-generator': 'decoy_generator', 'keep-terminal-aminos': 'keep_terminal_aminos', 'seed': 'seed', 'custom-enzyme': 'custom_enzyme', 'digestion': 'digestion', 'enzyme': 'enzyme', 'missed-cleavages': 'missed_cleavages'}
@@ -186,7 +187,7 @@ class TideIndexRunner:
             return None
     def run_index_create_row(self, fasta_path, output_directory_tide, output_directory_db, index_filename):
         #first, need to create the tide-index command
-        command = ['crux', 'tide-index']
+        command = [CRUX_BINARY, 'tide-index']
         for k,v in self.tide_index_options.items():
             if k and v:
                 command.append('--' + k)

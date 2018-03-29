@@ -14,9 +14,7 @@ parser.add_argument('index_name', help='Index name')
 parser.add_argument('search_name', help='search name')
 
 
-for k, v in tPipeProject.TideIndexRunner.get_tide_search_options().items():
-    print(k)
-    print(v)
+for k, v in tPipeProject.TideSearchRunner.get_tide_search_options().items():
     parser.add_argument(k, **v)
 
 

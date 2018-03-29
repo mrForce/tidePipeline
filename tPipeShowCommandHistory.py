@@ -16,7 +16,7 @@ print('project folder: ' + project_folder)
 
 
 project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
-project.begin_command_session()
+
 for command in project.get_commands():
     print(command)
-project.end_command_session()
+
