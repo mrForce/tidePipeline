@@ -30,19 +30,20 @@ def call_netmhc(hla, peptide_file_path, output_path):
     shutil.copyfile(peptide_file_path, new_peptide_path)
     cwd = os.getcwd()
     os.chdir(folder)
-    files_before = set(os.listdir('.'))
-    
+    files_before  = os.listdir()
+    print('Going to run split on: ' + peptide_file_name + ' inside of: ' + os.getcwd())
     subprocess.run(['split', '-l', '5000', peptide_file_name])
-    os.remove(new_peptide_path)
-    os.chdir(cwd)
-    start_timte = time.time()
+    os.remove(peptide_file_name)
+    start_time = time.time()
     with open(output_path, 'w') as f:
-        files = list(set(os.listdir(folder)) - files_before)
+        files = list(set(os.listdir()) - files_before)
         progress = 0.0
         num_files = len(files)
         i = 0
         progress = 0.0
         for filename in files:
+            print('going to run netmhc fromt: ' + os.getcwd() + ' on file: ' + filename)
+            
             subprocess.run(['/usr/bin/netmhc', '-a', hla, '-f', filename, '-p'], stdout=f)
             i += 1
             new_progress = 100.0*i/num_files
@@ -51,3 +52,4 @@ def call_netmhc(hla, peptide_file_path, output_path):
                 eta = 1.0*time_taken/num_peptides_processed*(num_peptides - num_peptides_processed)
                 progress = new_progress
                 print('Progress: ' + str(progress) + '% eta: ' + str(eta) + ' seconds')
+    os.chdir(cwd)
