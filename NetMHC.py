@@ -16,6 +16,7 @@ class NetMHCCommand:
 
 class NetMHCRunner(threading.Thread):
     def __init__(self, netmhc_commands, list_lock, create_progress_string):
+        threading.Thread.__init__(self)
         self.netmhc_commands = netmhc_commands
         self.list_lock = list_lock
         self.create_progress_string = create_progress_string
@@ -92,8 +93,13 @@ def call_netmhc(hla, peptide_file_path, output_path):
     def progress(num_runs_total, start_time, num_runs_left):
         progress = 100.0*(num_runs_total - num_runs)/num_runs_total
         time_taken = time.time() - start_time
-        time_per_run = 1.0*time_taken/(num_runs_total - num_runs_left)
-        return 'progress: ' + str(progress) + '%, eta: ' + str(time_per_run*num_runs_left) + ' seconds'
+        if num_runs_left > 0 and num_runs_left < num_runs_total:
+            time_per_run = 1.0*time_taken/(num_runs_total - num_runs_left)
+            return 'progress: ' + str(progress) + '%, eta: ' + str(time_per_run*num_runs_left) + ' seconds'
+        elif num_runs_left == 0:
+            return 'Complete!'
+        elif num_runs_left == num_runs_total:
+            return 'Starting'
     start_time = time.time()
     for t in range(0, num_threads):
         thread = NetMHCRunner(netmhc_list, list_lock, functools.partial(progress, num_runs, start_time))

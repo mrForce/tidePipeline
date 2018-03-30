@@ -360,12 +360,13 @@ class Project:
     def generate_tide_index(self, peptide_list_names, netmhc_runs, tide_index_options):
         pass
     def add_peptide_list(self, name, length, fasta_name):
-        fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).all()
-        if len(fasta_row) == 0:
+        fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).first()
+        if fasta_row is None:
             raise FASTAWithNameDoesNotExistError(fasta_name)
+        print('length:')
+        print(length)
         peptide_row = self.db_session.query(tPipeDB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
-        if peptide_list is None:
-            fasta_row = fasta_row[0]
+        if peptide_row is None:
             fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
             peptide_filename = fasta_filename + '_' + str(length) + '.txt'
             peptide_list_path = os.path.join('peptides', peptide_filename)
