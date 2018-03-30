@@ -363,16 +363,18 @@ class Project:
         fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).all()
         if len(fasta_row) == 0:
             raise FASTAWithNameDoesNotExistError(fasta_name)
-        fasta_row = fasta_row[0]
-        fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
-        peptide_filename = fasta_filename + '_' + str(length) + '.txt'
-        peptide_list_path = os.path.join('peptides', peptide_filename)
-        if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
-            peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
-            write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
-        peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
-        self.db_session.add(peptide_list)
-        self.db_session.commit()
+        peptide_row = self.db_session.query(tPipeDB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
+        if peptide_list is None:
+            fasta_row = fasta_row[0]
+            fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
+            peptide_filename = fasta_filename + '_' + str(length) + '.txt'
+            peptide_list_path = os.path.join('peptides', peptide_filename)
+            if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
+                peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
+                write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
+            peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+            self.db_session.add(peptide_list)
+            self.db_session.commit()
 
     def list_peptide_lists(self):
         peptide_lists = []

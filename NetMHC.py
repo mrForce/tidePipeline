@@ -3,6 +3,39 @@ import os
 import subprocess
 import time
 import shutil
+import threading
+import functools
+class NetMHCCommand:
+    def __init__(self, command, output_location):
+        self.command = command
+        self.output_location = output_location
+    def get_command(self):
+        return self.command
+    def get_output_location(self):
+        return self.output_location
+
+class NetMHCRunner(threading.Thread):
+    def __init__(self, netmhc_commands, list_lock, create_progress_string):
+        self.netmhc_commands = netmhc_commands
+        self.list_lock = list_lock
+        self.create_progress_string = create_progress_string
+    def run(self):
+        keep_going = True
+        while keep_going:
+            self.list_lock.acquire()
+            print(self.create_progress_string(len(self.netmhc_commands)))
+            if len(self.netmhc_commands) == 0:
+                keep_going = False
+                self.list_lock.release()
+            else:
+                netmhc_command_object = self.netmhc_commands.pop()
+                self.list_lock.release()
+                with open(netmhc_command_object.get_output_location(), 'w') as f:
+                    subprocess.run(netmhc_command_object.get_command(), stdout=f)
+
+        
+
+
 def parse_netmhc(netmhc_output_path, parse_output_path):
     regex = re.compile('^(\s+[^\s]+){2}(\s+(?P<peptide>[A-Z]+))(\s+[^\s]+){10}(\s+(?P<rank>[0-9]{1,2}\.[0-9]+))')
     results = []
@@ -24,33 +57,53 @@ def call_netmhc(hla, peptide_file_path, output_path):
     
     """
     peptide_file_name = os.path.split(peptide_file_path)[1]
-    os.makedirs(peptide_file_path + '-parts')
-    f = open(output_path, 'w')
     folder = peptide_file_path + '-parts'
     new_peptide_path = os.path.join(folder, peptide_file_name)
-    shutil.copyfile(peptide_file_path, new_peptide_path)
+    
+    folder = peptide_file_path + '-parts'
+    new_peptide_path = os.path.join(folder, peptide_file_name)
     cwd = os.getcwd()
-    os.chdir(folder)
-    files_before  = set(os.listdir())
-    print('Going to run split on: ' + peptide_file_name + ' inside of: ' + os.getcwd())
-    subprocess.run(['split', '-l', '5000', peptide_file_name])
-    os.remove(peptide_file_name)
+    files_before = set()
+    if os.path.isdir(folder):
+        os.chdir(folder)
+    else:
+        os.makedirs(folder)
+        shutil.copyfile(peptide_file_path, new_peptide_path)
+        os.chdir(folder)
+        files_before  = set(os.listdir())
+        print('Going to run split on: ' + peptide_file_name + ' inside of: ' + os.getcwd())
+        subprocess.run(['split', '-l', '10000', peptide_file_name])
+        os.remove(peptide_file_name)        
     start_time = time.time()
     files = list(set(os.listdir()) - files_before)
     progress = 0.0
     num_files = len(files)
     i = 0
     progress = 0.0
+    netmhc_list = []
+    output_file_list = []
     for filename in files:
-        print('going to run netmhc fromt: ' + os.getcwd() + ' on file: ' + filename)
-        
-        subprocess.run(['/usr/bin/netmhc', '-a', hla, '-f', filename, '-p'], stdout=f)
-        i += 1
-        new_progress = 100.0*i/num_files
-        if new_progress - progress >= 1.0:
-            time_taken = time.time() - start_time
-            eta = 1.0*time_taken/i*(num_files - i)
-            progress = new_progress
-            print('Progress: ' + str(progress) + '% eta: ' + str(eta) + ' seconds')
-    f.close()
+        netmhc_list.append(NetMHCCommand(['/usr/bin/netmhc', '-a', hla, '-f', filename, '-p'], filename + '-TEMPOUTPUT'))
+        output_file_list.append(filename + '-TEMPOUTPUT')
+    num_runs = len(netmhc_list)
+    num_threads = 2
+    threads = []
+    list_lock = threading.Lock()
+    def progress(num_runs_total, start_time, num_runs_left):
+        progress = 100.0*(num_runs_total - num_runs)/num_runs_total
+        time_taken = time.time() - start_time
+        time_per_run = 1.0*time_taken/(num_runs_total - num_runs_left)
+        return 'progress: ' + str(progress) + '%, eta: ' + str(time_per_run*num_runs_left) + ' seconds'
+    start_time = time.time()
+    for t in range(0, num_threads):
+        thread = NetMHCRunner(netmhc_list, list_lock, functools.partial(progress, num_runs, start_time))
+        threads.append(thread)
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
     os.chdir(cwd)
+    subprocess.run(['bash_scripts/combine_files.sh'] + [os.path.join(folder, x) for x in output_file_list] + [output_path])
+    for x in output_file_list:
+        print('Marked for removal: ' + os.path.join(folder, x))
+        
