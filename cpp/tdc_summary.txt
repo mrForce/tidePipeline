@@ -1,0 +1,51 @@
+Here, I'll take notes on how the TDC protocol works in Tide.
+
+We'll start at the AssignConfidenceApplication::main method in this file: https://github.com/mrForce/crux-toolkit/blob/master/src/app/AssignConfidenceApplication.cpp
+
+First, it sets estimation_method to either be TDC_METHOD, MINMAX_METHOD or PEPTIDE_LEVEL_METHOD, depending on the option passed to the program (for right now, I only care about TDC_METHOD).
+
+Then, it creates two MatchCollection* objects: one for targets (called target_matches) and one for decoys (called decoy_matches).
+
+What does a MatchCollection look like?
+
+class MatchCollection{
+      protected:
+	std::vector<Crux::Match*> match_; <--- See model/Match.h; Crux is a namespace
+
+	There are a whole bunch of other variables here, but I won't mention them.
+}
+
+
+class Match{
+      Crux::Spectrum* spectrum_;
+      Crux::Peptide* peptide_;
+
+      FLOAT_T match_scores_[NUMBER_SCORER_TYPES];
+      std::map<string, FLOAT_T> match_custom_scores_;
+      bool null_peptide_; <--- This indicates if this is a match with a decoy peptide
+      const char* peptide_sequence_;
+      MODIFIED_AA_T* mod_sequence_; <--- seq of peptide or shuffled if decoy (What the hell does this mean?)
+      int num_target_matches_; <--- Total target candidates for the spectrum
+      bool best_per_peptide; <--- Is this the best scoring PSM for this peptide?
+}
+
+On line 400, it looks like we add the target_match to the tdc_collection only if target_match scores better than the decoy, and vice-versa. Ties are broken randomly.
+
+But it doesn't look like we do anything with the tdc_collection.
+
+
+we set match_collection to tdc_collection, and then create a MatchIterator than iterates match_collection. When, we add the targets and decoys in tdc_collection to target_matches and decoy_matches, and then get the score from that.
+
+
+So, a few things to do:
+
+1) Add a third column, which will be the xcorr rank.
+2) Remove PSMs with an xcorr rank > 1
+3) When building the tdc collection, which will be used in computing the q-value, take the higher scoring target or corresponding decoy.
+
+
+Then, on line 285, we start iterating through the decoy matches. On line 290, we throw out decoy matches in which decoy_match->getRank(XCORR) > 1 -- I'm not sure if this is out of the decoys, or out of the combined decoys and targets?
+
+We eventually run into a call to compute_decoy_qvalues_tdc(target_scores, decoy_scores, ascending, 1.0). How does this work?
+
+First, sort the targets and decoys by their scores. 

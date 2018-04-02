@@ -1,3 +1,15 @@
+/* A few things to make this more similar to the TDC in tide:
+
+1) According) to line 343 of AssignConfidenceApplication.cpp, we remove target PSMs with an XCorr Rank of > 1. I think, but I'm not 100% sure of, that this means that for each spectra, it only takes the top matching peptide -- or maybe it's the top matching spectra for a peptide? 
+
+They also randomly break ties (see line 400). The also do some kind of score difference. 
+
+On line 759, there's a convert_fdr_to_qvalue function.
+
+There's also apparently a ComputeQValues.h file. 
+
+*/
+
 #include <iostream>
 #include <fstream>
 #include <set>
@@ -9,13 +21,13 @@ struct match_t{
   std::string peptide;
   double score;
   double q_value;
-  match_t(std::string peptide_, double score_)  {peptide = peptide_; score = score_; q_value = 0;}
+  match_t(std::string peptide_, double score_)  {peptide = peptide_; score = score_; q_value = 0.5;}
   bool operator<(const match_t& match) const {
     return score < match.score;
   }
 };
 
-void tdc_procedure(std::vector<match_t> targets, std::vector<match_t> decoys){
+void tdc_procedure(std::vector<match_t>& targets, std::vector<match_t>& decoys){
   /* Start by sorting them in ascending order */
   std::sort(targets.begin(), targets.end());
   std::sort(decoys.begin(), decoys.end());
@@ -45,7 +57,9 @@ void tdc_procedure(std::vector<match_t> targets, std::vector<match_t> decoys){
     if(fpr < min_fpr){
       min_fpr = fpr;
     }
-    (*target_it).q_value = min_fpr;
+    //std::cout << "min fpr: " << min_fpr << std::endl;
+    target_it->q_value = min_fpr;
+    //std::cout << target_it->q_value << std::endl;
     target_iter_num++;
   }
   
@@ -87,7 +101,7 @@ int main(int argc, char* argv[]){
   decoyFile.close();
   tdc_procedure(targets, decoys);
   for(std::vector<match_t>::iterator target_it = targets.begin(); target_it != targets.end(); ++target_it){
-    std::cout << (*target_it).peptide << std::to_string((*target_it).q_value) << std::endl;
+    std::cout << (*target_it).peptide << "\t" << std::to_string((*target_it).q_value) << std::endl;
   }
   return 0;
 }

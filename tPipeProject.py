@@ -9,7 +9,7 @@ import re
 import shutil
 import uuid
 from fileFunctions import *
-CRUX_BINARY = '~/crux_install/bin/crux'
+CRUX_BINARY = '/home/jforce/crux_install/bin/crux'
 class Error(Exception):
     pass
 class MGFFileMissingError(Error):
