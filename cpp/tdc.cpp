@@ -17,15 +17,39 @@ There's also apparently a ComputeQValues.h file.
 #include <functional>
 #include <vector>
 #include<algorithm>
-struct match_t{
+#include<map>
+struct psm{
   std::string peptide;
   double score;
-  double q_value;
-  match_t(std::string peptide_, double score_)  {peptide = peptide_; score = score_; q_value = 0.5;}
-  bool operator<(const match_t& match) const {
-    return score < match.score;
-  }
+  long long scan;
+  int rank;
 };
+struct target_decoy_pair{
+  std::string target_peptide;
+  std::string decoy_peptide;
+  double target_score;
+  double decoy_score;
+  target_decoy_pair(psm target_){ target_peptide = target_.peptide; target_score = target_.score; decoy_score = 0; decoy_peptide("")}
+};
+
+std::map<long long, target_decoy_pair> psms_to_pairs(std::vector<psm> targets, std::vector<psm> decoys){
+  std::map<long long, target_decoy_pair> pair_map;
+  for(std::vector<psm>::iterator it = targets.begin(); it != targets.end(); it++){
+    if((*it).rank == 1){
+      pair_map.insert(std::pair<long long, target_decoy_pair>((*it).scan, target_decoy_pair(*it)));
+    }
+  }
+  for(std::vector<psm>::iterator it = decoys.begin(); it != decoys.end(); it++){
+    std::map<long long, target_decoy_pair>::iterator target = pair_map.find((*it).scan);
+    if(target != pair_map.end()){
+      target->second->decoy_peptide = (*it).peptide;
+      target->second->decoy_score = (*it).score;
+    }
+  }
+  /*
+    Should targets without corresponding decoys be allowed in the tdc collection?
+  */
+}
 
 void tdc_procedure(std::vector<match_t>& targets, std::vector<match_t>& decoys){
   /* Start by sorting them in ascending order */
