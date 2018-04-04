@@ -96,9 +96,36 @@ void TDCcollection::prune_maps(){
      2) targets that score worse than the corresponding decoy
      3) decoys that score worse than the corresponding target
   */
-  for(std::map<PSM_map_key_, PSM_map_value_>::iterator decoy_iter = decoys_.begin(); decoy_iter != decoys_.end(); ++decoy_iter){
-    
+  std::map<PSM_map_key_, PSM_map_value_>::iterator decoy_iter = decoys_.begin();
+  while(decoy_iter != decoys_.end()){
+    PSM_map_key_ key = decoy_iter->first;
+    auto target_iter = targets_.find(key);
+    if(target_iter != targets_.end()){
+      double target_score = target_iter->second.score;
+      double decoy_score = decoy_iter->second.score;
+      
+      if(fabs(target_score - decoy_score) < 1e-10){
+	//break ties randomly
+	int select = rand() % 2;
+	if(select == 0){
+	  //then remove decoy
+	  decoy_iter = decoys_.erase(decoy_iter);
+	}else{
+	  targets_.erase(target_iter);
+	  decoy_iter++;
+	}
+      }else if(target_score > decoy_score){
+	decoy_iter = decoys_.erase(decoy_iter);
+      }else{
+	targets_.erase(target_iter);
+	decoy_iter++;
+      }
+    }else{
+      decoy_iter = decoys_.erase(decoy_iter);
+    }
   }
+ 
+
 }
 
 TDCcollection::TDCcollection(std::string target_location, std::string decoy_location){
