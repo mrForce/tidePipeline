@@ -17,10 +17,19 @@ std::vector<std::string> split(std::string parent, std::string substring){
   std::vector<std::string> parts;
   std::size_t index = 0;
   std::size_t start = 0;
-  while((index = parent.find_first_of(substring, index)) != std::string::npos){
-    parts.push_back(parent.substr(start, index - start));
-    start = index;
-  }
+
+  do{
+    if(index > 0){
+      index = parent.find_first_of(substring, index + 1);
+    }else{
+      index = parent.find_first_of(substring);
+    }
+   std::string substring = parent.substr(start, index - start);
+    parts.push_back(substring);
+    start = index + 1;
+    
+  }while(index != std::string::npos);
+
   return parts;
 }
 
@@ -151,28 +160,49 @@ std::vector<TargetWithQValue> TDCcollection::get_targets(){
     while(decoy_index < decoy_scores.size() && decoy_scores[decoy_index] <= target_scores[target_index].score){
       decoy_index++;
     }
-    fdr = ((double)(decoy_index + 1))/((double)(target_index + 1));
+    
+    fdr = ((double)(decoy_scores.size() - decoy_index + 1))/((double)(target_scores.size() - target_index));
     if(fdr > 1.0){
       fdr = 1.0;
     }
+    //std::cout << "FDR for score " << target_scores[target_index].score << " " << (decoy_scores.size() - decoy_index + 1) << "/" << (target_scores.size() - target_index) << " = " << fdr << std::endl;
     target_scores[target_index].fdr = fdr;
   }
-  auto target_score_iterator = target_scores.end();
-  double last_fdr = fdr;
-  target_score_iterator--;
-
-  for(; target_score_iterator != target_scores.begin(); target_score_iterator--){
+  std::vector<TargetWithQValue>::iterator target_score_iterator = target_scores.begin();
+  double last_fdr = target_score_iterator->fdr;
+  target_score_iterator->q_val = last_fdr;
+  target_score_iterator++;
+  
+  for(; target_score_iterator != target_scores.end(); target_score_iterator++){
     fdr = target_score_iterator->fdr;
+    
     if(last_fdr < fdr){
-      target_score_iterator->q_val = last_fdr;     
+      target_score_iterator->q_val = last_fdr;
+      //last_fdr does not change
+    }else{
+      last_fdr = fdr;
+      target_score_iterator->q_val = fdr;
     }
-    last_fdr = target_score_iterator->q_val;
   }
   return target_scores;
   
 }
 
 
-int main(){
-  std::cout << "hello\n";
+int main(int argc, char* argv[]){
+  if(argc == 3){
+    std::string target_file_location(argv[1]);
+    std::cout << "Target location: " << target_file_location << std::endl;
+    std::string decoy_file_location(argv[2]);
+    TDCcollection collection(target_file_location, decoy_file_location);
+    std::vector<TargetWithQValue> targets = collection.get_targets();
+    for(auto it = targets.begin(); it != targets.end(); it++){
+      std::cout << it->reference.scan << "\t" << it->reference.charge << "\t" << it->reference.rank << "\t" << it->peptide << "\t" << it->q_val << std::endl;
+    }
+  }else{
+    std::cout << "need three arguments" << std::endl;
+    return 1;
+  }
+  return 0;
+
 }

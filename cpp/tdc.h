@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <istream>
 #include <algorithm>
 #include <math.h>
 struct PSM_map_key_{
@@ -91,8 +92,11 @@ class TDCcollection{
       */
       if(target_is.is_open() && decoy_is.is_open()){
 	construct_file_index(target_is, decoy_is);
-	target_is.seekg(0, target_is.beg);
-	decoy_is.seekg(0, decoy_is.beg);
+	target_is.close();
+	target_is.open(target_location, std::ifstream::in);
+	decoy_is.close();
+	decoy_is.open(decoy_location, std::ifstream::in);
+	
 	parse_file(target_is, targets_);
 	parse_file(decoy_is, decoys_);
 	prune_maps();
