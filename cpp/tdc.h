@@ -40,6 +40,13 @@ struct TargetWithQValue{
   PSM_map_key_& reference;
   std::string peptide;
   double q_val;
+  double fdr;
+  double score;
+  bool operator() (const TargetWithQValue& lhs, const TargetWithQValue& rhs) const
+  {
+    return lhs.score < rhs.score;
+  }
+TargetWithQValue(std::string peptide_, PSM_map_key_& reference_, double score_) : peptide(peptide_), score(score_), reference(reference_), q_val(0), fdr(0) {}
 };
 
 class TDCcollection{
@@ -54,7 +61,7 @@ class TDCcollection{
   void prune_maps();
  public:
   TDCcollection(std::string, std::string);
-  std::vector<TargetWithQValue> get_targets(); 
+  std::vector<TargetWithQValue> get_targets();
      
   
 };

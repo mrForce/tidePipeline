@@ -144,8 +144,43 @@ TDCcollection::TDCcollection(std::string target_location, std::string decoy_loca
   }
 }
 
-std::vector<TargetWithQValue> get_targets(){
+std::vector<TargetWithQValue> TDCcollection::get_targets(){
+  std::vector<TargetWithQValue> target_scores(targets_.size());
+  std::vector<double> decoy_scores(decoys_.size());
+  for(auto it = targets_.begin(); it != targets_.end(); ++it){
+    target_scores.emplace_back(it->second.peptide, it->first, it->second.score);
+  }
+  for(auto it = decoys_.begin(); it != decoys_.end(); ++it){
+    decoy_scores.push_back(it->second.score);
+  }
+  sort(target_scores.begin(), target_scores.end());
+  sort(decoy_scores.begin(), decoy_scores.end());
+  std::size_t decoy_index = 0;
+  std::size_t target_index;
+  double fdr;
+  for(target_index = 0; target_index < target_scores.size(); it++){
+    while(decoy_index < decoy_scores.size() && decoy_scores[decoy_index] <= target_scores[target_index].score){
+      decoy_index++;
+    }
+    fdr = ((double)(decoy_index + 1))/((double)(target_index + 1));
+    if(fdr > 1.0){
+      fdr = 1.0;
+    }
+    target_scores[target_index].fdr = fdr;
+  }
+  auto target_score_iterator = target_scores.end();
+  double last_fdr = fdr;
+  target_score_iterator--;
 
+  for(; target_score_iterator != target_scores.begin(); target_score_iterator--){
+    fdr = target_score_iterator->fdr;
+    if(last_fdr < fdr){
+      target_score_iterator->q_val = last_fdr;     
+    }
+    last_fdr = target_score_iterator->q_val;
+  }
+  return target_scores;
+  
 }
 
 
