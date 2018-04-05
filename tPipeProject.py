@@ -12,6 +12,13 @@ from fileFunctions import *
 CRUX_BINARY = '/home/jforce/crux_install/bin/crux'
 class Error(Exception):
     pass
+
+class AssignConfidenceFailedError(Error):
+    def __init__(self, command):
+        self.message = 'assign-confidence command: ' + command + ' failed'
+    def __repr__(self):
+        return self.message
+    
 class MGFFileMissingError(Error):
     def __init__(self, idMGFfile, name, path):
         self.message = 'MGF file with ID: ' + str(idMGFfile) + ' and name: ' + name + ' and path: ' + path + ' is missing'
@@ -210,6 +217,49 @@ class TideIndexRunner:
         column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
         return tPipeDB.TideIndex(**column_arguments)
 
+class AssignConfidenceRunner:
+    def __init__(self, assign_confidence_options):
+        self.assign_confidence_options = assign_confidence_options
+        
+
+
+    @staticmethod
+    def get_assign_confidence_options():
+        return {'--estimation-method': {'choices': ['min-max', 'tdc', 'peptide-level']}, '--score': {'type': str}, '--sidak': {'choices': ['T', 'F']}, '--top-match-in': {'type': int}, '--combine-charge-states': {'choices': ['T', 'F']}, '--combine-modified-peptides': {'choices': ['T', 'F']}}
+
+    @staticmethod
+    def convert_cmdline_option_to_column_name(option):
+        converter = {'estimation-method': 'estimation_method', 'score': 'score', 'sidak': sidak, 'top-match-in': 'top_match_in', 'combine-charge-states': 'combine_charge_states', 'combine-modified-peptides': 'combine_modified_peptides'}
+        if option in converter:
+            return converter[option]
+        else:
+            return None
+
+    def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db):
+        #first, need to create the tide-index command
+        command = [CRUX_BINARY, 'assign-confidence']
+        for k,v in self.assign_confidence_options.items():
+            if k and v:
+                command.append('--' + k)
+                command.append(v)
+        command.append('--output-dir')
+        command.append(output_directory_tide)
+        command.append(target_path)
+
+        print('command')
+        print(' '.join(command))
+        try:
+            p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise AssignConfidenceFailedError(' '.join(command))
+        column_arguments = {}
+        for k, v in self.assign_confidence_options.items():
+            column_name = AssignConfidenceRunner.convert_cmdline_option_to_column_name(k)
+            if column_name:
+                column_arguments[column_name] = v
+        column_arguments['AssignConfidenceOutputPath'] = output_directory_db
+        return tPipeDB.AssignConfidence(**column_arguments)
+
 
 class Project:
     def __init__(self, project_path, command):
@@ -220,6 +270,10 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+    def assign_confidence(self, tide_search_name, options):
+        tide_search_row = self.db_session.query(tPipeDB.AssignConfidence).filter_by(TideSearchName = tide_search_name).first()
+
+            
     def run_tide_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options):
         mgf_row = self.db_session.query(tPipeDB.MGFFile).filter_by(MGFName = mgf_name).first()
         tide_index_row = self.db_session.query(tPipeDB.TideIndex).filter_by(TideIndexName=tide_index_name).first()

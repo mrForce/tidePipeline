@@ -129,6 +129,20 @@ class TideSearch(Base):
     paramsPath = Column('paramsPath', String)
     logPath = Column('logPath', String)
 
+class AssignConfidence(Base):
+    __tablename__ = 'AssignConfidence'
+    idAssignConfidence = Column('idAssignConfidence', Integer, primary_key=True)
+
+    AssignConfidenceOutputPath = Column('AssignConfidenceOutputPath', String)
+    idTideSearch = Column('idTideSearch', Integer, ForeignKey('TideSearch.idTideSearch'))
+    estimation_method = Column(String)
+    score = Column(String)
+    sidak = Column(String)
+    top_match_in = Column(Integer)
+    combine_charge_states = Column(String)
+    combined_modified_peptides = Column(String)
+    
+    
 class Percolator(Base):
     __tablename__ = 'Percolator'
     idPercolator = Column('idPercolator', Integer, primary_key=True)
