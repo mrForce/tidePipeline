@@ -153,8 +153,8 @@ std::vector<TargetWithQValue> TDCcollection::get_targets(){
   for(auto it = decoys_.begin(); it != decoys_.end(); ++it){
     decoy_scores.push_back(it->second.score);
   }
-  sort(target_scores.begin(), target_scores.end());
-  sort(decoy_scores.begin(), decoy_scores.end());
+  std::sort(target_scores.begin(), target_scores.end());
+  std::sort(decoy_scores.begin(), decoy_scores.end());
   std::size_t decoy_index = 0;
   std::size_t target_index;
   double fdr;
