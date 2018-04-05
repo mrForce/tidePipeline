@@ -18,18 +18,20 @@ std::vector<std::string> split(std::string parent, std::string substring){
   std::size_t index = 0;
   std::size_t start = 0;
   while((index = parent.find_first_of(substring, index)) != std::string::npos){
-    parts.append(parent.substr(start, index - start));
+    parts.push_back(parent.substr(start, index - start));
     start = index;
   }
   return parts;
 }
 
-void TDCcollection::construct_file_index(std::ifstream target_is, std::ifstream decoy_is){
+
+/* Just to be clear: although it looks similar to parse_file, they are not interchange-able! */
+void TDCcollection::construct_file_index(std::ifstream& target_is, std::ifstream& decoy_is){
   std::string line;
   int file_index_num = 0;
   while(std::getline(target_is, line)){
     std::vector<std::string> parts = split(line, "\t");
-    if(parts.length() == 6){
+    if(parts.size() == 6){
       std::string file_name = parts[0];
       std::map<std::string, int>::iterator it = file_index_.find(file_name);
       if(it == file_index_.end()){
@@ -42,7 +44,7 @@ void TDCcollection::construct_file_index(std::ifstream target_is, std::ifstream 
   }
   while(std::getline(decoy_is, line)){
     std::vector<std::string> parts = split(line, "\t");
-    if(parts.length() == 6){
+    if(parts.size() == 6){
       std::string file_name = parts[0];
       std::map<std::string, int>::iterator it = file_index_.find(file_name);
       if(it == file_index_.end()){
@@ -56,11 +58,11 @@ void TDCcollection::construct_file_index(std::ifstream target_is, std::ifstream 
 }
 
 
-void TDCcollection::parse_file(std::ifstream input_stream, std::map<PSM_map_key_, PSM_map_value_>& mapper){
+void TDCcollection::parse_file(std::ifstream& input_stream, std::map<PSM_map_key_, PSM_map_value_>& mapper){
     std::string line;
-    while(std::getline(target_is, line)){
+    while(std::getline(input_stream, line)){
       std::vector<std::string> parts = split(line, "\t");
-      if(parts.length() == 6){
+      if(parts.size() == 6){
 	std::string file_name = parts[0];
 	long long scan_number = std::stoll(parts[1]);
 	int charge = std::stoi(parts[2]);
@@ -68,13 +70,13 @@ void TDCcollection::parse_file(std::ifstream input_stream, std::map<PSM_map_key_
 	if(rank == 1){
 	  double score = std::stod(parts[4]);
 	  std::string peptide = parts[5];
-	  std::map<std::string, int>::iterator file_index_it = file_index.find(file_name);
+	  std::map<std::string, int>::iterator file_index_it = file_index_.find(file_name);
 	  
-	  if(file_index_it != file_index.end()){
+	  if(file_index_it != file_index_.end()){
 	    PSM_map_key_ key(file_index_it->second, scan_number, charge, rank);
 	    PSM_map_value_ value(peptide, score);
 	    
-	    std::pair<> emplace_result = mapper.emplace(key, value);
+	    std::pair<std::map<PSM_map_key_, PSM_map_value_>::iterator, bool> emplace_result = mapper.emplace(key, value);
 	    if(!(emplace_result.second)){
 	      std::cout << "There should not be duplicate peptides with the same file index, scan, charge and rank: " << line << std::endl;
 	    }
@@ -127,38 +129,25 @@ void TDCcollection::prune_maps(){
  
 
 }
-
+/*
 TDCcollection::TDCcollection(std::string target_location, std::string decoy_location){
-  std::ifstream target_is(target_location, std::ifstream::in);  
-  std::ifstream decoy_is(decoy_location, std::ifstream::in);
-  /* tab seperated values:
-     file    scan    charge    rank    score   peptide 
-  */
-  if(target_is.is_open() && decoy_is.is_open()){
-    construct_file_index(target_is, decoy_is);
-    target_is.seekg(0, target_is.beg);
-    decoy_is.seekg(0, decoy_is.beg);
-    parse_file(target_is, targets_);
-    parse_file(decoy_is, decoys_);
-    prune_maps();
-  }
-}
+}*/
 
 std::vector<TargetWithQValue> TDCcollection::get_targets(){
-  std::vector<TargetWithQValue> target_scores(targets_.size());
-  std::vector<double> decoy_scores(decoys_.size());
-  for(auto it = targets_.begin(); it != targets_.end(); ++it){
+  std::vector<TargetWithQValue> target_scores;
+  std::vector<double> decoy_scores;
+  for(std::map<PSM_map_key_, PSM_map_value_>::iterator it = targets_.begin(); it != targets_.end(); ++it){
     target_scores.emplace_back(it->second.peptide, it->first, it->second.score);
   }
   for(auto it = decoys_.begin(); it != decoys_.end(); ++it){
     decoy_scores.push_back(it->second.score);
   }
-  std::sort(target_scores.begin(), target_scores.end());
+  std::sort(target_scores.begin(), target_scores.end(), [](const TargetWithQValue& a, const TargetWithQValue& b) {return a.score < b.score;});
   std::sort(decoy_scores.begin(), decoy_scores.end());
   std::size_t decoy_index = 0;
   std::size_t target_index;
   double fdr;
-  for(target_index = 0; target_index < target_scores.size(); it++){
+  for(target_index = 0; target_index < target_scores.size(); target_index++){
     while(decoy_index < decoy_scores.size() && decoy_scores[decoy_index] <= target_scores[target_index].score){
       decoy_index++;
     }
