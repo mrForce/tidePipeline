@@ -283,6 +283,21 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+    def list_assign_confidence(self, tide_search_name = None, estimation_method = None):
+        filter_args = {}
+        if tide_search_name:
+            tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
+            if tide_search_row:
+                filter_args['idTideSearch'] = tide_search_row.idTideSearch
+            else:
+                raise TideSearchRowDoesNotExistError(tide_search_name)
+        if estimation_method:
+            filter_args['estimation_method'] = estimation_method
+        if len(filter_args.keys()) > 0:
+            return self.db_session.query(tPipeDB.AssignConfidence).filter_by(**filter_args).all()
+        else:
+            return self.db_session.query(tPipeDB.AssignConfidence).all()
+        
     def assign_confidence(self, tide_search_name, assign_confidence_runner, assign_confidence_name):
         tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
         assign_confidence_row = self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()

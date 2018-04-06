@@ -128,7 +128,7 @@ class TideSearch(Base):
     decoyPath = Column('decoyPath', String)
     paramsPath = Column('paramsPath', String)
     logPath = Column('logPath', String)
-    tideIndex = relationship('TideIndex', back_populates='TideSearch')
+    tideIndex = relationship('TideIndex')
     mgf = relationship('MGFfile')
 class AssignConfidence(Base):
     __tablename__ = 'AssignConfidence'
@@ -142,7 +142,7 @@ class AssignConfidence(Base):
     top_match_in = Column(Integer)
     combine_charge_states = Column(String)
     combined_modified_peptides = Column(String)
-    
+    tideSearch = relationship('TideSearch')
     
 class Percolator(Base):
     __tablename__ = 'Percolator'
