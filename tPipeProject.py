@@ -13,6 +13,18 @@ CRUX_BINARY = '/home/jforce/crux_install/bin/crux'
 class Error(Exception):
     pass
 
+class TideSearchRowDoesNotExistError(Error):
+    def __init__(self, tide_search_name):
+        self.tide_search_name = tide_search_name
+    def __repr__(self):
+        return 'There is no TideSearch row with the name: ' + str(self.tide_search_name)
+
+class AssignConfidenceNameMustBeUniqueError(Error):
+    def __init__(self, assign_confidence_name):
+        self.assign_confidence_name = assign_confidence_name
+    def __repr__(self):
+        return 'There is already an AssignConfidence row with the name: ' + str(self.assign_confidence_name)
+
 class AssignConfidenceFailedError(Error):
     def __init__(self, command):
         self.message = 'assign-confidence command: ' + command + ' failed'
@@ -220,7 +232,7 @@ class TideIndexRunner:
 class AssignConfidenceRunner:
     def __init__(self, assign_confidence_options):
         self.assign_confidence_options = assign_confidence_options
-        
+
 
 
     @staticmethod
@@ -235,7 +247,7 @@ class AssignConfidenceRunner:
         else:
             return None
 
-    def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db):
+    def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db, assign_confidence_name):
         #first, need to create the tide-index command
         command = [CRUX_BINARY, 'assign-confidence']
         for k,v in self.assign_confidence_options.items():
@@ -258,6 +270,7 @@ class AssignConfidenceRunner:
             if column_name:
                 column_arguments[column_name] = v
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db
+        column_arguments['AssignConfidenceName'] = assign_confidence_name
         return tPipeDB.AssignConfidence(**column_arguments)
 
 
@@ -270,12 +283,52 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
-    def assign_confidence(self, tide_search_name, options):
-        tide_search_row = self.db_session.query(tPipeDB.AssignConfidence).filter_by(TideSearchName = tide_search_name).first()
+    def assign_confidence(self, tide_search_name, assign_confidence_runner, assign_confidence_name):
+        tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
+        assign_confidence_row = self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
+        if tide_search_row and (assign_confidence_row is None):
+            #run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name)
+            target_path = os.path.join(self.project_path, tide_search_row.targetPath)
+            output_directory_name = str(uuid.uuid4().hex)
+            while os.path.isdir(os.path.join(self.project_path, 'assign_confidence_results', output_directory_name)):
+                output_directory_name = str(uuid.uuid4().hex)
+            output_directory_tide = os.path.join(self.project_path, 'assign_confidence_results', output_directory_name)
+            output_directory_db = os.path.join('assign_confidence_results', output_directory_name)
+            new_row = assign_confidence_runner.run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name)
+            self.db_session.add(new_row)
+            self.db_session.commit()
+        else:
+            if tide_search_row is None:
+                raise TideSearchRowDoesNotExistError(tide_search_name)
+            if assign_confidence_row:
+                raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
-            
+    def list_tide_search(self, mgf_name = None, tide_index_name = None):
+        """
+        List the tide searches. You can specify an mgf name and/or tide index
+        """
+        filter_args = {}
+        if mgf_name:
+            mgf_row = self.db_session.query(tPipeDB.MGFfile).filter_by(MGFName = mgf_name).first()
+            if mgf_row:
+                filter_args['idMGF'] = mgf_row.idMGFfile
+            else:
+                raise MGFRowDoesNotExistError(mgf_name)
+        if tide_index_name:
+            tide_index_row = self.db_sesion.query(tPipeDB.TideIndex).filter_by(TideIndexName = tide_index_name).first()
+            if tide_index_row:
+                filter_args['idTideIndex'] = tide_index_row.idTideIndex
+            else:
+                raise NoSuchTideIndexError(tide_index_name)
+        rows = []
+        if len(filter_args.keys()) > 0:
+            rows = self.db_session.query(tPipeDB.TideSearch).filter_by(**filter_args).all()
+        else:
+            rows = self.db_session.query(tPipeDB.TideSearch).all()
+        return rows
+        
     def run_tide_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options):
-        mgf_row = self.db_session.query(tPipeDB.MGFFile).filter_by(MGFName = mgf_name).first()
+        mgf_row = self.db_session.query(tPipeDB.MGFfile).filter_by(MGFName = mgf_name).first()
         tide_index_row = self.db_session.query(tPipeDB.TideIndex).filter_by(TideIndexName=tide_index_name).first()
         tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName=tide_search_name).first()
         if mgf_row and tide_index_row and (tide_search_row is None):
@@ -304,7 +357,7 @@ class Project:
             mgf_record = tPipeDB.MGFfile(MGFName = name, MGFPath = newpath)
             self.db_session.add(mgf_record)
             self.db_session.commit()
-            return fasta_record.idMGFfile    
+            return mgf_record.idMGFfile    
     def get_tide_indices(self):
         rows = self.db_session.query(tPipeDB.TideIndex).all()
         indices = []
@@ -655,7 +708,7 @@ class Project:
             raise ProjectPathAlreadyExistsError(project_path)
         else:
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files']
+            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results']
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             return Project(project_path)

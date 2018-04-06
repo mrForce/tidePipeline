@@ -122,18 +122,19 @@ class TideSearch(Base):
     __tablename__ = 'TideSearch'
     idTideSearch = Column('idTideSearch', Integer, primary_key=True)
     idTideIndex = Column('idTideIndex', Integer, ForeignKey('TideIndex.idTideIndex'))
-    TideSearchName = Column('TideSearchName', String)
+    TideSearchName = Column('TideSearchName', String, unique=True)
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     targetPath = Column('targetPath', String)
     decoyPath = Column('decoyPath', String)
     paramsPath = Column('paramsPath', String)
     logPath = Column('logPath', String)
-
+    tideIndex = relationship('TideIndex', back_populates='TideSearch')
+    mgf = relationship('MGFfile')
 class AssignConfidence(Base):
     __tablename__ = 'AssignConfidence'
     idAssignConfidence = Column('idAssignConfidence', Integer, primary_key=True)
-
     AssignConfidenceOutputPath = Column('AssignConfidenceOutputPath', String)
+    AssignConfidenceName = Column('AssignConfidenceName', String, unique=True)
     idTideSearch = Column('idTideSearch', Integer, ForeignKey('TideSearch.idTideSearch'))
     estimation_method = Column(String)
     score = Column(String)
