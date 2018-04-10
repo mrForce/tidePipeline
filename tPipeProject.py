@@ -284,6 +284,8 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+    def get_assign_confidence(self, assign_confidence_name):
+        return self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
     def list_assign_confidence(self, tide_search_name = None, estimation_method = None):
         filter_args = {}
         if tide_search_name:

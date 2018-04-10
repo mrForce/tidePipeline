@@ -126,6 +126,14 @@ class Report:
                 overlap = len(set.intersection(*sets))
                 peptide_overlap_rows.append(names + ['']*(num_assign_confidence_runs - len(names)) + [str(overlap)])
         self.latex_objects.append(LatexTable(peptide_overlap_headers, peptide_overlap_rows))
-        
+    def save_report(self, output_location):
+        with open(output_location, 'w') as f:
+            f.write('\documentclass{article}\n')
+            f.write('\\begin{document}\n')
+            for latex_object in self.latex_objects:
+                for line in latex_object.getLatexCodeLines():
+                    f.write(line + '\n')
+
+            f.write('\\end{document}')
 
         
