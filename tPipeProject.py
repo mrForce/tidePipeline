@@ -9,7 +9,7 @@ import re
 import shutil
 import uuid
 from fileFunctions import *
-CRUX_BINARY = '/home/jforce/crux_install/bin/crux'
+CRUX_BINARY = '/usr/bin/crux'
 class Error(Exception):
     pass
 
@@ -174,11 +174,12 @@ class TideSearchRunner:
         param_filename = str(uuid.uuid4().hex) + '-param.txt'
         while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
             param_filename = str(uuid.uuid4().hex) + '-param.txt'
-        with open(os.path.join(project_path, 'tide_param_files', param_filename)) as f:        
+        with open(os.path.join(project_path, 'tide_param_files', param_filename), 'w') as f:        
             for k, v in options.values():
                 f.write(k + '=' + str(v) + '\n')
-        spectra_file = os.path.join(project_path, 'MGF', mgf_row.MGFPath)
-        index_filename = os.path.join(project_path, 'tide_indices', index_row.TideIndexPath)
+        spectra_file = os.path.join(project_path, mgf_row.MGFPath)
+        index_filename = os.path.join(project_path, index_row.TideIndexPath)
+        print('current working directory: ' + os.getcwd())
         command = [CRUX_BINARY, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
         try:
             p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
@@ -343,6 +344,7 @@ class Project:
         return rows
         
     def run_tide_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options):
+        print('in tide search function')
         mgf_row = self.db_session.query(tPipeDB.MGFfile).filter_by(MGFName = mgf_name).first()
         tide_index_row = self.db_session.query(tPipeDB.TideIndex).filter_by(TideIndexName=tide_index_name).first()
         tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName=tide_search_name).first()
@@ -569,17 +571,18 @@ class Project:
             pass
     def remove_invalid_mark(self):
         os.remove(os.path.join(self.project_path, 'project_invalid'))
-    def begin_command_session(self):
+    def begin_command_session(self, validate=True):
         """
         Validate project integrity, create operation lock
         """
-        self.validate_project_integrity()
-        current_place = os.getcwd()
-        os.chdir(self.project_path)
-        shutil.make_archive('backup', 'gztar')
-        os.chdir(current_place)
-        self.lock_operations()
-    def end_command_session(self):
+        if validate:
+            self.validate_project_integrity()
+            current_place = os.getcwd()
+            os.chdir(self.project_path)
+            shutil.make_archive('backup', 'gztar')
+            os.chdir(current_place)
+            self.lock_operations()
+    def end_command_session(self, validate=True):
         """
         Validate project integrity (ignoring the operation lock). If project does not have integrity, then rollback project.
 
@@ -588,18 +591,18 @@ class Project:
         self.command.executionSuccess = 1
         
         self.db_session.commit()
-
-        try:
-            self.validate_project_integrity(ignore_operation_lock = True)
-        except Error as e:
-            #rollback
-            print('Doing the operations caused the project to become invalid; here is the error')
-            print(sys.exc_info()[0])
-            print('There is a backup file: ' + os.path.join(self.project_path, 'backup.tar.gz') + ' That you can use to revert the changes to bring the project into a valid state. Just unpack it. If you didn\'t do anything unusualy, then please file a bug report')
-            sys.exit(1)
-        else:
-            self.unlock_operations()
-            os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
+        if validate:
+            try:
+                self.validate_project_integrity(ignore_operation_lock = True)
+            except Error as e:
+                #rollback
+                print('Doing the operations caused the project to become invalid; here is the error')
+                print(sys.exc_info()[0])
+                print('There is a backup file: ' + os.path.join(self.project_path, 'backup.tar.gz') + ' That you can use to revert the changes to bring the project into a valid state. Just unpack it. If you didn\'t do anything unusualy, then please file a bug report')
+                sys.exit(1)
+            else:
+                self.unlock_operations()
+                os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
     def copy_file(self, subfolder, path):
         files = self.list_files(subfolder)
         tails = [os.path.split(x)[1] for x in files]

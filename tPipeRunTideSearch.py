@@ -35,9 +35,11 @@ for k, v in arguments.items():
     if k and v and k != 'project_folder' and k != 'mgf_name' and k != 'index_name' and k != 'search_name':
         k = k.replace('_', '-')
         good_arguments[k] = v
-        
+print('going to begin command session')        
 project.begin_command_session()
+print('starting command session')
 tide_search_runner = tPipeProject.TideSearchRunner(good_arguments)
+print('got tide search runner')
 project.run_tide_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name, good_arguments)
 project.end_command_session()
 

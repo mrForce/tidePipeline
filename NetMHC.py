@@ -111,5 +111,6 @@ def call_netmhc(hla, peptide_file_path, output_path):
     os.chdir(cwd)
     subprocess.run(['bash_scripts/combine_files.sh'] + [os.path.join(folder, x) for x in output_file_list] + [output_path])
     for x in output_file_list:
-        print('Marked for removal: ' + os.path.join(folder, x))
+        print('Removing: ' + os.path.join(folder, x))
+        os.remove(os.path.join(folder, x))
         
