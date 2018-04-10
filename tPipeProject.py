@@ -417,7 +417,7 @@ class Project:
                 self.db_session.commit()
             filtered_netmhc_rows.append(row)
             with open(os.path.join(self.project_path, pep_score_path), 'r') as f:
-                tp = tempfile.NamedTemporaryFile(mode='w', delete=False)
+                tp = tempfile.NamedTemporaryFile(mode='w')
                 temp_files.append(tp)
                 for line in f:
                     line_parts = line.split(',')
@@ -436,10 +436,12 @@ class Project:
                 raise NoSuchPeptideListError(pln)
         for x in temp_files:
             files.append(x.name)
-            x.close()
-        temp_fasta = tempfile.NamedTemporaryFile(mode='w', delete=False)
-        temp_fasta.close()
+            #x.close()
+        temp_fasta = tempfile.NamedTemporaryFile(mode='w')
+        #temp_fasta.close()
         subprocess.run(['bash_scripts/join_peptides_to_fasta.sh'] + files + [temp_fasta.name])
+        for x in temp_files:
+            x.close()
         output_directory_name = str(uuid.uuid4().hex)
         output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         while os.path.isfile(output_directory_path) or os.path.isdir(output_directory_path):
@@ -447,6 +449,7 @@ class Project:
             output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         
         row = tide_index_runner.run_index_create_row(temp_fasta.name, output_directory_path, os.path.join('tide_indices', output_directory_name), 'index')
+        temp_fasta.close()
         row.TideIndexName = tide_index_name
         #now we must must set the relationships for peptidelists and filteredNetMHCs
         row.peptidelists = peptide_list_rows
