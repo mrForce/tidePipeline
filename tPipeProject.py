@@ -238,7 +238,7 @@ class AssignConfidenceRunner:
 
     @staticmethod
     def get_assign_confidence_options():
-        return {'--estimation-method': {'choices': ['min-max', 'tdc', 'peptide-level']}, '--score': {'type': str}, '--sidak': {'choices': ['T', 'F']}, '--top-match-in': {'type': int}, '--combine-charge-states': {'choices': ['T', 'F']}, '--combine-modified-peptides': {'choices': ['T', 'F']}}
+        return {'--estimation-method': {'choices': ['mix-max', 'tdc', 'peptide-level']}, '--score': {'type': str}, '--sidak': {'choices': ['T', 'F']}, '--top-match-in': {'type': int}, '--combine-charge-states': {'choices': ['T', 'F']}, '--combine-modified-peptides': {'choices': ['T', 'F']}}
 
     @staticmethod
     def convert_cmdline_option_to_column_name(option):
