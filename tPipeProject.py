@@ -114,7 +114,7 @@ class NoSuchPeptideListError(Error):
 
 class NoSuchHLAError(Error):
     def __init__(self, hla_name):
-        self.message = 'There is no HLA with the name: ' + hla_Name
+        self.message = 'There is no HLA with the name: ' + hla_name
     def __repr__(self):
         return self.message
 
