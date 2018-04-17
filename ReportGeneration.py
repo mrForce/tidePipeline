@@ -40,13 +40,15 @@ def extract_columns(file_path, column_names):
     encoding = locale.getpreferredencoding()
     columns_temp_file = tempfile.NamedTemporaryFile(mode='w+t', encoding=encoding)
     command = ['crux extract-columns ' + file_path + ' "' + ','.join(column_names) + '" > ' + columns_temp_file.name]
+    print('command: ' + ' '.join(command))
     subprocess.run(command, shell=True)
     rows = []
     columns_temp_file.seek(0)
     for line in columns_temp_file:
         rows.append(line.split())
     columns_temp_file.close()
-    return rows
+    #first row are the headers
+    return rows[1::]
     
         
 
@@ -68,11 +70,13 @@ class AssignConfidenceHandler:
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, assign_confidence_row.AssignConfidenceOutputPath), ['scan', 'sequence', q_val_column])
+        rows = extract_columns(os.path.join(project_path, assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', q_val_column])
         self.total_psms = 0
         self.num_passing_psms = 0
         for row in rows:
             self.total_psms += 1
+            print('row')
+            print(row)
             scan = int(row[0])
             peptide = row[1]
             q_val = float(row[2])

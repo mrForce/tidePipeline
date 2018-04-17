@@ -6,4 +6,5 @@ I'm going to make it so that we only backup the actual sqlite DB file, and not t
 
 Interesting, it appears that when adding assign confidence, I wasn't linking it to the tide search.
 
-I fixed that, but for printing, I need to get the estimation method
+I'm adding a tPipeSaveAssignConfidencePeptides.py script. This lets the user export the peptides -- from PSMs that meet a q-value threshold criteria -- from an AssignConfidence run to a file, and will print out the number of unique peptides. If the export location is a folder, then the script should error out -- unless that folder is the null device (the user doesn't want to save the exporter peptides, they just want a count)
+
