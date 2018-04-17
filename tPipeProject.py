@@ -9,6 +9,7 @@ import re
 import shutil
 import uuid
 from fileFunctions import *
+from datetime import datetime
 CRUX_BINARY = '/usr/bin/crux'
 class Error(Exception):
     pass
@@ -561,23 +562,30 @@ class Project:
         (and I'll add other criteria here as I expand the command set)
         3) All peptide list files are present
         """
+        print('going to validate project integrity')
+        print('current time: ' + str(datetime.now().time()))
         if (not ignore_operation_lock) and os.path.isfile(os.path.join(self.project_path, 'operation_lock')):
             raise OperationsLockedError()
+        print('going to check fasta rows')
         fasta_rows = self.db_session.query(tPipeDB.FASTA).all()
         for row in fasta_rows:
             path = row.FASTAPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
                 raise FASTAMissingError(row.idFASTA, row.Name, row.FASTAPath)
+        print('going to check peptide list rows')
         peptide_list_rows = self.db_session.query(tPipeDB.PeptideList).all()
         for row in peptide_list_rows:
             path = row.PeptideListPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
                 raise PeptideListFileMissingError(row.idPeptideList, row.peptideListName, row.PeptideListPath)
+        print('going to check mgf rows')
         mgf_rows = self.db_session.query(tPipeDB.MGFfile).all()
         for row in mgf_rows:
             path = row.MGFPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
                 raise MGFFileMissingError(row.idMGFfile, row.MGFName, row.MGFPath)
+        print('done validating project integrity')
+        print('current time: ' + str(datetime.now().time()))
         return True
     def lock_operations(self):
         with open(os.path.join(self.project_path, 'operation_lock'), 'w') as f:
@@ -597,7 +605,9 @@ class Project:
             self.validate_project_integrity()
             current_place = os.getcwd()
             os.chdir(self.project_path)
-            shutil.make_archive('backup', 'gztar')
+            #shutil.make_archive('backup', 'gztar')
+            #just copy the database.db file
+            shutil.copyfile('database.db', 'database.db.backup')
             os.chdir(current_place)
             self.lock_operations()
     def end_command_session(self, validate=True):
@@ -615,12 +625,11 @@ class Project:
             except Error as e:
                 #rollback
                 print('Doing the operations caused the project to become invalid; here is the error')
-                print(sys.exc_info()[0])
-                print('There is a backup file: ' + os.path.join(self.project_path, 'backup.tar.gz') + ' That you can use to revert the changes to bring the project into a valid state. Just unpack it. If you didn\'t do anything unusualy, then please file a bug report')
+                print(sys.exc_info()[0])                
                 sys.exit(1)
             else:
                 self.unlock_operations()
-                os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
+                #os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
     def copy_file(self, subfolder, path):
         files = self.list_files(subfolder)
         tails = [os.path.split(x)[1] for x in files]
