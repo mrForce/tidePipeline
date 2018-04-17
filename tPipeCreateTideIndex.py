@@ -34,7 +34,14 @@ else:
         if k and v and k != 'peptideList' and k != 'netMHCFilter' and k != 'project_folder' and k != 'index_name':
             k = k.replace('_', '-')
             good_arguments[k] = v
-
+    for pln, hla, cutoff in args.netMHCFilter:
+        if not project.verify_peptide_list(pln):
+            print('peptide list: ' + pln + ' does not exist')
+            sys.exit()
+        if not project.verify_hla(hla):
+            print('HLA: ' + hla + ' does not exist')
+            sys.exit()
+            
     project.begin_command_session()
     tide_index_runner = tPipeProject.TideIndexRunner(good_arguments)    
     project.create_tide_index(args.peptideList, args.netMHCFilter, tide_index_runner, args.index_name)

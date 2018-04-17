@@ -175,7 +175,7 @@ class TideSearchRunner:
         while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
             param_filename = str(uuid.uuid4().hex) + '-param.txt'
         with open(os.path.join(project_path, 'tide_param_files', param_filename), 'w') as f:        
-            for k, v in options.values():
+            for k, v in options.items():
                 f.write(k + '=' + str(v) + '\n')
         spectra_file = os.path.join(project_path, mgf_row.MGFPath)
         index_filename = os.path.join(project_path, index_row.TideIndexPath)
@@ -394,6 +394,19 @@ class Project:
             indices.append(index)
         return indices
 
+    def verify_peptide_list(self, peptide_list_name):
+        row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
+        if row is None:
+            return False
+        else:
+            return True
+
+    def verify_hla(self, hla):
+        row = self.db_session.query(tPipeDB.HLA).filter_by(HLAName = hla).first()
+        if row is None:
+            return False
+        else:
+            return True
     def create_tide_index(self, peptide_list_names, netmhc_filters, tide_index_runner, tide_index_name):
         """
         peptide_list_names is a list of strings, where each is the name of a PeptideList
