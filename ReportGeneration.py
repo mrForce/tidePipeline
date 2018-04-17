@@ -63,10 +63,14 @@ class AssignConfidenceHandler:
     Peptides
     PSMs
     """
-    def __init__(self, assign_confidence_row, q_val_column, threshold, project_path):
+    def __init__(self, assign_confidence_row, q_val_column, threshold, project_path, include_origin = False):
         self.assign_confidence_name = assign_confidence_row.AssignConfidenceName
         self.mgf_name = assign_confidence_row.tideSearch.mgf.MGFName
+        tide_search_row = assign_confidence_row.tideSearch
+        tide_index_row = tide_search_row.tideIndex
+        
         self.tide_search_name = assign_confidence_row.tideSearch.TideSearchName
+
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value

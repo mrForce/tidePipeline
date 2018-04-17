@@ -16,6 +16,12 @@ parser.add_argument('export_location', help='File to put the peptide list')
 
 parser.add_argument('--overwrite', help='By default, this script doesn\'t overwrite files. Set this to True if you want to overwrite the output', type=bool, default=False)
 
+parser.add_argument('--includePeptideSource', help='include this if you want to show which NetMHC runs or PeptideList each peptide comes from.', type=bool, default=False)
+
+
+
+
+
 args = parser.parse_args()
 
 project_folder = args.project_folder
