@@ -249,7 +249,7 @@ class AssignConfidenceRunner:
         else:
             return None
 
-    def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db, assign_confidence_name):
+    def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row):
         #first, need to create the tide-index command
         command = [CRUX_BINARY, 'assign-confidence']
         for k,v in self.assign_confidence_options.items():
@@ -273,6 +273,7 @@ class AssignConfidenceRunner:
                 column_arguments[column_name] = v
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db
         column_arguments['AssignConfidenceName'] = assign_confidence_name
+        column_arguments['tideSearch'] = tide_search_row
         return tPipeDB.AssignConfidence(**column_arguments)
 
 
@@ -313,7 +314,7 @@ class Project:
                 output_directory_name = str(uuid.uuid4().hex)
             output_directory_tide = os.path.join(self.project_path, 'assign_confidence_results', output_directory_name)
             output_directory_db = os.path.join('assign_confidence_results', output_directory_name)
-            new_row = assign_confidence_runner.run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name)
+            new_row = assign_confidence_runner.run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row)
             self.db_session.add(new_row)
             self.db_session.commit()
         else:

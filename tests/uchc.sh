@@ -22,14 +22,14 @@ cd ..
 
 #tar -czf index_save.tar.gz EL4Project
 
-echo "going to run search"
+#echo "going to run search"
 
-python3 tPipeRunTideSearch.py EL4Project JPRPaper mouse_combined_index JPRSearchCombined --num-threads 1
-python3 tPipeRunTideSearch.py EL4Project ReplicateOne mouse_combined_index ReplicateOneSearchCombined --num-threads 1
-python3 tPipeRunTideSearch.py EL4Project ReplicateTwo mouse_combined_index ReplicateTwoSearchCombined --num-threads 1
+#python3 tPipeRunTideSearch.py EL4Project JPRPaper mouse_combined_index JPRSearchCombined --num-threads 1
+#python3 tPipeRunTideSearch.py EL4Project ReplicateOne mouse_combined_index ReplicateOneSearchCombined --num-threads 1
+#python3 tPipeRunTideSearch.py EL4Project ReplicateTwo mouse_combined_index ReplicateTwoSearchCombined --num-threads 1
 
-tar -czf search_save.tar.gz EL4Project
+#tar -czf search_save.tar.gz EL4Project
 
-python3 tPipeRunAssignConfidence.py EL4Project JPRSearchCombined JPRConfidenceCombined
-python3 tPipeRunAssignConfidence.py EL4Project ReplicateOneSearchCombined ReplicateOneConfidenceCombined
-python3 tPipeRunAssignConfidence.py EL4Project ReplicateTwoSearchCombined ReplicateTwoConfidenceCombined
+#python3 tPipeRunAssignConfidence.py EL4Project JPRSearchCombined JPRConfidenceCombinedWithSearch
+python3 tPipeRunAssignConfidence.py EL4Project ReplicateOneSearchCombined ReplicateOneConfidenceCombinedWithSearch
+python3 tPipeRunAssignConfidence.py EL4Project ReplicateTwoSearchCombined ReplicateTwoConfidenceCombinedWithSearch

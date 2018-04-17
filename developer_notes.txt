@@ -3,3 +3,7 @@ These are just notes that I take as I go along
 
 ---- 4/17/18 ------
 I'm going to make it so that we only backup the actual sqlite DB file, and not the whole project. I need to change the begin_command_sesion, end_command_session, and possibly validate_project_integrity
+
+Interesting, it appears that when adding assign confidence, I wasn't linking it to the tide search.
+
+I fixed that, but for printing, I need to get the estimation method

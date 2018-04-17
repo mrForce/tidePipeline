@@ -20,5 +20,21 @@ project.begin_command_session()
 rows = project.list_assign_confidence(tide_search_name = args.tideSearchName, estimation_method = args.estimationMethod)
 print('id   |   Name   |   Output Path   |   Tide Search Name   |   estimation method   |   score type   |   sidak')
 for row in rows:
-    print(str(row.idAssignConfidence) + '   |   ' + row.AssignConfidenceName + '   |   ' + row.AssignConfidenceOutputPath + '   |   ' + row.tideSearch.TideSearchName + '   |   ' + row.estimation_method + '   |   ' + row.score + '   |   ' + row.sidak)
+    assign_confidence_name = row.AssignConfidenceName
+    assign_confidence_output_path = row.AssignConfidenceOutputPath
+    tide_search = row.tideSearch
+    tide_search_name = 'None'
+    if tide_search and tide_search.TideSearchName:
+        tide_search_name = tide_search.TideSearchName
+    #tdc is the default
+    estimation_method = 'tdc'
+    if row.estimation_method:
+        estimation_method = row.estimation_method
+    score_type = '<empty>'
+    if row.score:
+        score_type = row.score
+    sidak = 'False'
+    if row.sidak:
+        sidak = row.sidak
+    print(str(row.idAssignConfidence) + '   |   ' + assign_confidence_name + '   |   ' + assign_confidence_output_path + '   |   ' + tide_search_name + '   |   ' + estimation_method + '   |   ' + score_type + '   |   ' + sidak)
 project.end_command_session()
