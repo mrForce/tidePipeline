@@ -786,7 +786,7 @@ class Project:
             raise ProjectPathAlreadyExistsError(project_path)
         else:
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results']
+            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilterNetMHC', 'TargetSet']
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             return Project(project_path)

@@ -4,11 +4,6 @@ from sqlalchemy.ext.declarative import declarative_base
 import datetime
 Base = declarative_base()
 
-"""
-species_hla = Table('species_hla', Base.metadata,
-     Column('species_id', ForeignKey('Species.idSpecies'), primary_key=True),
-     Column('HLA_id', ForeignKey('HLA.idHLA'), primary_key=True)
-)"""
 
 
 tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
@@ -16,7 +11,29 @@ tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Colu
 tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
+"""
+Need to add the following 3 tables in database revision 8d70dec8ab88
+"""
+tideindex_targetset = Table('tideindex_targetset', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
+targetset_filteredNetMHC = Table('targetset_filteredNetMHC', Base.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+
+targetset_peptidelists = Table('targetset_peptidelists', Base.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+
+
+class TargetSet(Base):
+    __tablename__ = 'TargetSet'
+    idTargetSet = Column('idTargetSet', Integer, primary_key = True)
+    TargetSetFASTAPath = Column('TargetSetFASTAPath', String, unique=True)
+    """
+    Each source will be represented by an ASCII character. the SourceSymbolMap row will contain JSON that maps each character to a tuple of the form: ('FilteredNetMHC', 'FilteredNetMHCName') or ('PeptideList', 'PeptideListName'). PeptideSourceMapPath will contain the path to a JSON file that maps each peptide to a string of sources. 
+
+    I realize that this probably isn't the most efficient way of doing this, but it should work for now.
+    """
+    PeptideSourceMapPath = Column('PeptideSourceMapPath', String)
+    SourceSymbolMap = Column('SourceSymbolMap', String)
+    filteredNetMHCs = relationship('FilteredNetMHC', secondary=targetset_filteredNetMHC, back_populates='targetsets')
+    peptideLists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
 class HLA(Base):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
@@ -54,6 +71,7 @@ class PeptideList(Base):
     #Just a string of integers seperated by spaces. 
     length = Column('length', Integer)
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
+    targetsets = relationship('TargetSet', secondary=targetset_peptidelists, back_populates='peptidelists')
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath
 
@@ -76,6 +94,7 @@ class FilteredNetMHC(Base):
     FilteredNetMHCName = Column('FilteredNetMHCName', String)
     RankCutoff = Column('RankCutoff', Float)
     tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
+    targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
 class TideIndex(Base):
     __tablename__ = 'TideIndex'
     idTideIndex = Column('idTideIndex', Integer, primary_key=True)
@@ -106,7 +125,7 @@ class TideIndex(Base):
     missing_cleavages = Column(Integer)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = tideindex_filteredNetMHC, back_populates = 'tideindices')
     peptidelists = relationship('PeptideList', secondary= tideindex_peptidelists, back_populates = 'tideindices')
-
+    targetsets = relationship('TargetSet', secondary=tideindex_targetset, back_populates='tideindices')
     
 class TideSearch(Base):
     __tablename__ = 'TideSearch'
