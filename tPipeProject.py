@@ -286,6 +286,12 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+    def verify_filtered_netMHC(self, name):
+        if self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first():
+            return True
+        else:
+            return False
+
     def get_assign_confidence(self, assign_confidence_name):
         return self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
     def list_assign_confidence(self, tide_search_name = None, estimation_method = None):
@@ -415,9 +421,26 @@ class Project:
         row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
         if row is None:
             file_name = str(uuid.uuid4())
-            while os.path.isfile(os.path.join(self.project_path, file_name)) or os.path.isdir(
+            while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
+                file_name = str(uuid.uuid4())
+            output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
+            input_path = os.path.join(self.project_path, row.HighScoringPeptidesPath)
+            with open(input_path, 'r') as f:
+                with open(output_path, 'w') as g:
+                    for line in f:
+                        parts = line.split(',')
+                        if len(parts) == 2:
+                            peptide = parts[0].strip()
+                            rank = float(parts[1])
+                            if rank <= rank_cutoff:
+                                g.write(peptide + '\n')
             
-            row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name)
+            
+            row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+            self.db_session.add(row)
+            self.db_session.commit()
+            
+                
     def create_tide_index(self, peptide_list_names, netmhc_filters, tide_index_runner, tide_index_name):
         """
         peptide_list_names is a list of strings, where each is the name of a PeptideList
