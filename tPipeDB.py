@@ -14,14 +14,6 @@ species_hla = Table('species_hla', Base.metadata,
 tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
 tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
-class Species(Base):
-    __tablename__ = 'Species'
-    idSpecies = Column('idSpecies', Integer, primary_key=True)
-    SpeciesName = Column('SpeciesName', String, unique=True)
-
-    hlas = relationship('HLA', back_populates='species')
-    def __repr__(self):
-        return 'Species: ' + self.SpeciesName
 
 
 
@@ -29,11 +21,9 @@ class HLA(Base):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
     HLAName = Column('HLAName', String, unique=True)
-    #a single HLA should only be associated with one species
-    species_id = Column('species_id', ForeignKey('Species.idSpecies'))
-    species = relationship('Species', back_populates='hlas')
+
     def __repr__(self):
-        return 'MHC ' + self.HLAName + ' from species: ' + self.species[0].SpeciesName
+        return 'MHC ' + self.HLAName
 
 
 class MGFfile(Base):
@@ -79,7 +69,6 @@ class NetMHC(Base):
     PeptideScorePath = Column('HighScoringPeptidesPath', String)
     
 class FilteredNetMHC(Base):
-    #this is a rather abstract thing -- we don't actually store the filtered values peptides, since filtering them by their rank is a quick task once we already know their ranks
     __tablename__ = 'FilteredNetMHC'
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
     idNetMHC = Column('idNetMHC', Integer, ForeignKey('NetMHC.idNetMHC'))
