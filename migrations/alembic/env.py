@@ -3,6 +3,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool, create_engine
 from logging.config import fileConfig
 import os
+import sys
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -37,6 +38,9 @@ def run_migrations_offline():
     """
     print('running migration offline')
     project_location = os.getenv('PIPELINE_PROJECT', '')
+    if len(project_location) < 1:
+        print('Did someone forget to set PIPELINE_PROJECT?')
+        sys.exit()
     url = 'sqlite:///' + os.path.join(project_location, 'database.db')
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True)
@@ -54,6 +58,9 @@ def run_migrations_online():
     """
     print('running migration online')
     project_location = os.getenv('PIPELINE_PROJECT', '')
+    if len(project_location) < 1:
+        print('Did someone forget to set PIPELINE_PROJECT?')
+        sys.exit()
     print('project location')
     print(project_location)
     url = 'sqlite:///' + os.path.join(project_location, 'database.db')

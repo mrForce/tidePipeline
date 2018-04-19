@@ -40,13 +40,16 @@ def upgrade():
         os.mkdir(os.path.join(project_location, 'FilteredNetMHC'))
     with op.batch_alter_table('FilteredNetMHC') as batch_op:
         batch_op.add_column(sa.Column('filtered_path', sa.String))
+        batch_op.add_column(sa.Column('FilteredNetMHCName', sa.String))
     connection = op.get_bind()
 
     metadata = sa.MetaData()
-    filtered = sa.Table('FilteredNetMHC',metadata, sa.Column('idFilteredNetMHC', sa.Integer, primary_key=True), sa.Column('idNetMHC', sa.Integer, sa.ForeignKey('NetMHC.idNetMHC')), sa.Column('RankCutoff', sa.Float), sa.Column('filtered_path', sa.String))
-    netmhc = sa.Table('NetMHC', metadata, sa.Column('idNetMHC', sa.Integer, primary_key = True), sa.Column('HighScoringPeptidesPath', sa.String))
-    path_updates = list()
-    for row in connection.execute(sa.select([filtered, netmhc]).where(filtered.c.idNetMHC == netmhc.c.idNetMHC)):
+    hla = sa.Table('HLA', metadata, sa.Column('idHLA', sa.Integer, primary_key=True), sa.Column('HLAName', sa.String))
+    peptide_list = sa.Table('PeptideList', metadata, sa.Column('idPeptideList', sa.Integer, primary_key=True), sa.Column('peptideListName', sa.String, unique=True))
+    filtered = sa.Table('FilteredNetMHC',metadata, sa.Column('idFilteredNetMHC', sa.Integer, primary_key=True), sa.Column('idNetMHC', sa.Integer, sa.ForeignKey('NetMHC.idNetMHC')), sa.Column('RankCutoff', sa.Float), sa.Column('filtered_path', sa.String), sa.Column('FilteredNetMHCName', sa.String, unique=True))
+    netmhc = sa.Table('NetMHC', metadata, sa.Column('idNetMHC', sa.Integer, primary_key = True), sa.Column('idHLA', sa.Integer), sa.Column('HighScoringPeptidesPath', sa.String), sa.Column('peptideListID', sa.Integer))
+    updates = list()
+    for row in connection.execute(sa.select([peptide_list, filtered, netmhc, hla]).where(filtered.c.idNetMHC == netmhc.c.idNetMHC and netmhc.c.peptideListID == peptide_list.c.idPeptideList and netmhc.c.idHLA == hla.c.idHLA)):
         print('row')
         path = os.path.join(project_location, row.HighScoringPeptidesPath)
         file_name = str(uuid.uuid4())
@@ -57,10 +60,14 @@ def upgrade():
         print('row')
         print(row)
         print('row in filtered')
-        update_path = filtered.update().where(filtered.c.idFilteredNetMHC == row.idFilteredNetMHC).values(filtered_path=os.path.join('FilteredNetMHC', file_name))
 
-        path_updates.append(update_path)
-    for pu in path_updates:
+        
+        update = filtered.update().where(filtered.c.idFilteredNetMHC == row.idFilteredNetMHC).values(filtered_path=os.path.join('FilteredNetMHC', file_name), FilteredNetMHCName = row.peptideListName + '_' + str(row.RankCutoff) + '_' + row.HLAName)
+
+        updates.append(update)
+
+
+    for pu in updates:
         print('going to do path update')
         print(pu)
         connection.execute(pu)

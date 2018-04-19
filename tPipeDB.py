@@ -72,7 +72,8 @@ class FilteredNetMHC(Base):
     __tablename__ = 'FilteredNetMHC'
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
     idNetMHC = Column('idNetMHC', Integer, ForeignKey('NetMHC.idNetMHC'))
-    
+    filtered_path = Column('filtered_path', String)
+    FilteredNetMHCName = Column('FilteredNetMHCName', String)
     RankCutoff = Column('RankCutoff', Float)
     tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
 class TideIndex(Base):
