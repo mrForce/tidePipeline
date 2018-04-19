@@ -409,6 +409,15 @@ class Project:
             return False
         else:
             return True
+
+    def run_netmhc(self, peptide_list_name, hla, rank_cutoff, filtered_name):
+        idNetMHC, pep_score_path = self.run_netmhc(peptide_list_name, hla)
+        row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
+        if row is None:
+            file_name = str(uuid.uuid4())
+            while os.path.isfile(os.path.join(self.project_path, file_name)) or os.path.isdir(
+            
+            row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name)
     def create_tide_index(self, peptide_list_names, netmhc_filters, tide_index_runner, tide_index_name):
         """
         peptide_list_names is a list of strings, where each is the name of a PeptideList
