@@ -23,13 +23,16 @@ def extract_peptides(input_file_path, output_file_path, threshold):
         with open(output_file_path, 'w') as g:
             for line in f:
                 parts = line.split(',')
-                peptide = parts[0]
-                rank = float(parts[1])
-                if rank <= threshold:
-                    g.write(peptide + '\n')
+                if len(parts) == 2:
+                    peptide = parts[0]
+                    rank = float(parts[1])
+                    if rank <= threshold:
+                        g.write(peptide + '\n')
+                else:
+                    print('Could not parse line: ' + line)
 
 def upgrade():
-    project_location = os.getenv('PROJECT_LOCATION', '')
+    project_location = os.getenv('PIPELINE_PROJECT', '')
     print('project location')
     print(project_location)
     assert(len(project_location) > 0)
@@ -38,17 +41,30 @@ def upgrade():
     with op.batch_alter_table('FilteredNetMHC') as batch_op:
         batch_op.add_column(sa.Column('filtered_path', sa.String))
     connection = op.get_bind()
+
     metadata = sa.MetaData()
-    filtered = sa.Table('FilteredNetMHC',metadata, sa.Column('idFilteredNetMHC', sa.Integer, primary_key=True), sa.Column('idNetMHC', sa.Integer, sa.ForeignKey('NetMHC.idNetMHC')), sa.Column('RankCutoff', sa.Float))
+    filtered = sa.Table('FilteredNetMHC',metadata, sa.Column('idFilteredNetMHC', sa.Integer, primary_key=True), sa.Column('idNetMHC', sa.Integer, sa.ForeignKey('NetMHC.idNetMHC')), sa.Column('RankCutoff', sa.Float), sa.Column('filtered_path', sa.String))
     netmhc = sa.Table('NetMHC', metadata, sa.Column('idNetMHC', sa.Integer, primary_key = True), sa.Column('HighScoringPeptidesPath', sa.String))
+    path_updates = list()
     for row in connection.execute(sa.select([filtered, netmhc]).where(filtered.c.idNetMHC == netmhc.c.idNetMHC)):
         print('row')
         path = os.path.join(project_location, row.HighScoringPeptidesPath)
         file_name = str(uuid.uuid4())
         while os.path.isfile(os.path.join(project_location, 'FilteredNetMHC', file_name)):
             file_name = str(uuid.uuid4())
-        extract_peptides(path, os.path.join(project_location, 'FilteredNetMHC', file_name), row.RankCutoff)
-        
+        output_path = os.path.join(project_location, 'FilteredNetMHC', file_name)
+        extract_peptides(path, output_path, row.RankCutoff)
+        print('row')
+        print(row)
+        print('row in filtered')
+        update_path = filtered.update().where(filtered.c.idFilteredNetMHC == row.idFilteredNetMHC).values(filtered_path=os.path.join('FilteredNetMHC', file_name))
+
+        path_updates.append(update_path)
+    for pu in path_updates:
+        print('going to do path update')
+        print(pu)
+        connection.execute(pu)
+
         
 
     
@@ -56,9 +72,9 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table('FilteredNetMHC') as batch_op:
-        batch_op.drop_column('filtered_path')
-    project_location = os.getenv('PROJECT_LOCATION', '')
+    #with op.batch_alter_table('FilteredNetMHC') as batch_op:
+    #    batch_op.drop_column('filtered_path')
+    project_location = os.getenv('PIPELINE_PROJECT', '')
     print('project location')
     print(project_location)
     assert(len(project_location) > 0)

@@ -1,6 +1,6 @@
 from __future__ import with_statement
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, create_engine
 from logging.config import fileConfig
 import os
 # this is the Alembic Config object, which provides
@@ -35,6 +35,7 @@ def run_migrations_offline():
     script output.
 
     """
+    print('running migration offline')
     project_location = os.getenv('PIPELINE_PROJECT', '')
     url = 'sqlite:///' + os.path.join(project_location, 'database.db')
     context.configure(
@@ -51,8 +52,14 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+    print('running migration online')
+    project_location = os.getenv('PIPELINE_PROJECT', '')
+    print('project location')
+    print(project_location)
+    url = 'sqlite:///' + os.path.join(project_location, 'database.db')
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        {'sqlalchemy.url': url},
         prefix='sqlalchemy.',
         poolclass=pool.NullPool)
 
