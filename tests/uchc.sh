@@ -13,10 +13,10 @@ cd ..
 #python3 tPipeAddMGF.py EL4Project "/home/jordan/mgf/jlb20170918_SKarandikar_Srivastatalab_MHCelute_samp1.mgf" ReplicateOne
 #python3 tPipeAddMGF.py EL4Project "/home/jordan/mgf/jlb20170918_SKarandikar_Srivastatalab_MHCelute_samp2.mgf" ReplicateTwo
 
-#python3 tPipeAddPeptideList.py EL4Project EightMers EL4Proteome 8
-#python3 tPipeAddPeptideList.py EL4Project NineMers EL4Proteome 9
-#python3 tPipeAddPeptideList.py EL4Project TenMers EL4Proteome 10
-#python3 tPipeAddPeptideList.py EL4Project ElevenMers EL4Proteome 11
+#python3 tPipeAddPeptideList.py EL4Project  EL4Proteome 8 EightMers
+#python3 tPipeAddPeptideList.py EL4Project  EL4Proteome 9 NineMers
+#python3 tPipeAddPeptideList.py EL4Project  EL4Proteome 10 TenMers
+#python3 tPipeAddPeptideList.py EL4Project  EL4Proteome 11 ElevenMers
 #echo "Going to create tide index"
 #python3 tPipeCreateTideIndex.py EL4Project mouse_combined_index --netMHCFilter EightMers H-2-Kb 2 --netMHCFilter NineMers H-2-Kb 2 --netMHCFilter TenMers H-2-Kb 2 --netMHCFilter ElevenMers H-2-Kb 2 --netMHCFilter EightMers H-2-Db 2 --netMHCFilter NineMers H-2-Db 2 --netMHCFilter TenMers H-2-Db 2 --netMHCFilter ElevenMers H-2-Db 2 --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme > index_output.txt
 

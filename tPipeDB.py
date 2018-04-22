@@ -29,7 +29,8 @@ class TargetSet(Base):
     SourceIDMap = Column('SourceIDMap', String)
     TargetSetName = Column('TargetSetName', String, unique=True)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary=targetset_filteredNetMHC, back_populates='targetsets')
-    peptideLists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
+    peptidelists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
+    tideindices = relationship('TideIndex', secondary=tideindex_targetset, back_populates='targetsets')
 class HLA(Base):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)

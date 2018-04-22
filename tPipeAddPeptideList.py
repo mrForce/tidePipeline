@@ -7,10 +7,11 @@ parser = argparse.ArgumentParser(description='Generate a list of k-mers from a F
 
 parser.add_argument('project_folder', help='The location of the project folder', nargs=1)
 
-parser.add_argument('PeptideListName', help='Name of the peptide list', nargs=1)
+
 parser.add_argument('FASTAName', help='Name of the FASTA to use', nargs=1)
 
 parser.add_argument('length', help='length of k-mer', nargs=1)
+parser.add_argument('PeptideListName', help='Name of the peptide list', nargs=1)
 args = parser.parse_args()
 project_folder = args.project_folder[0]
 print('project folder: ' + project_folder)

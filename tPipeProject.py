@@ -177,6 +177,8 @@ class TideSearchNameMustBeUniqueError(Error):
     def __repr__(self):
         return self.message
 
+
+    
 class TideSearchRunner:
     def __init__(self, tide_search_options):
         self.tide_search_options = tide_search_options
@@ -301,6 +303,8 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+
+
     def add_targetset(self, netmhc_filter_names, peptide_list_names, target_set_name):
         #need to create lists of the form [(name, location)...]
         netmhc_filter_locations = []
@@ -309,14 +313,14 @@ class Project:
         for name in netmhc_filter_names:
             row  = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
             if row:
-                location = row.filtered_path
-                netmhc_filter_locations.append(name, location)
+                location = os.path.join(self.project_path, row.filtered_path)
+                netmhc_filter_locations.append((name, location))
             else:
                 raise NoSuchFilteredNetMHCError(name)
         for name in peptide_list_names:
             row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = name).first()
             if row:
-                location = row.PeptideListPath
+                location = os.path.join(self.project_path, row.PeptideListPath)
                 peptide_list_locations.append((name, location))
             else:
                 raise NoSuchPeptideListError(name)
@@ -326,10 +330,12 @@ class Project:
         output_folder = str(uuid.uuid4())
         while os.path.isdir(os.path.join(self.project_path, 'TargetSet', output_folder)) or os.path.isfile(os.path.join(self.project_path, 'TargetSet', output_folder)):
             output_folder = str(uuid.uuid4())
+        os.mkdir(os.path.join(self.project_path, 'TargetSet', output_folder))
         output_fasta_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'targets.fasta')
         output_json_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'sources.json')
+
         source_id_map = create_target_set(netmhc_filter_locations, peptide_list_locations, output_fasta_location, output_json_location)
-        target_set_row = tPipeDB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargeSetName = target_set_name)
+        target_set_row = tPipeDB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name)
         self.db_session.add(target_set_row)
         self.db_session.commit()
     def verify_filtered_netMHC(self, name):
@@ -463,14 +469,18 @@ class Project:
             return True
 
     def run_netmhc(self, peptide_list_name, hla, rank_cutoff, filtered_name):
-        idNetMHC, pep_score_path = self.run_netmhc(peptide_list_name, hla)
-        row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
-        if row is None:
+        idNetMHC, pep_score_path = self._run_netmhc(peptide_list_name, hla)
+        print('idNetMHC: ' + str(idNetMHC))
+        
+        row = self.db_session.query(tPipeDB.NetMHC).filter_by(idNetMHC = idNetMHC).first()
+        assert(row)
+        if row is not None:
             file_name = str(uuid.uuid4())
             while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
                 file_name = str(uuid.uuid4())
+            print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
-            input_path = os.path.join(self.project_path, row.HighScoringPeptidesPath)
+            input_path = os.path.join(self.project_path, row.PeptideScorePath)
             with open(input_path, 'r') as f:
                 with open(output_path, 'w') as g:
                     for line in f:
@@ -482,8 +492,8 @@ class Project:
                                 g.write(peptide + '\n')
             
             
-            row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
-            self.db_session.add(row)
+            filtered_row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+            self.db_session.add(filtered_row)
             self.db_session.commit()
             
                 
@@ -504,7 +514,7 @@ class Project:
         for pln, hla, rank_cutoff in netmhc_filters:
             rank_cutoff = float(rank_cutoff)
             print('going to run netmhc')
-            idNetMHC, pep_score_path = self.run_netmhc(pln, hla)
+            idNetMHC, pep_score_path = self._run_netmhc(pln, hla)
             row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff=rank_cutoff).first()
             if row is None:
                 row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff=rank_cutoff)
@@ -552,8 +562,28 @@ class Project:
         self.db_session.add(row)
         self.db_session.commit()
         
-        
-    def run_netmhc(self, peptide_list_name, hla_name):
+    
+
+    def generate_tide_index(self, peptide_list_names, netmhc_runs, tide_index_options):
+        pass
+    def add_peptide_list(self, name, length, fasta_name):
+        fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).first()
+        if fasta_row is None:
+            raise FASTAWithNameDoesNotExistError(fasta_name)
+        print('length:')
+        print(length)
+        peptide_row = self.db_session.query(tPipeDB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
+        if peptide_row is None:
+            fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
+            peptide_filename = fasta_filename + '_' + str(length) + '.txt'
+            peptide_list_path = os.path.join('peptides', peptide_filename)
+            if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
+                peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
+                write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
+            peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+            self.db_session.add(peptide_list)
+            self.db_session.commit()
+    def _run_netmhc(self, peptide_list_name, hla_name):
         """
         This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (idNetMHC, PeptideScorePath)
         
@@ -579,25 +609,6 @@ class Project:
             self.db_session.commit()
             return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
 
-    def generate_tide_index(self, peptide_list_names, netmhc_runs, tide_index_options):
-        pass
-    def add_peptide_list(self, name, length, fasta_name):
-        fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).first()
-        if fasta_row is None:
-            raise FASTAWithNameDoesNotExistError(fasta_name)
-        print('length:')
-        print(length)
-        peptide_row = self.db_session.query(tPipeDB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
-        if peptide_row is None:
-            fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
-            peptide_filename = fasta_filename + '_' + str(length) + '.txt'
-            peptide_list_path = os.path.join('peptides', peptide_filename)
-            if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
-                peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
-                write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
-            peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
-            self.db_session.add(peptide_list)
-            self.db_session.commit()
 
     def list_peptide_lists(self):
         peptide_lists = []
@@ -799,26 +810,11 @@ class Project:
                 hla['species_name'] = 'None'
             hlas.append(hla)
         return hlas
-    def add_hla(self, hla_name, species, speciesIsID):
-        species_rows = []
-        if speciesIsID:
-            species_rows = self.db_session.query(tPipeDB.Species).filter_by(idSpecies=species).all()
-            if len(species_rows) == 0:
-                raise NoSpeciesWithIDError(species)
-            elif len(species_rows) > 1:
-                raise MultipleSpeciesWithSameIDError(species)
-        else:        
-            species_rows = self.db_session.query(tPipeDB.Species).filter_by(SpeciesName=species).all()
-            print(species_rows)
-            print(len(species_rows))
-            if len(species_rows) > 1:
-                raise MultipleSpeciesWithSameNameError(species)
-            elif len(species_rows) == 0:
-                raise NoSpeciesWithNameError(species)
+    def add_hla(self, hla_name):
         hla_rows = self.db_session.query(tPipeDB.HLA).filter_by(HLAName = hla_name).all()
         if len(hla_rows) > 0:
             raise HLAWithNameExistsError(hla_name)
-        hla = tPipeDB.HLA(HLAName = hla_name, species_id = species_rows[0].idSpecies)
+        hla = tPipeDB.HLA(HLAName = hla_name)
         self.db_session.add(hla)
         self.db_session.commit()
         return hla.idHLA
@@ -832,7 +828,7 @@ class Project:
             raise ProjectPathAlreadyExistsError(project_path)
         else:
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilterNetMHC', 'TargetSet']
+            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet']
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             return Project(project_path)
