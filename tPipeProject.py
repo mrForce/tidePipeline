@@ -11,9 +11,17 @@ import shutil
 import uuid
 from fileFunctions import *
 from datetime import datetime
+import json
 CRUX_BINARY = '/usr/bin/crux'
 class Error(Exception):
     pass
+
+class TargetSetNameMustBeUniqueError(Error):
+    def __init__(self, target_set_name):
+        self.target_set_name = target_set_name
+    def __repr__(self):
+        return 'There is already a TargetSet with the name: ' + self.target_set_name
+
 
 class NoSuchFilteredNetMHCError(Error):
     def __init__(self, name):
@@ -294,15 +302,36 @@ class Project:
         self.db_session.commit()
 
     def add_targetset(self, netmhc_filter_names, peptide_list_names, target_set_name):
+        #need to create lists of the form [(name, location)...]
+        netmhc_filter_locations = []
+        peptide_list_locations = []
+
         for name in netmhc_filter_names:
-            if not self.verify_filtered_netMHC(name):
+            row  = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
+            if row:
+                location = row.filtered_path
+                netmhc_filter_locations.append(name, location)
+            else:
                 raise NoSuchFilteredNetMHCError(name)
         for name in peptide_list_names:
-            if not self.verify_peptide_list(name):
+            row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = name).first()
+            if row:
+                location = row.PeptideListPath
+                peptide_list_locations.append((name, location))
+            else:
                 raise NoSuchPeptideListError(name)
-        if self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSet
-
+        if self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = target_set_name).first():
+            raise TargetSetNameMustBeUniqueError(target_set_name)
         
+        output_folder = str(uuid.uuid4())
+        while os.path.isdir(os.path.join(self.project_path, 'TargetSet', output_folder)) or os.path.isfile(os.path.join(self.project_path, 'TargetSet', output_folder)):
+            output_folder = str(uuid.uuid4())
+        output_fasta_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'targets.fasta')
+        output_json_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'sources.json')
+        source_id_map = create_target_set(netmhc_filter_locations, peptide_list_locations, output_fasta_location, output_json_location)
+        target_set_row = tPipeDB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargeSetName = target_set_name)
+        self.db_session.add(target_set_row)
+        self.db_session.commit()
     def verify_filtered_netMHC(self, name):
         if self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first():
             return True
