@@ -25,13 +25,8 @@ class TargetSet(Base):
     __tablename__ = 'TargetSet'
     idTargetSet = Column('idTargetSet', Integer, primary_key = True)
     TargetSetFASTAPath = Column('TargetSetFASTAPath', String, unique=True)
-    """
-    Each source will be represented by an ASCII character. the SourceSymbolMap row will contain JSON that maps each character to a tuple of the form: ('FilteredNetMHC', 'FilteredNetMHCName') or ('PeptideList', 'PeptideListName'). PeptideSourceMapPath will contain the path to a JSON file that maps each peptide to a string of sources. 
-
-    I realize that this probably isn't the most efficient way of doing this, but it should work for now.
-    """
     PeptideSourceMapPath = Column('PeptideSourceMapPath', String)
-    SourceSymbolMap = Column('SourceSymbolMap', String)
+    SourceIDMap = Column('SourceIDMap', String)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary=targetset_filteredNetMHC, back_populates='targetsets')
     peptideLists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
 class HLA(Base):
