@@ -1,0 +1,7 @@
+This is a manual test.
+
+long.fasta contains a 200 amino acid random protein. This should be set up as a peptide list of 9-mers, and ran through NetMHC with a rank cutoff of 2.0% and the H-2-Db allele.
+
+short.fasta starts with a 15 amino acid random protein, with a strong binder (GMNWLMYTL) and a non-binder (EENFVTHIP) from long.fasta appended to the end.
+
+The TargetSet should have GMNWLMYTL mapping to both short.fasta and long.fasta, while EENFVTHIP should only map to short.fasta.
