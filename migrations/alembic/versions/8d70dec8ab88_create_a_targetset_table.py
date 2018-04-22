@@ -82,12 +82,12 @@ def upgrade():
     if not os.path.isdir(os.path.join(project_location, 'TargetSet')):
         os.mkdir(os.path.join(project_location, 'TargetSet'))
     metadata = sa.MetaData()
-    op.create_table('TargetSet', sa.Column('idTargetSet', sa.Integer, primary_key=True), sa.Column('TargetSetFASTAPath', sa.String, unique=True), sa.Column('PeptideSourceMapPath', sa.String), sa.Column('SourceIDMap', sa.String))
+    op.create_table('TargetSet', sa.Column('idTargetSet', sa.Integer, primary_key=True), sa.Column('TargetSetFASTAPath', sa.String, unique=True), sa.Column('PeptideSourceMapPath', sa.String), sa.Column('SourceIDMap', sa.String), sa.Column('TargetSetName', sa.String, unique=True))
     op.create_table('tideindex_targetset',  sa.Column('tideindex_id', sa.Integer, sa.ForeignKey('TideIndex.idTideIndex'), primary_key = True), sa.Column('targetset_id', sa.Integer, sa.ForeignKey('TargetSet.idTargetSet'), primary_key=True))
     op.create_table('targetset_filteredNetMHC', sa.Column('targetset_id', sa.Integer, sa.ForeignKey('TargetSet.idTargetSet'), primary_key = True), sa.Column('filteredNetMHC_id', sa.Integer, sa.ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
     op.create_table('targetset_peptidelists', sa.Column('targetset_id', sa.Integer, sa.ForeignKey('TargetSet.idTargetSet'), primary_key = True), sa.Column('peptideList_id', sa.Integer, sa.ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
-    target_set = sa.Table('TargetSet', metadata, sa.Column('idTargetSet', sa.Integer, primary_key = True), sa.Column('TargetSetFASTAPath', sa.String, unique=True), sa.Column('PeptideSourceMapPath', sa.String), sa.Column('SourceIDMap', sa.String))
+    target_set = sa.Table('TargetSet', metadata, sa.Column('idTargetSet', sa.Integer, primary_key = True), sa.Column('TargetSetFASTAPath', sa.String, unique=True), sa.Column('PeptideSourceMapPath', sa.String), sa.Column('SourceIDMap', sa.String), sa.Column('TargetSetName', sa.String, unique=True))
     peptide_list = sa.Table('PeptideList', metadata, sa.Column('idPeptideList', sa.Integer, primary_key=True), sa.Column('peptideListName', sa.String, unique=True))
     filtered = sa.Table('FilteredNetMHC',metadata, sa.Column('idFilteredNetMHC', sa.Integer, primary_key=True), sa.Column('idNetMHC', sa.Integer, sa.ForeignKey('NetMHC.idNetMHC')), sa.Column('RankCutoff', sa.Float), sa.Column('filtered_path', sa.String), sa.Column('FilteredNetMHCName', sa.String, unique=True))
     #we don't need very many columns here
@@ -120,7 +120,7 @@ def upgrade():
         output_directory = os.path.join(project_location, 'TargetSet', name)
         os.mkdir(output_directory)
         source_map = create_target_set(filtered_netmhc_list, peptide_lists, os.path.join(output_directory, 'targets.fasta'), os.path.join(output_directory, 'sources.json'))
-        result = connection.execute(target_set.insert().values(TargetSetFASTAPath = os.path.join('TargetSet',name, 'targets.fasta'), PeptideSourceMapPath = os.path.join('TargetSet', name, 'sources.json'), SourceIDMap = json.dumps(source_map)))
+        result = connection.execute(target_set.insert().values(TargetSetFASTAPath = os.path.join('TargetSet',name, 'targets.fasta'), TargetSetName = tide_index_row.TideIndexName + '_targetset', PeptideSourceMapPath = os.path.join('TargetSet', name, 'sources.json'), SourceIDMap = json.dumps(source_map)))
         target_set_id = result.inserted_primary_key[0]
         #need to run inserts
         for insert in table_inserts:

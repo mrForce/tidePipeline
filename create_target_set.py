@@ -14,6 +14,7 @@ This function returns a dictionary of the form {'filtered_netmhc': {number: 'nam
 
 
 """
+
 def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, output_json_location):
     assert(not os.path.isfile(output_fasta_location))
     assert(not os.path.isdir(output_fasta_location))
@@ -27,25 +28,25 @@ def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, out
     i = 0
     filtered_map = {}
     filtered_map_reverse = {}
-    for name, location in filtered_netmhc.items():
+    for name, location in filtered_netmhc:
         filtered_map[i] = name
-        filtered_map_revers[name] = i
+        filtered_map_reverse[name] = i
         i += 1
     peptide_lists_map = {}
     peptide_lists_map_reverse = {}
-    for name, location in peptide_lists.items():
+    for name, location in peptide_lists:
         peptide_lists_map[i] = name
         peptide_lists_map_reverse[name] = i
         i += 1
     source_id_map = {'filtered_netmhc': filtered_map, 'peptide_lists': peptide_lists_map}
     target_set = defaultdict(list)
-    for name, location in filtered_netmhc.items():
+    for name, location in filtered_netmhc:
         source_id = filtered_map_reverse[name]
         with open(location, 'r') as f:
             for line in f:
                 if len(line.strip()) > 0:
                     target_set[line.strip()].append(source_id)
-    for name, location in peptide_lists.items():
+    for name, location in peptide_lists:
         source_id = peptide_lists_map_reverse[name]
         with open(location, 'r') as f:
             for line in f:
@@ -63,5 +64,3 @@ def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, out
     with open(output_json_location, 'w') as g:
         json.dump(dict(target_set), g)
     return source_id_map
-    
-    

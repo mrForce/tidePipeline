@@ -1,4 +1,5 @@
 import tPipeDB
+from create_target_set import *
 import sys
 import tempfile
 import os
@@ -13,6 +14,12 @@ from datetime import datetime
 CRUX_BINARY = '/usr/bin/crux'
 class Error(Exception):
     pass
+
+class NoSuchFilteredNetMHCError(Error):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return 'There is no FilteredNetMHC entry with the name: ' + self.name
 
 class TideSearchRowDoesNotExistError(Error):
     def __init__(self, tide_search_name):
@@ -286,6 +293,16 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+    def add_targetset(self, netmhc_filter_names, peptide_list_names, target_set_name):
+        for name in netmhc_filter_names:
+            if not self.verify_filtered_netMHC(name):
+                raise NoSuchFilteredNetMHCError(name)
+        for name in peptide_list_names:
+            if not self.verify_peptide_list(name):
+                raise NoSuchPeptideListError(name)
+        if self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSet
+
+        
     def verify_filtered_netMHC(self, name):
         if self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first():
             return True

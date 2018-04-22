@@ -27,6 +27,7 @@ class TargetSet(Base):
     TargetSetFASTAPath = Column('TargetSetFASTAPath', String, unique=True)
     PeptideSourceMapPath = Column('PeptideSourceMapPath', String)
     SourceIDMap = Column('SourceIDMap', String)
+    TargetSetName = Column('TargetSetName', String, unique=True)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary=targetset_filteredNetMHC, back_populates='targetsets')
     peptideLists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
 class HLA(Base):
