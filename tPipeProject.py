@@ -16,6 +16,13 @@ CRUX_BINARY = '/usr/bin/crux'
 class Error(Exception):
     pass
 
+class NoSuchTargetSetError(Error):
+    def __init__(self, target_set_name):
+        self.target_set_name = target_set_name
+    def __repr__(self):
+        return 'There is no TargetSet with the name: ' + self.target_set_name
+
+
 class TargetSetNameMustBeUniqueError(Error):
     def __init__(self, target_set_name):
         self.target_set_name = target_set_name
@@ -343,7 +350,11 @@ class Project:
             return True
         else:
             return False
-
+    def verify_target_set(self, name):
+        if self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = name).first():
+            return True
+        else:
+            return False
     def get_assign_confidence(self, assign_confidence_name):
         return self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
     def list_assign_confidence(self, tide_search_name = None, estimation_method = None):
@@ -441,7 +452,9 @@ class Project:
         rows = self.db_session.query(tPipeDB.TideIndex).all()
         indices = []
         for row in rows:
-            index = {'name': row.TideIndexName, 'id': str(row.idTideIndex), 'path':row.TideIndexPath, 'peptide_lists':[], 'filteredNetMHCs':[]}
+            index = {'name': row.TideIndexName, 'id': str(row.idTideIndex), 'path':row.TideIndexPath, 'peptide_lists':[], 'filteredNetMHCs':[], 'target_sets': []}
+            for r in row.targetsets:
+                index['target_sets'].append({'name': r.TargetSetName})
             for l in row.peptidelists:
                 index['peptide_lists'].append({'name': l.peptideListName, 'length': str(l.length), 'fasta_name': l.fasta.Name})
             for n in row.filteredNetMHCs:
@@ -472,15 +485,15 @@ class Project:
         idNetMHC, pep_score_path = self._run_netmhc(peptide_list_name, hla)
         print('idNetMHC: ' + str(idNetMHC))
         
-        row = self.db_session.query(tPipeDB.NetMHC).filter_by(idNetMHC = idNetMHC).first()
-        assert(row)
-        if row is not None:
+        row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
+        #to be clear, this means that 
+        if row is None:
             file_name = str(uuid.uuid4())
             while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
                 file_name = str(uuid.uuid4())
             print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
-            input_path = os.path.join(self.project_path, row.PeptideScorePath)
+            input_path = os.path.join(self.project_path, pep_score_path)
             with open(input_path, 'r') as f:
                 with open(output_path, 'w') as g:
                     for line in f:
@@ -497,68 +510,61 @@ class Project:
             self.db_session.commit()
             
                 
-    def create_tide_index(self, peptide_list_names, netmhc_filters, tide_index_runner, tide_index_name):
+    def create_tide_index(self, set_type, set_name, tide_index_runner, tide_index_name):
         """
-        peptide_list_names is a list of strings, where each is the name of a PeptideList
-
-        Each netmhc filter is a tuple of the form (HLA_name, peptide list name, rank cutoff)
-        
         tide_index_runner is an instance of the TideIndexRunner class
         """
+        fasta_file_location = ''
         temp_files = []
-        filtered_netmhc_rows = []
-        if netmhc_filters is None:
-            netmhc_filters = []
-        if peptide_list_names is None:
-            peptide_list_names = []
-        for pln, hla, rank_cutoff in netmhc_filters:
-            rank_cutoff = float(rank_cutoff)
-            print('going to run netmhc')
-            idNetMHC, pep_score_path = self._run_netmhc(pln, hla)
-            row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff=rank_cutoff).first()
-            if row is None:
-                row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff=rank_cutoff)
-                self.db_session.add(row)
-                self.db_session.commit()
-            filtered_netmhc_rows.append(row)
-            with open(os.path.join(self.project_path, pep_score_path), 'r') as f:
-                tp = tempfile.NamedTemporaryFile(mode='w')
-                temp_files.append(tp)
-                for line in f:
-                    line_parts = line.split(',')
-                    if len(line_parts) == 2:
-                        rank = float(line_parts[1])
-                        if rank <= rank_cutoff:
-                            tp.write(line_parts[0] + '\n')
-        files = []
-        peptide_list_rows = []
-        for pln in peptide_list_names:
-            row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName=pln).first()
+        link_row = None
+        if set_type == 'TargetSet':
+            target_set_name = set_name
+            row = self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = target_set_name).first()
             if row:
-                files.append(os.path.join(self.project_path, row.PeptideListPath))
-                peptide_list_rows.append(row)
+                link_row = row
+                fasta_file_location = os.path.join(self.project_path, row.TargetSetFASTAPath)
             else:
-                raise NoSuchPeptideListError(pln)
-        for x in temp_files:
-            files.append(x.name)
-            #x.close()
-        temp_fasta = tempfile.NamedTemporaryFile(mode='w')
-        #temp_fasta.close()
-        subprocess.run(['bash_scripts/join_peptides_to_fasta.sh'] + files + [temp_fasta.name])
-        for x in temp_files:
-            x.close()
+                raise NoSuchTargetSetError(set_name)
+        elif set_type == 'FilteredNetMHC':
+            row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = set_name).first()
+            if row:
+                line_row = row
+                temp_fasta = tempfile.NamedTemporaryFile(mode='w')
+                subprocess.run(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.filtered_path), temp_fasta.name])
+                temp_files.append(temp_fasta)
+                fasta_file_location = temp_fasta.name
+            else:
+                raise NoSuchFilteredNetMHCError(set_name)
+        elif set_type == 'PeptideList':
+            row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = set_name).first()
+            if row:
+                link_row = row
+                temp_fasta = tempfile.NamedTemporaryFile(mode='w')
+                subprocess.run(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListpath), temp_fasta.name])
+                temp_files.append(temp_fasta)
+                fasta_file_location = temp_fasta.name
+            else:
+                raise NoSuchPeptideListError(set_name)
+        else:
+            assert(False)
         output_directory_name = str(uuid.uuid4().hex)
         output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         while os.path.isfile(output_directory_path) or os.path.isdir(output_directory_path):
             output_directory_name = str(uuid.uuid4().hex)
             output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         
-        row = tide_index_runner.run_index_create_row(temp_fasta.name, output_directory_path, os.path.join('tide_indices', output_directory_name), 'index')
-        temp_fasta.close()
+        row = tide_index_runner.run_index_create_row(fasta_file_location, output_directory_path, os.path.join('tide_indices', output_directory_name), 'index')
+        for x in temp_files:
+            x.close()
         row.TideIndexName = tide_index_name
-        #now we must must set the relationships for peptidelists and filteredNetMHCs
-        row.peptidelists = peptide_list_rows
-        row.filteredNetMHCs = filtered_netmhc_rows
+        if set_type == 'TargetSet':
+            row.targetsets = [link_row]
+        elif set_type == 'FilteredNetMHC':
+            row.filteredNetMHCs = [link_row]
+        elif set_type == 'PeptideList':
+            row.peptidelists = [link_row]
+        else:
+            assert(False)
         self.db_session.add(row)
         self.db_session.commit()
         
