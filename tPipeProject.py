@@ -209,7 +209,7 @@ class TideSearchRunner:
         print('current working directory: ' + os.getcwd())
         command = [CRUX_BINARY, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
         try:
-            p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideSearchFailedError(' '.join(command))
         search_row = tPipeDB.TideSearch(idTideIndex = index_row.idTideIndex, idMGF=mgf_row.idMGFfile, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), TideSearchName=tide_search_row_name)
@@ -246,7 +246,7 @@ class TideIndexRunner:
         print('command')
         print(' '.join(command))
         try:
-            p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideIndexFailedError(' '.join(command))
         column_arguments = {}
@@ -289,7 +289,7 @@ class AssignConfidenceRunner:
         print('command')
         print(' '.join(command))
         try:
-            p = subprocess.run(command, check=True, stdout=sys.stdout, stderr=sys.stderr)
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise AssignConfidenceFailedError(' '.join(command))
         column_arguments = {}
@@ -588,7 +588,7 @@ class Project:
             if row:
                 line_row = row
                 temp_fasta = tempfile.NamedTemporaryFile(mode='w')
-                subprocess.run(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.filtered_path), temp_fasta.name])
+                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.filtered_path), temp_fasta.name])
                 temp_files.append(temp_fasta)
                 fasta_file_location = temp_fasta.name
             else:
@@ -598,7 +598,7 @@ class Project:
             if row:
                 link_row = row
                 temp_fasta = tempfile.NamedTemporaryFile(mode='w')
-                subprocess.run(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListpath), temp_fasta.name])
+                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListpath), temp_fasta.name])
                 temp_files.append(temp_fasta)
                 fasta_file_location = temp_fasta.name
             else:

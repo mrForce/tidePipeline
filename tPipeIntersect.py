@@ -103,21 +103,21 @@ t_file = tempfile.NamedTemporaryFile()
 temp_files.append(t_file)
 collection_one_combined_file = t_file.name
 if len(collection_one_files) == 1:
-    subprocess.run(['bash_scripts/sort.sh', collection_one_files[0], t_file.name])
+    subprocess.call(['bash_scripts/sort.sh', collection_one_files[0], t_file.name])
 else:
-    subprocess.run(['bash_scripts/combine_and_uniq_files.sh'] + collection_one_files + [collection_one_combined_file])
+    subprocess.call(['bash_scripts/combine_and_uniq_files.sh'] + collection_one_files + [collection_one_combined_file])
 
 t_file = tempfile.NamedTemporaryFile()
 temp_files.append(t_file)
 collection_two_combined_file = t_file.name
 if len(collection_two_files) == 1:
-    subprocess.run(['bash_scripts/sort.sh', collection_two_files[0], t_file.name])
+    subprocess.call(['bash_scripts/sort.sh', collection_two_files[0], t_file.name])
 else:
-    subprocess.run(['bash_scripts/combine_and_uniq_files.sh'] + collection_two_files + [collection_two_combined_file])
+    subprocess.call(['bash_scripts/combine_and_uniq_files.sh'] + collection_two_files + [collection_two_combined_file])
 
 if args.output_location and len(args.output_location) > 0:
-    subprocess.run(['bash_scripts/peptide_intersection.sh', collection_one_combined_file, collection_two_combined_file, args.output_location])
+    subprocess.call(['bash_scripts/peptide_intersection.sh', collection_one_combined_file, collection_two_combined_file, args.output_location])
 else:
-    subprocess.run(['comm', '-12', collection_one_combined_file, collection_two_combined_file])
+    subprocess.call(['comm', '-12', collection_one_combined_file, collection_two_combined_file])
 
 project.end_command_session()

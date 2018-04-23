@@ -31,7 +31,7 @@ class NetMHCRunner(threading.Thread):
             else:
                 netmhc_command_object = self.netmhc_commands.pop()
                 self.list_lock.release()
-                subprocess.run([netmhc_command_object.get_command() + ' > ' + netmhc_command_object.get_output_location()], shell=True)                               
+                subprocess.call([netmhc_command_object.get_command() + ' > ' + netmhc_command_object.get_output_location()], shell=True)                               
                 #with open(netmhc_command_object.get_output_location(), 'w') as f:
                 #    subprocess.run(netmhc_command_object.get_command(), stdout=f)
 
@@ -49,7 +49,7 @@ def parse_netmhc(netmhc_output_path, parse_output_path):
                     g.write(match.group('peptide') + ',' + match.group('rank') + '\n')
 
 def get_num_lines(filepath):
-    wc_process = subprocess.run(['wc', filepath], stdout=subprocess.PIPE)
+    wc_process = subprocess.call(['wc', filepath], stdout=subprocess.PIPE)
     return int(wc_process.stdout.decode().split()[0])
 def call_netmhc(hla, peptide_file_path, output_path):
     num_peptides = get_num_lines(peptide_file_path)
@@ -74,7 +74,7 @@ def call_netmhc(hla, peptide_file_path, output_path):
         os.chdir(folder)
         files_before  = set(os.listdir())
         print('Going to run split on: ' + peptide_file_name + ' inside of: ' + os.getcwd())
-        subprocess.run(['split', '-l', '10000', peptide_file_name])
+        subprocess.call(['split', '-l', '10000', peptide_file_name])
         os.remove(peptide_file_name)        
     start_time = time.time()
     files = list(set(os.listdir()) - files_before)
@@ -110,7 +110,7 @@ def call_netmhc(hla, peptide_file_path, output_path):
     for t in threads:
         t.join()
     os.chdir(cwd)
-    subprocess.run(['bash_scripts/combine_files.sh'] + [os.path.join(folder, x) for x in output_file_list] + [output_path])
+    subprocess.call(['bash_scripts/combine_files.sh'] + [os.path.join(folder, x) for x in output_file_list] + [output_path])
     for x in output_file_list:
         print('Removing: ' + os.path.join(folder, x))
         os.remove(os.path.join(folder, x))
