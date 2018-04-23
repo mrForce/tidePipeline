@@ -149,6 +149,9 @@ class AssignConfidence(Base):
     combine_charge_states = Column(String)
     combined_modified_peptides = Column(String)
     tideSearch = relationship('TideSearch')
+
+
+
     
 class Percolator(Base):
     __tablename__ = 'Percolator'
@@ -163,6 +166,14 @@ class Percolator(Base):
     logPath = Column('logPath', String)
 
 
+#For now, let's not even bother linking this with AssignConfidence
+class FilteredSearchResult(Base):
+    __tablename__ = 'FilteredSearchResult'
+    idFilteredSearchResult = Column('idFilteredSearchResult', Integer, primary_key=True)
+    filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
+    filteredSearchResultPath = Column('filteredSearchResultPath', String)
+    q_value_threshold = Column('q_value_threshold', Float)
+    method = Column('method', String)
 class Command(Base):
     __tablename__ = 'Command'
     idCommand = Column('idCommand', Integer, primary_key=True)

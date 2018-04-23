@@ -312,6 +312,8 @@ class Project:
         self.db_session.add(self.command)
         self.db_session.commit()
 
+        
+
 
     def count_sources(self, assign_confidence_name, q_val_threshold):
         row = self.get_assign_confidence(assign_confidence_name)
