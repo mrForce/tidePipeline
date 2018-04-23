@@ -93,7 +93,7 @@ def upgrade():
     #we don't need very many columns here
     tide_index = sa.Table('TideIndex', metadata, sa.Column('idTideIndex', sa.Integer, primary_key = True), sa.Column('TideIndexName', sa.String, unique=True))
     tideindex_filteredNetMHC = sa.Table('tideindex_filteredNetMHC', metadata, sa.Column('tideindex_id', sa.Integer, sa.ForeignKey('TideIndex.idTideIndex'), primary_key=True), sa.Column('filteredNetMHC_id', sa.Integer, sa.ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
-
+    tideindex_targetset = sa.Table('tideindex_targetset', metadata, sa.Column('tideindex_id', sa.ForeignKey('TideIndex.idTideIndex'), primary_key = True), sa.Column('targetset_id', sa.ForeignKey('TargetSet.idTargetSet'), primary_key=True))
     tideindex_peptidelists = sa.Table('tideindex_peptidelists', metadata, sa.Column('tideindex_id', sa.Integer, sa.ForeignKey('TideIndex.idTideIndex'), primary_key=True), sa.Column('peptidelist_id', sa.Integer, sa.ForeignKey('PeptideList.idPeptideList'), primary_key=True))
     targetset_filteredNetMHC = sa.Table('targetset_filteredNetMHC', metadata, sa.Column('targetset_id', sa.Integer, sa.ForeignKey('TargetSet.idTargetSet'), primary_key = True), sa.Column('filteredNetMHC_id', sa.Integer, sa.ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
     targetset_peptidelists = sa.Table('targetset_peptidelists', metadata, sa.Column('targetset_id', sa.Integer, sa.ForeignKey('TargetSet.idTargetSet'), primary_key = True), sa.Column('peptideList_id', sa.Integer, sa.ForeignKey('PeptideList.idPeptideList'), primary_key=True))
@@ -122,6 +122,7 @@ def upgrade():
         source_map = create_target_set(filtered_netmhc_list, peptide_lists, os.path.join(output_directory, 'targets.fasta'), os.path.join(output_directory, 'sources.json'))
         result = connection.execute(target_set.insert().values(TargetSetFASTAPath = os.path.join('TargetSet',name, 'targets.fasta'), TargetSetName = tide_index_row.TideIndexName + '_targetset', PeptideSourceMapPath = os.path.join('TargetSet', name, 'sources.json'), SourceIDMap = json.dumps(source_map)))
         target_set_id = result.inserted_primary_key[0]
+        connection.execute(tideindex_targetset.insert().values(tideindex_id=tide_index_id, targetset_id=target_set_id))
         #need to run inserts
         for insert in table_inserts:
             connection.execute(insert, {'target_set_id': target_set_id})

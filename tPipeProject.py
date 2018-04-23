@@ -12,6 +12,8 @@ import uuid
 from fileFunctions import *
 from datetime import datetime
 import json
+import TargetSetSourceCount
+import ReportGeneration
 CRUX_BINARY = '/usr/bin/crux'
 class Error(Exception):
     pass
@@ -311,7 +313,27 @@ class Project:
         self.db_session.commit()
 
 
-
+    def count_sources(self, assign_confidence_name, q_val_threshold):
+        row = self.get_assign_confidence(assign_confidence_name)
+        if row:
+            print('tide search')
+            print(row.tideSearch)
+            print('tide index')
+            print(row.tideSearch.tideIndex)
+            print('filtered NetMHCs')
+            print(row.tideSearch.tideIndex.filteredNetMHCs)
+            print('peptide lists')
+            print(row.tideSearch.tideIndex.peptidelists)
+            print('target sets')
+            print(row.tideSearch.tideIndex.targetsets)
+            target_set_row = row.tideSearch.tideIndex.targetsets[0]
+            q_val_column = 'tdc q-value'
+            if row.estimation_method and len(row.estimation_method) > 0:
+                q_val_column = row.estimation_method + ' q-value'
+            handler = ReportGeneration.AssignConfidenceHandler(row, q_val_column, q_val_threshold, self.project_path)
+            peptides = handler.getPeptides()
+            
+            return TargetSetSourceCount.count_sources(self.project_path, target_set_row, peptides)
     def add_targetset(self, netmhc_filter_names, peptide_list_names, target_set_name):
         #need to create lists of the form [(name, location)...]
         netmhc_filter_locations = []
