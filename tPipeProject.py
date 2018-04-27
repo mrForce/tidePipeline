@@ -806,7 +806,9 @@ class Project:
                         version = int(match.group('version'))
                         if version > max_version:
                            max_version = version
-            newpath = os.path.join(subfolder, path_tail + '-' + str(max_version + 1))
+            filename, extension = os.path.splitext(path_tail)
+            
+            newpath = os.path.join(subfolder, filename + '-' + str(max_version + 1) + extension)
         shutil.copy(path, os.path.join(self.project_path, newpath))
         return newpath
     def add_fasta_file(self, path, name, comment):
