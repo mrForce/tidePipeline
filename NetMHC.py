@@ -78,6 +78,12 @@ def call_netmhc(hla, peptide_file_path, output_path):
         os.remove(peptide_file_name)        
     start_time = time.time()
     files = list(set(os.listdir()) - files_before)
+    #we'll create a temporary folder to place the NetMHC output
+    temp_folder_name = str(uuid.uuid4())
+    while not os.path.exists(temp_folder_name):
+        temp_folder_name = str(uuid.uuid4())
+    os.makedirs(temp_folder_name)
+    temp_folder_abs_path = os.path.abspath(temp_folder_name)
     progress = 0.0
     num_files = len(files)
     i = 0
@@ -85,8 +91,9 @@ def call_netmhc(hla, peptide_file_path, output_path):
     netmhc_list = []
     output_file_list = []
     for filename in files:
-        netmhc_list.append(NetMHCCommand('/usr/bin/netmhc -a ' + hla + ' -f ' + filename + ' -p ', filename + '-TEMPOUTPUT'))
-        output_file_list.append(filename + '-TEMPOUTPUT')
+        output_file_path = os.path.join(temp_folder_name, filename + '-TEMPOUTPUT')
+        netmhc_list.append(NetMHCCommand('/usr/bin/netmhc -a ' + hla + ' -f ' + filename + ' -p ', output_file_path))
+        output_file_list.append(output_file_path)
     num_runs = len(netmhc_list)
     num_threads = 2
     threads = []
@@ -111,7 +118,6 @@ def call_netmhc(hla, peptide_file_path, output_path):
         t.join()
     os.chdir(cwd)
     subprocess.call(['bash_scripts/combine_files.sh'] + [os.path.join(folder, x) for x in output_file_list] + [output_path])
-    for x in output_file_list:
-        print('Removing: ' + os.path.join(folder, x))
-        os.remove(os.path.join(folder, x))
+    os.remove(temp_folder_abs_path)
+    
         
