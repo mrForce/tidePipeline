@@ -305,6 +305,8 @@ class AssignConfidenceRunner:
 
 class Project:
     def __init__(self, project_path, command):
+        if os.path.isfile('reminder.txt'):
+            subprocess.call(['cat', 'reminder.txt'])
         self.project_path = project_path
         print('project path: ' + project_path)
         self.db_session = tPipeDB.init_session(os.path.join(project_path, 'database.db'))
