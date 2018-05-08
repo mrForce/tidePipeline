@@ -157,14 +157,10 @@ class Percolator(Base):
     __tablename__ = 'Percolator'
     idPercolator = Column('idPercolator', Integer, primary_key=True)
     idTideSearch = Column('idTideSearch', Integer, ForeignKey('TideSearch.idTideSearch'))
-    targetPeptidesPath = Column('targetPeptidesPath', String)
-    decoyPeptidesPath = Column('decoyPeptidesPath', String)
-    targetPSMSPath = Column('targetPSMSPath', String)
-    decoyPSMSPath = Column('decoyPSMSPath', String)
-    paramsPath = Column('paramsPath', String)
-    pepXMLPath = Column('pepXMLPath', String)
-    logPath = Column('logPath', String)
-
+    PercolatorName = Column('PercolatorName', String, unique=True)
+    PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
+    inputParamFilePath = Column('inputParamFilePath', String)
+    tideSearch = relationship('TideSearch')
 
 #For now, let's not even bother linking this with AssignConfidence
 class FilteredSearchResult(Base):
