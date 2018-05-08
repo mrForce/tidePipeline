@@ -14,7 +14,7 @@ from datetime import datetime
 import json
 import TargetSetSourceCount
 import ReportGeneration
-CRUX_BINARY = '/usr/bin/crux'
+CRUX_BINARY = '/usr/local/bin/crux'
 class Error(Exception):
     pass
 
@@ -374,21 +374,22 @@ class Project:
         #need to create lists of the form [(name, location)...]
         netmhc_filter_locations = []
         peptide_list_locations = []
-
-        for name in netmhc_filter_names:
-            row  = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
-            if row:
-                location = os.path.join(self.project_path, row.filtered_path)
-                netmhc_filter_locations.append((name, location))
-            else:
-                raise NoSuchFilteredNetMHCError(name)
-        for name in peptide_list_names:
-            row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = name).first()
-            if row:
-                location = os.path.join(self.project_path, row.PeptideListPath)
-                peptide_list_locations.append((name, location))
-            else:
-                raise NoSuchPeptideListError(name)
+        if netmhc_filter_names:
+            for name in netmhc_filter_names:
+                row  = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
+                if row:
+                    location = os.path.join(self.project_path, row.filtered_path)
+                    netmhc_filter_locations.append((name, location))
+                else:
+                    raise NoSuchFilteredNetMHCError(name)
+        if peptide_list_names:
+            for name in peptide_list_names:
+                row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = name).first()
+                if row:
+                    location = os.path.join(self.project_path, row.PeptideListPath)
+                    peptide_list_locations.append((name, location))
+                else:
+                    raise NoSuchPeptideListError(name)
         if self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = target_set_name).first():
             raise TargetSetNameMustBeUniqueError(target_set_name)
         
@@ -718,8 +719,8 @@ class Project:
         """
         print('going to validate project integrity')
         print('current time: ' + str(datetime.now().time()))
-        if (not ignore_operation_lock) and os.path.isfile(os.path.join(self.project_path, 'operation_lock')):
-            raise OperationsLockedError()
+        #if (not ignore_operation_lock) and os.path.isfile(os.path.join(self.project_path, 'operation_lock')):
+        #    raise OperationsLockedError()
         print('going to check fasta rows')
         fasta_rows = self.db_session.query(tPipeDB.FASTA).all()
         for row in fasta_rows:
@@ -742,10 +743,13 @@ class Project:
         print('current time: ' + str(datetime.now().time()))
         return True
     def lock_operations(self):
-        with open(os.path.join(self.project_path, 'operation_lock'), 'w') as f:
-            pass
+        pass
+        #with open(os.path.join(self.project_path, 'operation_lock'), 'w') as f:
+        #    pass
     def unlock_operations(self):
-        os.remove(os.path.join(self.project_path, 'operation_lock'))
+        pass
+        #os.remove(os.path.join(self.project_path, 'operation_lock'))
+        
     def mark_invalid(self):
         with open(os.path.join(self.project_path, 'project_invalid'), 'w') as f:
             pass

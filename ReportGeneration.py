@@ -41,7 +41,7 @@ def extract_columns(file_path, column_names):
     columns_temp_file = tempfile.NamedTemporaryFile(mode='w+t', encoding=encoding)
     command = ['crux extract-columns ' + file_path + ' "' + ','.join(column_names) + '" > ' + columns_temp_file.name]
     print('command: ' + ' '.join(command))
-    subprocess.run(command, shell=True)
+    subprocess.call(command, shell=True)
     rows = []
     columns_temp_file.seek(0)
     for line in columns_temp_file:

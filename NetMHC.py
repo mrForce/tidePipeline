@@ -31,6 +31,7 @@ class NetMHCRunner(threading.Thread):
             else:
                 netmhc_command_object = self.netmhc_commands.pop()
                 self.list_lock.release()
+                print('command: ' + netmhc_command_object.get_command())
                 subprocess.call([netmhc_command_object.get_command() + ' > ' + netmhc_command_object.get_output_location()], shell=True)                               
                 #with open(netmhc_command_object.get_output_location(), 'w') as f:
                 #    subprocess.run(netmhc_command_object.get_command(), stdout=f)
@@ -49,8 +50,9 @@ def parse_netmhc(netmhc_output_path, parse_output_path):
                     g.write(match.group('peptide') + ',' + match.group('rank') + '\n')
 
 def get_num_lines(filepath):
-    wc_process = subprocess.call(['wc', filepath], stdout=subprocess.PIPE)
-    return int(wc_process.stdout.decode().split()[0])
+    print('filepath: ' + filepath)
+    wc_process = subprocess.check_output(['wc', filepath])
+    return int(wc_process.decode().split()[0])
 def call_netmhc(hla, peptide_file_path, output_path):
     num_peptides = get_num_lines(peptide_file_path)
     """
@@ -85,7 +87,7 @@ def call_netmhc(hla, peptide_file_path, output_path):
     netmhc_list = []
     output_file_list = []
     for filename in files:
-        netmhc_list.append(NetMHCCommand('/usr/bin/netmhc -a ' + hla + ' -f ' + filename + ' -p ', filename + '-TEMPOUTPUT'))
+        netmhc_list.append(NetMHCCommand('/home/code/IMPORT/netMHC-4.0/netMHC -a ' + hla + ' -f ' + filename + ' -p ', filename + '-TEMPOUTPUT'))
         output_file_list.append(filename + '-TEMPOUTPUT')
     num_runs = len(netmhc_list)
     num_threads = 2
