@@ -104,6 +104,58 @@ class AssignConfidenceHandler:
         return self.num_passing_psms
     def getNumPSMs(self):
         return self.total_psms
+class PercolatorHandler:
+
+    """
+    This needs to get several things:
+    The name of the row
+    The MGF name
+    The Tide Search Name
+    Peptides
+    PSMs
+    """
+    def __init__(self, percolator_row, q_val_column, threshold, project_path, include_origin = False):
+        self.percolator_name = percolator_row.PercolatorName
+        self.mgf_name = percolator_row.tideSearch.mgf.MGFName
+        tide_search_row = percolator_row.tideSearch
+        tide_index_row = tide_search_row.tideIndex
+        
+        self.tide_search_name = percolator_row.tideSearch.TideSearchName
+
+        self.peptides = set()
+        self.psms = set()
+        #we need to extract scan, peptide and q value
+        rows = extract_columns(os.path.join(project_path, PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', q_val_column])
+        self.total_psms = 0
+        self.num_passing_psms = 0
+        for row in rows:
+            self.total_psms += 1
+            print('row')
+            print(row)
+            scan = int(row[0])
+            peptide = row[1]
+            q_val = float(row[2])
+            if q_val <= threshold:
+                self.num_passing_psms += 1
+                self.peptides.add(peptide)
+                self.psms.add((scan, peptide))
+        
+    def getName(self):
+        return self.percolator_name
+    def getMGFName(self):
+        return self.mgf_name
+    def getTideSearchName(self):
+        return self.tide_search_name
+
+    def getPeptides(self):
+        return self.peptides
+    def getPassingPSMs(self):
+        return self.psms
+    def getNumPassingPSMs(self):
+        return self.num_passing_psms
+    def getNumPSMs(self):
+        return self.total_psms
+
 class Report:
     """
     For a report, we're only working with AssignConfidence for now.

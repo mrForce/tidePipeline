@@ -137,6 +137,8 @@ class Project:
             return False
     def get_assign_confidence(self, assign_confidence_name):
         return self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
+    def get_percolator(self, percolator_name):
+        return self.db_session.query(tPipeDB.Percolator).filter_by(PercolatorName = percolator_name).first()
     def list_assign_confidence(self, tide_search_name = None, estimation_method = None):
         filter_args = {}
         if tide_search_name:
