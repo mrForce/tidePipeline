@@ -125,7 +125,7 @@ class PercolatorHandler:
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', q_val_column])
+        rows = extract_columns(os.path.join(project_path, percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', q_val_column])
         self.total_psms = 0
         self.num_passing_psms = 0
         for row in rows:
