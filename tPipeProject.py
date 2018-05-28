@@ -282,8 +282,8 @@ class Project:
         else:
             return True
 
-    def run_netmhc(self, peptide_list_name, hla, rank_cutoff, filtered_name):
-        idNetMHC, pep_score_path = self._run_netmhc(peptide_list_name, hla)
+    def run_netmhc(self, peptide_list_name, hla, rank_cutoff, filtered_name, netmhcpan = False):
+        idNetMHC, pep_score_path = self._run_netmhc(peptide_list_name, hla, netmhcpan)
         print('idNetMHC: ' + str(idNetMHC))
         
         row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
@@ -390,7 +390,7 @@ class Project:
             peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
             self.db_session.commit()
-    def _run_netmhc(self, peptide_list_name, hla_name):
+    def _run_netmhc(self, peptide_list_name, hla_name, netmhcpan = False):
         """
         This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (idNetMHC, PeptideScorePath)
         
@@ -409,7 +409,7 @@ class Project:
             netmhc_output_filename = str(uuid.uuid4().hex)
             while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename, '-parsed')):
                 netmhc_output_filename = str(uuid.uuid4().hex)
-            call_netmhc(hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename))
+            call_netmhc(hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), netmhc_pan)
             parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
             netmhc_row = tPipeDB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
             self.db_session.add(netmhc_row)

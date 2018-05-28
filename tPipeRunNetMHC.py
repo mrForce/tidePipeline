@@ -12,7 +12,7 @@ parser.add_argument('peptideList', help='Name of the peptidelist to run NetMHC o
 parser.add_argument('HLA', help='Name of the HLA allele to run with NetMHC')
 parser.add_argument('rank', help='The rank cutoff', type=float)
 parser.add_argument('FilteredNetMHCName', help='The name referring to the set of peptides filtered by NetMHC')
-
+parser.add_argument('--netMHCPan', action='store_true', help='Use netMHCPan')
 
 args = parser.parse_args()
 assert(float(args.rank) <= 100.0 and float(args.rank) >= 0.0)
@@ -37,7 +37,7 @@ print(args.HLA)
 print(args.rank)
 print(args.FilteredNetMHCName)
 
-project.run_netmhc(args.peptideList, args.HLA, float(args.rank), args.FilteredNetMHCName)
+project.run_netmhc(args.peptideList, args.HLA, float(args.rank), args.FilteredNetMHCName, args.netMHCPan)
 
 project.end_command_session()
 
