@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod, ABCMeta
-from BaseProject import BaseProject
-class AbstractSearchProject(BaseProject, metaclass=ABCMeta):
+from Base import Base
+class AbstractEngine(Base, metaclass=ABCMeta):
     def list_search(self, mgf_name = None, index_name=None):
         pass
     def run_search(self, mgf_name, index_name, search_runner, search_name, options):

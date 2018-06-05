@@ -1,5 +1,5 @@
 import tPipeDB
-import TideSearchProject
+import TideEngine
 import argparse
 import sys
 
@@ -15,7 +15,7 @@ project_folder = args.project_folder
 
 
 
-project = TideSearchProject.TideSearchProject(project_folder, ' '.join(sys.argv))
+project = TideEngine.TideEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session(False)
 tide_searches = project.list_tide_search(mgf_name = args.mgfName, tide_index_name = args.tideIndexName)
 print('id   |   Tide Search Name   |   Tide Index Name   |   MGF name   |   target path')

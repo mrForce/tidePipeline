@@ -1,6 +1,6 @@
 import tPipeDB
 import Runners
-import TideSearchProject
+import TideEngine
 
 import argparse
 import sys
@@ -25,7 +25,7 @@ print('project folder: ' + project_folder)
 
 
 
-project = TideSearchProject.TideSearchProject(project_folder, ' '.join(sys.argv))
+project = TideEngine.TideEngine(project_folder, ' '.join(sys.argv))
 arguments = vars(args)
 good_arguments = {}
 

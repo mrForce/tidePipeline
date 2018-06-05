@@ -1,6 +1,6 @@
-from AbstractSearchProject import AbstractSearchProject
+from AbstractEngine import AbstractEngine
 
-class TideSearchProject(AbstractSearchProject):
+class TideEngine(AbstractEngine):
     def list_search(self, mgf_name = None, tide_index_name = None):
         """
         List the tide searches. You can specify an mgf name and/or tide index

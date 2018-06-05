@@ -1,5 +1,5 @@
 import tPipeDB
-import TideSearchProject
+import TideEngine
 import argparse
 import sys
 import pprint
@@ -15,7 +15,7 @@ project_folder = args.project_folder
 
 
 
-project = TideSearchProject.TideSearchProject(project_folder, ' '.join(sys.argv))
+project = TideEngine.TideEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 indices = project.get_tide_indices()
 printer = pprint.PrettyPrinter(indent=3)
