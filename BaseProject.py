@@ -22,7 +22,7 @@ from Runners import *
     
 
 
-class Project:
+class BaseProject:
     def __init__(self, project_path, command):
         if os.path.isfile('reminder.txt'):
             subprocess.call(['cat', 'reminder.txt'])
