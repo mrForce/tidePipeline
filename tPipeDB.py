@@ -218,7 +218,7 @@ class Percolator(Base):
     inputParamFilePath = Column('inputParamFilePath', String)
     tideSearch = relationship('TideSearch')
 
-#For now, let's not even bother linking this with AssignConfidence
+
 class FilteredSearchResult(Base):
     __tablename__ = 'FilteredSearchResult'
     idFilteredSearchResult = Column('idFilteredSearchResult', Integer, primary_key=True)
