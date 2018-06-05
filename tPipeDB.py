@@ -159,6 +159,39 @@ class TideSearch(Base):
     logPath = Column('logPath', String)
     tideIndex = relationship('TideIndex')
     mgf = relationship('MGFfile')
+
+class MSGFPlusModificationFile(Base):
+    __tablename__ = 'MSGFPlusModificationFile'
+    idMSGFPlusModificationFile = Column('idMSGFPlusModificationFile', Integer, primary_key=True)
+    MSGFPlusModificationFileName = Column('MSGFPlusModificationFileName', String, unique=True)
+    MSGFPlusModificationFilePath = Column('MSGFPlusModificationFilePath', String, unique=True)
+"""
+See "MSGF+ Parameters" section of this: https://omics.pnl.gov/software/ms-gf. 
+
+Note that the tda and ShowQValue options are missing from this table. I did this, because I want these options to always be on.
+"""
+class MSGFPlusSearch(Base):
+    __tablename__ = 'MSGFPlusSearch'
+    idMSGFPlusSearch = Column('idMSGFPlusSearch', Integer, primary_key=True)
+    idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'))
+    idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
+    #Output in mzIdentML format
+    resultFilePath = Column('resultFilePath', String)
+    ParentMassTolerance = Column('ParentMassTolerance', String)
+    IsotopeErrorRange = Column('IsotopeErrorRange', String)
+    #If NumOfThreads is null, then used default value (which is the number of logical cores on the machine)
+    NumOfThreads = Column('NumOfThreads', Integer)
+    FragmentationMethodID = Column('FragmentationMethodID', Integer)
+    InstrumentID = Column('InstrumentID', Integer)
+    EnzymeID = Column('EnzymeID', Integer)
+    ProtocolID = Column('ProtocolID', Integer)
+    ntt = Column('ntt', Integer)
+    idMSGFPlusModificationFile = Column('idMSGFPlusModificationFile', Integer, ForeignKey('MSGFPlusModificationFile.idMSGFPlusModificationFile'))
+    minPepLength = Column('minPepLength', Integer)
+    maxPepLength = Column('maxPepLength', Integer)
+    minPrecursorCharge = Column('minPrecursorCharge', Integer)
+    maxPrecursorCharge = Column('maxPrecursorCharge', Integer)
+    
 class AssignConfidence(Base):
     __tablename__ = 'AssignConfidence'
     idAssignConfidence = Column('idAssignConfidence', Integer, primary_key=True)
