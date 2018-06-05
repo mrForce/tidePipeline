@@ -1,5 +1,6 @@
 import tPipeDB
-import tPipeProject
+import Runners
+import TideSearchProject
 
 import argparse
 import sys
@@ -14,7 +15,7 @@ parser.add_argument('index_name', help='Index name')
 parser.add_argument('search_name', help='search name')
 
 
-for k, v in tPipeProject.TideSearchRunner.get_tide_search_options().items():
+for k, v in Runners.TideSearchRunner.get_tide_search_options().items():
     parser.add_argument(k, **v)
 
 
@@ -24,7 +25,7 @@ print('project folder: ' + project_folder)
 
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = TideSearchProject.TideSearchProject(project_folder, ' '.join(sys.argv))
 arguments = vars(args)
 good_arguments = {}
 
@@ -38,7 +39,7 @@ for k, v in arguments.items():
 print('going to begin command session')        
 project.begin_command_session()
 print('starting command session')
-tide_search_runner = tPipeProject.TideSearchRunner(good_arguments)
+tide_search_runner = Runners.TideSearchRunner(good_arguments)
 print('got tide search runner')
 project.run_tide_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name, good_arguments)
 project.end_command_session()
