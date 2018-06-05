@@ -8,13 +8,20 @@ Base = declarative_base()
 
 tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
+msgfplus_index_filteredNetMHC = Table('msgfplus_index_filteredNetMHC', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+
 tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+
+
+msgfplus_index_peptidelists = Table('msgfplus_index_peptidelists', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
 """
 Need to add the following 3 tables in database revision 8d70dec8ab88
 """
 tideindex_targetset = Table('tideindex_targetset', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
+
+msgfplus_index_targetset = Table('msgfplus_index_targetset', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
 targetset_filteredNetMHC = Table('targetset_filteredNetMHC', Base.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
@@ -31,6 +38,7 @@ class TargetSet(Base):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary=targetset_filteredNetMHC, back_populates='targetsets')
     peptidelists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
     tideindices = relationship('TideIndex', secondary=tideindex_targetset, back_populates='targetsets')
+    msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_targetset, back_populates='targetsets')
 class HLA(Base):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
@@ -69,6 +77,7 @@ class PeptideList(Base):
     length = Column('length', Integer)
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
     targetsets = relationship('TargetSet', secondary=targetset_peptidelists, back_populates='peptidelists')
+    msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_peptidelists, back_populates='peptidelists')
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath
 
@@ -92,6 +101,7 @@ class FilteredNetMHC(Base):
     RankCutoff = Column('RankCutoff', Float)
     tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
     targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
+    msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_filteredNetMHC, back_populates='filteredNetMHCs')
 class TideIndex(Base):
     __tablename__ = 'TideIndex'
     idTideIndex = Column('idTideIndex', Integer, primary_key=True)
@@ -123,6 +133,19 @@ class TideIndex(Base):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = tideindex_filteredNetMHC, back_populates = 'tideindices')
     peptidelists = relationship('PeptideList', secondary= tideindex_peptidelists, back_populates = 'tideindices')
     targetsets = relationship('TargetSet', secondary=tideindex_targetset, back_populates='tideindices')
+
+"""
+See the BuildSA section of this webpage for more information: https://omics.pnl.gov/software/ms-gf
+
+Unlike tide, we specify the enzyme when doing the MSGF+ search, not when building the protein database.
+"""
+class MSGFPlusIndex(Base):
+    __tablename__ = 'MSGFPlusIndex'
+    idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, primary_key=True)
+    tda = Column('tda', Integer)
+    filteredNetMHCs = relationship('FilteredNetMHC', secondary = msgfplus_index_filteredNetMHC, back_populates = 'msgfplusindices')
+    peptidelists = relationship('PeptideList', secondary= msgfplus_index_peptidelists, back_populates = 'msgfplusindices')
+    targetsets = relationship('TargetSet', secondary=msgfplus_index_targetset, back_populates='msgfplusindices')
     
 class TideSearch(Base):
     __tablename__ = 'TideSearch'
