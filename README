@@ -1,3 +1,5 @@
+Just something I should note: I'm expanding this to MS-GF+, Andromeda (part of MaxQuant), and X!Tandem.
+
 Things to do:
 
 All of the commands that add to a table should print the ID of what they added to stdout.
