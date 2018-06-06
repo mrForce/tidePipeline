@@ -52,8 +52,25 @@ def extract_columns(file_path, column_names):
     
         
 
+class AbstractQValueHandler(ABC):
+    @abstractmethod
+    def __init__(self, name, q_val_threshold, project_path):
+        pass
+    @abstractmethod
+    def get_peptides(self):
+        """
+        Returns a list of peptides from PSMs that met the Q-value threshold
+        """
+        pass
+    @abstractmethod
+    def get_psms(self):
+        """
+        Returns a list of tuples of the form: [(scan, peptide)]. 
+        """
+        pass
+
     
-class AssignConfidenceHandler:
+class AssignConfidenceHandler(AbstractQValueHandler):
 
     """
     This needs to get several things:
@@ -63,34 +80,21 @@ class AssignConfidenceHandler:
     Peptides
     PSMs
     """
-    def __init__(self, assign_confidence_row, q_val_column, threshold, project_path, include_origin = False):
-        self.assign_confidence_name = assign_confidence_row.AssignConfidenceName
-        self.mgf_name = assign_confidence_row.tideSearch.mgf.MGFName
-        tide_search_row = assign_confidence_row.tideSearch
-        tide_index_row = tide_search_row.tideIndex
-        
-        self.tide_search_name = assign_confidence_row.tideSearch.TideSearchName
-
+    def __init__(self, name, threshold, project_path, db_session):
+        row = db_session.
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', q_val_column])
-        self.total_psms = 0
-        self.num_passing_psms = 0
+        rows = extract_columns(os.path.join(project_path, assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', 'tdc q-value'])
         for row in rows:
-            self.total_psms += 1
-            print('row')
-            print(row)
             scan = int(row[0])
             peptide = row[1]
             q_val = float(row[2])
             if q_val <= threshold:
-                self.num_passing_psms += 1
                 self.peptides.add(peptide)
-                self.psms.add((scan, peptide))
+
         
-    def getName(self):
-        return self.assign_confidence_name
+
     def getMGFName(self):
         return self.mgf_name
     def getTideSearchName(self):
@@ -114,7 +118,7 @@ class PercolatorHandler:
     Peptides
     PSMs
     """
-    def __init__(self, percolator_row, q_val_column, threshold, project_path, include_origin = False):
+    def __init__(self, percolator_row, q_val_column, threshold, project_path):
         self.percolator_name = percolator_row.PercolatorName
         self.mgf_name = percolator_row.tideSearch.mgf.MGFName
         tide_search_row = percolator_row.tideSearch
