@@ -293,7 +293,8 @@ def init_session(db_path):
     return session
 
 
-
+"""
 engine = create_engine('sqlite://', echo=True)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
+"""
