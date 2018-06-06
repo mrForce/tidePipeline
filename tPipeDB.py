@@ -6,22 +6,22 @@ Base = declarative_base()
 
 
 
-tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
-msgfplus_index_filteredNetMHC = Table('msgfplus_index_filteredNetMHC', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+msgfplus_index_filteredNetMHC = Table('msgfplus_index_filteredNetMHC', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
-tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
-msgfplus_index_peptidelists = Table('msgfplus_index_peptidelists', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+msgfplus_index_peptidelists = Table('msgfplus_index_peptidelists', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
 """
 Need to add the following 3 tables in database revision 8d70dec8ab88
 """
-tideindex_targetset = Table('tideindex_targetset', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idTideIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
+tideindex_targetset = Table('tideindex_targetset', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
-msgfplus_index_targetset = Table('msgfplus_index_targetset', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
+msgfplus_index_targetset = Table('msgfplus_index_targetset', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
 targetset_filteredNetMHC = Table('targetset_filteredNetMHC', Base.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
@@ -293,18 +293,7 @@ def init_session(db_path):
     return session
 
 
-"""
+
 engine = create_engine('sqlite://', echo=True)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
-
-session = Session()
- human = Species(SpeciesName = 'human')
-common_hla = HLA(HLAName = 'HLA A*0101', species=[human])
-abc_hypersens = HLA(HLAName = 'HLA B*5701', species=[human])
-session.add(human)
-session.add(common_hla)
-session.add(abc_hypersens)
-session.commit()
-print(common_hla)
-"""
