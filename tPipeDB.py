@@ -102,9 +102,18 @@ class FilteredNetMHC(Base):
     tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
     targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_filteredNetMHC, back_populates='filteredNetMHCs')
-class TideIndex(Base):
+
+class IndexBase(Base):
+    __tablename__ = 'IndexBase'
+    idIndex = Column('idIndex', Integer, primary_key=True)
+    indexType = Column(String(50))
+    __mapper_args__ = {
+        'polymorphic_identity': 'indexbase',
+        'polymorphic_on': indexType
+    }
+class TideIndex(IndexBase):
     __tablename__ = 'TideIndex'
-    idTideIndex = Column('idTideIndex', Integer, primary_key=True)
+    idIndex = Column(Integer, ForeignKey('IndexBase.idIndex'), primary_key=True)
     #the name of the index is given by the user
     TideIndexName = Column('TideIndexName', String, unique=True)
     TideIndexPath = Column('TideIndexPath', String)
@@ -133,24 +142,40 @@ class TideIndex(Base):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = tideindex_filteredNetMHC, back_populates = 'tideindices')
     peptidelists = relationship('PeptideList', secondary= tideindex_peptidelists, back_populates = 'tideindices')
     targetsets = relationship('TargetSet', secondary=tideindex_targetset, back_populates='tideindices')
-
+    __mapper_args__ = {
+        'polymorphic_identity': 'tideindex',
+    }
 """
 See the BuildSA section of this webpage for more information: https://omics.pnl.gov/software/ms-gf
 
 Unlike tide, we specify the enzyme when doing the MSGF+ search, not when building the protein database.
 """
-class MSGFPlusIndex(Base):
+class MSGFPlusIndex(IndexBase):
     __tablename__ = 'MSGFPlusIndex'
-    idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, primary_key=True)
+    idIndex = Column(Integer, ForeignKey('IndexBase.idIndex'), primary_key=True)
     tda = Column('tda', Integer)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = msgfplus_index_filteredNetMHC, back_populates = 'msgfplusindices')
     peptidelists = relationship('PeptideList', secondary= msgfplus_index_peptidelists, back_populates = 'msgfplusindices')
     targetsets = relationship('TargetSet', secondary=msgfplus_index_targetset, back_populates='msgfplusindices')
+    __mapper_args__ = {
+        'polymorphic_identity': 'msgfplusindex',
+    }
+
+
+class SearchBase(Base):
+    __tablename__ = 'SearchBase'
+    idSearch = Column('idSearch', Integer, primary_key=True)
+    searchType = Column(String(50))
+    __mapper_args__ = {
+        'polymorphic_identity': 'searchbase',
+        'polymorphic_on': searchType
+    }
+
     
-class TideSearch(Base):
+class TideSearch(SearchBase):
     __tablename__ = 'TideSearch'
-    idTideSearch = Column('idTideSearch', Integer, primary_key=True)
-    idTideIndex = Column('idTideIndex', Integer, ForeignKey('TideIndex.idTideIndex'))
+    idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
+    idTideIndex = Column('idTideIndex', Integer, ForeignKey('TideIndex.idIndex'))
     TideSearchName = Column('TideSearchName', String, unique=True)
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     targetPath = Column('targetPath', String)
@@ -159,7 +184,9 @@ class TideSearch(Base):
     logPath = Column('logPath', String)
     tideIndex = relationship('TideIndex')
     mgf = relationship('MGFfile')
-
+    __mapper_args__ = {
+        'polymorphic_identity': 'tidesearch',
+    }
 class MSGFPlusModificationFile(Base):
     __tablename__ = 'MSGFPlusModificationFile'
     idMSGFPlusModificationFile = Column('idMSGFPlusModificationFile', Integer, primary_key=True)
@@ -170,10 +197,10 @@ See "MSGF+ Parameters" section of this: https://omics.pnl.gov/software/ms-gf.
 
 Note that the tda and ShowQValue options are missing from this table. I did this, because I want these options to always be on.
 """
-class MSGFPlusSearch(Base):
+class MSGFPlusSearch(SearchBase):
     __tablename__ = 'MSGFPlusSearch'
-    idMSGFPlusSearch = Column('idMSGFPlusSearch', Integer, primary_key=True)
-    idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, ForeignKey('MSGFPlusIndex.idMSGFPlusIndex'))
+    idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
+    idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, ForeignKey('MSGFPlusIndex.idIndex'))
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     #Output in mzIdentML format
     resultFilePath = Column('resultFilePath', String)
@@ -191,32 +218,56 @@ class MSGFPlusSearch(Base):
     maxPepLength = Column('maxPepLength', Integer)
     minPrecursorCharge = Column('minPrecursorCharge', Integer)
     maxPrecursorCharge = Column('maxPrecursorCharge', Integer)
+    MSGFPlusQValue = relationship('MSGFPlusQValue', uselist=False, back_populates='MSGFPlusSearch')
+    __mapper_args__ = {
+        'polymorphic_identity': 'msgfplussearch',
+    }
+
+class QValueBase(Base):
+    __tablename__ = 'QValueBase'
+    idQValue = Column('idQValue', Integer, primary_key=True)
+    QValueType = Column(String(50))
+    __mapper_args__ = {
+        'polymorphic_identity': 'qvaluebase',
+        'polymorphic_on': QValueType
+    }
+
+
+class MSGFPlusQValue(QValueBase):
+    __tablename__ = 'MSGFPlusQValue'
+    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
+    MSGFPlusSearch = relationship('MSGFPlusSearch', back_populates='MSGFPlusQValue')
     
-class AssignConfidence(Base):
+class AssignConfidence(QValueBase):
     __tablename__ = 'AssignConfidence'
-    idAssignConfidence = Column('idAssignConfidence', Integer, primary_key=True)
+    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
     AssignConfidenceOutputPath = Column('AssignConfidenceOutputPath', String)
     AssignConfidenceName = Column('AssignConfidenceName', String, unique=True)
-    idTideSearch = Column('idTideSearch', Integer, ForeignKey('TideSearch.idTideSearch'))
+    idTideSearch = Column('idTideSearch', Integer, ForeignKey('TideSearch.idSearch'))
     estimation_method = Column(String)
     score = Column(String)
     sidak = Column(String)
     top_match_in = Column(Integer)
     combine_charge_states = Column(String)
     combined_modified_peptides = Column(String)
-    tideSearch = relationship('TideSearch')
-
+    search = relationship('SearchBase')
+    __mapper_args__ = {
+        'polymorphic_identity': 'assignconfidence',
+    }
 
 
     
-class Percolator(Base):
+class Percolator(QValueBase):
     __tablename__ = 'Percolator'
-    idPercolator = Column('idPercolator', Integer, primary_key=True)
-    idTideSearch = Column('idTideSearch', Integer, ForeignKey('TideSearch.idTideSearch'))
+    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
+    idSearch = Column('idSearch', Integer, ForeignKey('TideSearch.idSearch'))
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
-    tideSearch = relationship('TideSearch')
+    search = relationship('SearchBase')
+    __mapper_args__ = {
+        'polymorphic_identity': 'percolator',
+    }
 
 
 class FilteredSearchResult(Base):
@@ -225,7 +276,7 @@ class FilteredSearchResult(Base):
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
     filteredSearchResultPath = Column('filteredSearchResultPath', String)
     q_value_threshold = Column('q_value_threshold', Float)
-    method = Column('method', String)
+    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'))
 class Command(Base):
     __tablename__ = 'Command'
     idCommand = Column('idCommand', Integer, primary_key=True)
