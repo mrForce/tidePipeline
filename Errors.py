@@ -27,6 +27,11 @@ class TideSearchRowDoesNotExistError(Error):
     def __repr__(self):
         return 'There is no TideSearch row with the name: ' + str(self.tide_search_name)
 
+class FilteredSearchResultNameMustBeUniqueError(Error):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return 'There is already a FilteredSearchResult with the name: ' + self.name
 class AssignConfidenceNameMustBeUniqueError(Error):
     def __init__(self, assign_confidence_name):
         self.assign_confidence_name = assign_confidence_name

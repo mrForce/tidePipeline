@@ -276,7 +276,7 @@ class FilteredSearchResult(Base):
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
     filteredSearchResultPath = Column('filteredSearchResultPath', String)
     q_value_threshold = Column('q_value_threshold', Float)
-    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'))
+    QValue = relationship('QValueBase', uselist=False)
 class Command(Base):
     __tablename__ = 'Command'
     idCommand = Column('idCommand', Integer, primary_key=True)

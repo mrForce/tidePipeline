@@ -8,7 +8,19 @@ import uuid
 from Errors import *
 
 class PostProcessing(Base):
-
+    def create_filtered_search_result(self, name, peptides, qvalue_row, threshold):
+        row = self.get_filtered_search_result_row(name)
+        if row:
+            raise FilteredSearchResultNameMustBeUniqueError(name)        
+        filtered_filename = str(uuid.uuid4())
+        while os.path.isfile(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename)) or os.path.isdir(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename)):
+            filtered_filename = str(uuid.uuid4())
+        with open(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename), 'w') as f:
+            for peptide in peptides:
+                f.write(peptide + '\n')
+        filtered_row = tPipeDB.FilteredSearchResult(filteredSearchResultName = name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = threshold, QValue = qvalue_row)
+        self.db_session.add(filtered_row)
+        self.db_session.commit()
 
     def filter_q_value_assign_confidence(self, assign_confidence_name, q_value_threshold, filtered_search_result_name):
         row = self.get_assign_confidence(assign_confidence_name)
