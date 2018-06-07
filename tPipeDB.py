@@ -2,33 +2,33 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
-Base = declarative_base()
+BaseTable = declarative_base()
 
 
 
-tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', BaseTable.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
-msgfplus_index_filteredNetMHC = Table('msgfplus_index_filteredNetMHC', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+msgfplus_index_filteredNetMHC = Table('msgfplus_index_filteredNetMHC', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
-tideindex_peptidelists = Table('tideindex_peptidelists', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+tideindex_peptidelists = Table('tideindex_peptidelists', BaseTable.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
-msgfplus_index_peptidelists = Table('msgfplus_index_peptidelists', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+msgfplus_index_peptidelists = Table('msgfplus_index_peptidelists', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
 """
 Need to add the following 3 tables in database revision 8d70dec8ab88
 """
-tideindex_targetset = Table('tideindex_targetset', Base.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
+tideindex_targetset = Table('tideindex_targetset', BaseTable.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
-msgfplus_index_targetset = Table('msgfplus_index_targetset', Base.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
+msgfplus_index_targetset = Table('msgfplus_index_targetset', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
-targetset_filteredNetMHC = Table('targetset_filteredNetMHC', Base.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
-targetset_peptidelists = Table('targetset_peptidelists', Base.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
-class TargetSet(Base):
+class TargetSet(BaseTable):
     __tablename__ = 'TargetSet'
     idTargetSet = Column('idTargetSet', Integer, primary_key = True)
     TargetSetFASTAPath = Column('TargetSetFASTAPath', String, unique=True)
@@ -39,7 +39,7 @@ class TargetSet(Base):
     peptidelists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
     tideindices = relationship('TideIndex', secondary=tideindex_targetset, back_populates='targetsets')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_targetset, back_populates='targetsets')
-class HLA(Base):
+class HLA(BaseTable):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
     HLAName = Column('HLAName', String, unique=True)
@@ -48,7 +48,7 @@ class HLA(Base):
         return 'MHC ' + self.HLAName
 
 
-class MGFfile(Base):
+class MGFfile(BaseTable):
     __tablename__ = 'MGFfile'
     idMGFfile = Column('idMGFfile', Integer, primary_key=True)
     MGFName = Column('MGFName', String, unique=True)
@@ -56,7 +56,7 @@ class MGFfile(Base):
     def __repr__(self):
         return 'MGF File found at: ' + self.MGFPath
 
-class FASTA(Base):
+class FASTA(BaseTable):
     __tablename__ = 'FASTA'
     idFASTA = Column('idFASTA', Integer, primary_key=True)
     Name = Column('Name', String, unique=True)
@@ -66,7 +66,7 @@ class FASTA(Base):
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
 
-class PeptideList(Base):
+class PeptideList(BaseTable):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
     peptideListName = Column('peptideListName', String, unique=True)
@@ -82,7 +82,7 @@ class PeptideList(Base):
         return 'Peptide List can be found at: ' + self.PeptideListPath
 
 
-class NetMHC(Base):
+class NetMHC(BaseTable):
     __tablename__ = 'NetMHC'
     idNetMHC = Column('idNetMHC', Integer, primary_key = True)
     peptidelistID = Column('peptideListID', Integer, ForeignKey('PeptideList.idPeptideList'))
@@ -92,7 +92,7 @@ class NetMHC(Base):
     #a TXT file, each line is a peptide, then a comma, then the rank
     PeptideScorePath = Column('HighScoringPeptidesPath', String)
     
-class FilteredNetMHC(Base):
+class FilteredNetMHC(BaseTable):
     __tablename__ = 'FilteredNetMHC'
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
     idNetMHC = Column('idNetMHC', Integer, ForeignKey('NetMHC.idNetMHC'))
@@ -103,7 +103,7 @@ class FilteredNetMHC(Base):
     targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_filteredNetMHC, back_populates='filteredNetMHCs')
 
-class IndexBase(Base):
+class IndexBase(BaseTable):
     __tablename__ = 'IndexBase'
     idIndex = Column('idIndex', Integer, primary_key=True)
     indexType = Column(String(50))
@@ -162,7 +162,7 @@ class MSGFPlusIndex(IndexBase):
     }
 
 
-class SearchBase(Base):
+class SearchBase(BaseTable):
     __tablename__ = 'SearchBase'
     idSearch = Column('idSearch', Integer, primary_key=True)
     searchType = Column(String(50))
@@ -187,7 +187,7 @@ class TideSearch(SearchBase):
     __mapper_args__ = {
         'polymorphic_identity': 'tidesearch',
     }
-class MSGFPlusModificationFile(Base):
+class MSGFPlusModificationFile(BaseTable):
     __tablename__ = 'MSGFPlusModificationFile'
     idMSGFPlusModificationFile = Column('idMSGFPlusModificationFile', Integer, primary_key=True)
     MSGFPlusModificationFileName = Column('MSGFPlusModificationFileName', String, unique=True)
@@ -223,7 +223,7 @@ class MSGFPlusSearch(SearchBase):
         'polymorphic_identity': 'msgfplussearch',
     }
 
-class QValueBase(Base):
+class QValueBase(BaseTable):
     __tablename__ = 'QValueBase'
     idQValue = Column('idQValue', Integer, primary_key=True)
     QValueType = Column(String(50))
@@ -270,14 +270,14 @@ class Percolator(QValueBase):
     }
 
 
-class FilteredSearchResult(Base):
+class FilteredSearchResult(BaseTable):
     __tablename__ = 'FilteredSearchResult'
     idFilteredSearchResult = Column('idFilteredSearchResult', Integer, primary_key=True)
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
     filteredSearchResultPath = Column('filteredSearchResultPath', String)
     q_value_threshold = Column('q_value_threshold', Float)
     QValue = relationship('QValueBase', uselist=False)
-class Command(Base):
+class Command(BaseTable):
     __tablename__ = 'Command'
     idCommand = Column('idCommand', Integer, primary_key=True)
     executionDateTime = Column('executionDateTime', DateTime, default=datetime.datetime.utcnow)
