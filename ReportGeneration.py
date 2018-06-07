@@ -54,7 +54,7 @@ def extract_columns(file_path, column_names):
 
 class AbstractQValueHandler(ABC):
     @abstractmethod
-    def __init__(self, name, q_val_threshold, project_path):
+    def __init__(self, name, q_val_threshold, project_path, db_session):
         pass
     @abstractmethod
     def get_peptides(self):
@@ -67,6 +67,9 @@ class AbstractQValueHandler(ABC):
         """
         Returns a list of tuples of the form: [(scan, peptide)]. 
         """
+        pass
+    @abstractmethod
+    def get_row(self):
         pass
 
     
@@ -81,11 +84,11 @@ class AssignConfidenceHandler(AbstractQValueHandler):
     PSMs
     """
     def __init__(self, name, threshold, project_path, db_session):
-        assign_confidence_rows = db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = name).first()
+        self.assign_confidence_row = db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = name).first()
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', 'tdc q-value'])
+        rows = extract_columns(os.path.join(project_path, self.assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', 'tdc q-value'])
         for row in rows:
             scan = int(row[0])
             peptide = row[1]
@@ -99,7 +102,8 @@ class AssignConfidenceHandler(AbstractQValueHandler):
         return self.peptides
     def get_psms(self):
         return self.psms
-
+    def get_row(self):
+        return self.assign_confidence_row
 class PercolatorHandler(AbstractQValueHandler):
 
     """
@@ -111,11 +115,11 @@ class PercolatorHandler(AbstractQValueHandler):
     PSMs
     """
     def __init__(self, name, threshold, project_path, db_session):
-        percolator_row = tPipeDB.query(tPipeDB.Percolator).filter_by(PercolatorName = name).first()
+        self.percolator_row = tPipeDB.query(tPipeDB.Percolator).filter_by(PercolatorName = name).first()
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', 'percolator q-value'])
+        rows = extract_columns(os.path.join(project_path, self.percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', 'percolator q-value'])
         for row in rows:
             scan = int(row[0])
             peptide = row[1]
@@ -128,7 +132,8 @@ class PercolatorHandler(AbstractQValueHandler):
         return self.peptides
     def get_psms(self):
         return self.psms
-
+    def get_row(self):
+        return self.percolator_row
 class Report:
     """
     For a report, we're only working with AssignConfidence for now.

@@ -23,21 +23,14 @@ class PostProcessing(Base):
         self.db_session.commit()
 
     def filter_q_value_assign_confidence(self, assign_confidence_name, q_value_threshold, filtered_search_result_name):
-        row = self.get_assign_confidence(assign_confidence_name)
-        q_val_column=  'tdc q-value'
-        if row.estimation_method and len(row.estimation_method) > 0:
-            q_val_column = row.estimation_method + ' q-value'
-        handler = ReportGeneration.AssignConfidenceHandler(row, q_val_column, q_value_threshold, self.project_path)
-        peptides = handler.getPeptides()
-        filtered_filename = str(uuid.uuid4())
-        while os.path.isfile(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename)) or os.path.isdir(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename)):
-            filtered_filename = str(uuid.uuid4())
-        with open(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename), 'w') as f:
-            for peptide in peptides:
-                f.write(peptide + '\n')
-        filtered_row = tPipeDB.FilteredSearchResult(filteredSearchResultName = filtered_search_result_name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = str(q_value_threshold), method='AssignConfidence')
-        self.db_session.add(filtered_row)
-        self.db_session.commit()
+        assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(assign_confidence_name, q_value_threshold, self.project_path, self.db_session)
+        peptides = assign_confidence_handler.get_peptides()
+        self.create_filtered_search_result(filtered_search_result_name, peptides, assign_confidence_handler.get_row() , q_value_threshold)
+        
+    def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name):
+        percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, q_value_threshold, self.project_path, self.db_session)
+        peptides = percolator_handler.get_peptides()
+        self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold)
 
     def get_filtered_search_result_row(self, name):
         return self.db_session.query(tPipeDB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
