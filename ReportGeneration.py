@@ -81,7 +81,7 @@ class AssignConfidenceHandler(AbstractQValueHandler):
     PSMs
     """
     def __init__(self, name, threshold, project_path, db_session):
-        row = db_session.
+        assign_confidence_rows = db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = name).first()
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
@@ -92,23 +92,15 @@ class AssignConfidenceHandler(AbstractQValueHandler):
             q_val = float(row[2])
             if q_val <= threshold:
                 self.peptides.add(peptide)
-
+                self.psms.add((scan, peptide))
         
 
-    def getMGFName(self):
-        return self.mgf_name
-    def getTideSearchName(self):
-        return self.tide_search_name
-
-    def getPeptides(self):
+    def get_peptides(self):
         return self.peptides
-    def getPassingPSMs(self):
+    def get_psms(self):
         return self.psms
-    def getNumPassingPSMs(self):
-        return self.num_passing_psms
-    def getNumPSMs(self):
-        return self.total_psms
-class PercolatorHandler:
+
+class PercolatorHandler(AbstractQValueHandler):
 
     """
     This needs to get several things:
@@ -118,47 +110,24 @@ class PercolatorHandler:
     Peptides
     PSMs
     """
-    def __init__(self, percolator_row, q_val_column, threshold, project_path):
-        self.percolator_name = percolator_row.PercolatorName
-        self.mgf_name = percolator_row.tideSearch.mgf.MGFName
-        tide_search_row = percolator_row.tideSearch
-        tide_index_row = tide_search_row.tideIndex
-        
-        self.tide_search_name = percolator_row.tideSearch.TideSearchName
-
+    def __init__(self, name, threshold, project_path, db_session):
+        percolator_row = tPipeDB.query(tPipeDB.Percolator).filter_by(PercolatorName = name).first()
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', q_val_column])
-        self.total_psms = 0
-        self.num_passing_psms = 0
+        rows = extract_columns(os.path.join(project_path, percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', 'percolator q-value'])
         for row in rows:
-            self.total_psms += 1
-            print('row')
-            print(row)
             scan = int(row[0])
             peptide = row[1]
             q_val = float(row[2])
             if q_val <= threshold:
-                self.num_passing_psms += 1
                 self.peptides.add(peptide)
                 self.psms.add((scan, peptide))
         
-    def getName(self):
-        return self.percolator_name
-    def getMGFName(self):
-        return self.mgf_name
-    def getTideSearchName(self):
-        return self.tide_search_name
-
-    def getPeptides(self):
+    def get_peptides(self):
         return self.peptides
-    def getPassingPSMs(self):
+    def get_psms(self):
         return self.psms
-    def getNumPassingPSMs(self):
-        return self.num_passing_psms
-    def getNumPSMs(self):
-        return self.total_psms
 
 class Report:
     """
