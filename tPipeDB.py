@@ -85,24 +85,25 @@ class PeptideList(BaseTable):
 class NetMHC(BaseTable):
     __tablename__ = 'NetMHC'
     idNetMHC = Column('idNetMHC', Integer, primary_key = True)
-    peptidelistID = Column('peptideListID', Integer, ForeignKey('PeptideList.idPeptideList'))
+    peptidelistID = Column(Integer, ForeignKey('PeptideList.idPeptideList'))
     idHLA = Column('idHLA', Integer, ForeignKey('HLA.idHLA'))
+    hla = relationship('HLA')
     #Raw output of NetMHC
     NetMHCOutputPath = Column('NetMHCOutputPath', String)
     #a TXT file, each line is a peptide, then a comma, then the rank
-    PeptideScorePath = Column('HighScoringPeptidesPath', String)
-    
+    PeptideScorePath = Column('PeptideScorePath', String)
+    peptidelist = relationship('PeptideList')
 class FilteredNetMHC(BaseTable):
     __tablename__ = 'FilteredNetMHC'
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
-    idNetMHC = Column('idNetMHC', Integer, ForeignKey('NetMHC.idNetMHC'))
+    idNetMHC = Column(Integer, ForeignKey('NetMHC.idNetMHC'))
     filtered_path = Column('filtered_path', String)
     FilteredNetMHCName = Column('FilteredNetMHCName', String)
     RankCutoff = Column('RankCutoff', Float)
     tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
     targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_filteredNetMHC, back_populates='filteredNetMHCs')
-
+    netmhc = relationship('NetMHC')
 class IndexBase(BaseTable):
     __tablename__ = 'IndexBase'
     idIndex = Column('idIndex', Integer, primary_key=True)

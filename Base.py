@@ -34,8 +34,19 @@ class Base:
         self.db_session.commit()
 
 
-        
-        
+
+    def get_list_filtered_netmhc(self, peptide_list_name = None, hla=None):
+        joined = self.db_session.query(FilteredNetMHC).join(FilteredNetMHC.netmhcs).join(NetMHC.hla).join(NetMHC.peptidelist)
+        if peptide_list_name:
+            joined = joined.filter(peptideListName = peptide_list_name)
+        if hla:
+            joined = joined.filter(HLAName = hla)
+        joined_rows = joined.all()
+        results = []
+        header = ['ID', 'Filtered NetMHC Name', 'path', 'HLA', 'rank cutoff', 'PeptideList Name']
+        for row in joined_rows:
+            results.append({'ID': row.idFilteredNetMHC, 'Filtered NetMHC Name': row.FilteredNetMHCName, 'path': row.filtered_path, 'HLA': row.HLAName, 'rank cutoff': str(row.RankCutoff), 'PeptideList Name' : row.peptideListName})
+        return (header, results)
     def get_filtered_netmhc_row(self, name):
         return self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
 

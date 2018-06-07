@@ -1,5 +1,5 @@
 import tPipeDB
-import tPipeProject
+import Base
 
 import argparse
 import sys
@@ -18,7 +18,7 @@ args = parser.parse_args()
 assert(float(args.rank) <= 100.0 and float(args.rank) >= 0.0)
 project_folder = args.project_folder
 print('project folder: ' + project_folder)
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 
 
 project.begin_command_session()
