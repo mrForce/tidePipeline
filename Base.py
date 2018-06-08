@@ -2,6 +2,7 @@ import tPipeDB
 from create_target_set import *
 import sys
 import tempfile
+from tabulate import tabulate
 import os
 from Bio import SeqIO
 from NetMHC import *
@@ -54,6 +55,19 @@ class Base:
         return self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = name).first()
     def get_peptide_list_row(self, name):
         return self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = name).first()
+
+    def list_targetsets(self):
+        rows = self.db_session.query(tPipeDB.TargetSet).all()
+        headers = ['ID', 'Name', 'Sources']
+        results = []
+        for row in rows:
+            row_id = str(row.idTargetSet)
+            name = str(row.TargetSetName)
+            source_id_map = json.loads(str(row.SourceIDMap))
+            results.append([row_id, name, 'Filtered NetMHC: ' + ', '.join(source_id_map['filtered_netmhc'].values()) + '\n' + 'Peptide Lists: ' + ', '.join(source_id_map['peptide_lists'].values())])
+        return tabulate(results, headers=headers)
+
+    
     def add_targetset(self, netmhc_filter_names, peptide_list_names, target_set_name):
         #need to create lists of the form [(name, location)...]
         netmhc_filter_locations = []
