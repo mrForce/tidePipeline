@@ -122,7 +122,7 @@ class NetMHC(BaseTable):
     #a TXT file, each line is a peptide, then a comma, then the rank
     PeptideScorePath = Column('PeptideScorePath', String)
     peptidelist = relationship('PeptideList')
-class FilteredNetMHC(BaseTable):
+class FilteredNetMHC(AbstractPeptideCollection):
     __tablename__ = 'FilteredNetMHC'
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
     idNetMHC = Column(Integer, ForeignKey('NetMHC.idNetMHC'))
@@ -133,6 +133,17 @@ class FilteredNetMHC(BaseTable):
     targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_filteredNetMHC, back_populates='filteredNetMHCs')
     netmhc = relationship('NetMHC')
+    def get_peptides(self, project_path):
+        peptides = set()
+        with open(os.path.join(project_path, self.filtered_path), 'r') as f:
+            for line in f:
+                stripped_line = line.strip()
+                if len(stripped_line) >= 1:
+                    peptides.add(stripped_line)
+        return peptides
+
+
+        
 class IndexBase(BaseTable):
     __tablename__ = 'IndexBase'
     idIndex = Column('idIndex', Integer, primary_key=True)
