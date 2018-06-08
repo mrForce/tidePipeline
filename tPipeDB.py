@@ -2,8 +2,20 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
-BaseTable = declarative_base()
+from abc import ABCMeta, abstractmethod
+import os
+BaseTable = declarative_base(metaclass=ABCMeta)
 
+
+class AbstractPeptideCollection(BaseTable):
+    __abstract__ = True
+    #get_peptides should return a set of peptides. Each peptide is a string.
+    @abstractmethod
+    def get_peptides(self, project_path):
+        pass
+
+
+    
 
 
 tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', BaseTable.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
@@ -28,7 +40,7 @@ targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata,
 targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
-class TargetSet(BaseTable):
+class TargetSet(AbstractPeptideCollection):
     __tablename__ = 'TargetSet'
     idTargetSet = Column('idTargetSet', Integer, primary_key = True)
     TargetSetFASTAPath = Column('TargetSetFASTAPath', String, unique=True)
@@ -39,6 +51,15 @@ class TargetSet(BaseTable):
     peptidelists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
     tideindices = relationship('TideIndex', secondary=tideindex_targetset, back_populates='targetsets')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_targetset, back_populates='targetsets')
+    def get_peptides(self, project_path):
+        fasta_location = os.path.join(project_path, self.TargetSetFASTAPath)
+        with open(fasta_location, 'r') as f:
+            peptides = set()
+            for line in f:
+                stripped_line = line.strip()
+                if len(stripped_line) >= 1 and ('>' not in stripped_line):
+                    peptides.add(stripped_line)
+        return peptides
 class HLA(BaseTable):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
@@ -66,7 +87,7 @@ class FASTA(BaseTable):
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
 
-class PeptideList(BaseTable):
+class PeptideList(AbstractPeptideCollection):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
     peptideListName = Column('peptideListName', String, unique=True)
@@ -81,6 +102,14 @@ class PeptideList(BaseTable):
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath
 
+    def get_peptides(self, project_path):
+        peptides = set()
+        with open(os.path.join(project_path, self.PeptideListPath), 'r') as f:
+            for line in f:
+                stripped_line = line.strip()
+                if len(stripped_line) >= 1:
+                    peptides.add(stripped_line)
+        return peptides
 
 class NetMHC(BaseTable):
     __tablename__ = 'NetMHC'
@@ -271,13 +300,22 @@ class Percolator(QValueBase):
     }
 
 
-class FilteredSearchResult(BaseTable):
+class FilteredSearchResult(AbstractPeptideCollection):
     __tablename__ = 'FilteredSearchResult'
     idFilteredSearchResult = Column('idFilteredSearchResult', Integer, primary_key=True)
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
     filteredSearchResultPath = Column('filteredSearchResultPath', String)
     q_value_threshold = Column('q_value_threshold', Float)
     QValue = relationship('QValueBase', uselist=False)
+    def get_peptides(self, project_path):
+        peptides = set()
+        with open(os.path.join(project_path, self.filteredSearchResultPath), 'r') as f:
+            for line in f:
+                stripped_line = line.strip()
+                if len(stripped_line) >= 1:
+                    peptides.add(stripped_line)
+        return peptides
+    
 class Command(BaseTable):
     __tablename__ = 'Command'
     idCommand = Column('idCommand', Integer, primary_key=True)
