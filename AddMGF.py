@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 import os
@@ -23,7 +22,7 @@ print('project folder: ' + project_folder)
 name = args.MGFName
 path = args.MGFPath
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 project.add_mgf_file(path, name)
 project.end_command_session()

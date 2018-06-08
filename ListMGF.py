@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 
@@ -15,7 +14,7 @@ project_folder = args.project_folder
 
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 print('ID | MGF name | path')
 for t in project.list_mgf_db():

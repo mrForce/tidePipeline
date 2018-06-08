@@ -1,9 +1,9 @@
 import re
 import argparse
-import tPipeProject
+
+import PostProcessing
 import sys
 import os
-import tPipeDB
 from Bio import SeqIO
 import tempfile
 import subprocess
@@ -32,7 +32,7 @@ project_folder = args.project_folder[0]
 
 print('project folder: ' + project_folder)
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 
 collection_one = []
 collection_two = []

@@ -1,6 +1,5 @@
-import tPipeDB
-import tPipeProject
-
+import PostProcessing
+import Runners
 import argparse
 import sys
 import os
@@ -21,14 +20,14 @@ project_folder = args.project_folder
 print('project folder: ' + project_folder)
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 arguments = vars(args)
 project.begin_command_session()
 percolator_runner = None
 if args.param_file:
-    percolator_runner = tPipeProject.PercolatorRunner(args.param_file)
+    percolator_runner = Runners.PercolatorRunner(args.param_file)
 else:
-    percolator_runner = tPipeProject.PercolatorRunner()
+    percolator_runner = Runners.PercolatorRunner()
 percolator_name = args.percolator_name
 project.percolator(args.search_name, percolator_runner, percolator_name)
 project.end_command_session()

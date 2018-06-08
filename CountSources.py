@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 import pprint
@@ -17,7 +16,7 @@ project_folder = args.project_folder
 
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 pprint.pprint(project.count_sources(args.AssignConfidenceName, args.q_value))
 project.end_command_session()

@@ -1,5 +1,5 @@
 from Base import Base
-import tPipeDB
+import DB
 import ReportGeneration
 import TargetSetSourceCount
 import os
@@ -18,7 +18,7 @@ class PostProcessing(Base):
         with open(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename), 'w') as f:
             for peptide in peptides:
                 f.write(peptide + '\n')
-        filtered_row = tPipeDB.FilteredSearchResult(filteredSearchResultName = name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = threshold, QValue = qvalue_row)
+        filtered_row = DB.FilteredSearchResult(filteredSearchResultName = name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = threshold, QValue = qvalue_row)
         self.db_session.add(filtered_row)
         self.db_session.commit()
 
@@ -33,10 +33,10 @@ class PostProcessing(Base):
         self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold)
 
     def get_filtered_search_result_row(self, name):
-        return self.db_session.query(tPipeDB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
+        return self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
     
     def verify_filtered_search_result(self, name):
-        row = self.db_session.query(tPipeDB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
+        row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
         if row:
             return True
         else:
@@ -65,13 +65,13 @@ class PostProcessing(Base):
             
             return TargetSetSourceCount.count_sources(self.project_path, target_set_row, peptides)
     def get_assign_confidence(self, assign_confidence_name):
-        return self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
+        return self.db_session.query(DB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
     def get_percolator(self, percolator_name):
-        return self.db_session.query(tPipeDB.Percolator).filter_by(PercolatorName = percolator_name).first()
+        return self.db_session.query(DB.Percolator).filter_by(PercolatorName = percolator_name).first()
     def list_assign_confidence(self, tide_search_name = None, estimation_method = None):
         filter_args = {}
         if tide_search_name:
-            tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
+            tide_search_row = self.db_session.query(DB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
             if tide_search_row:
                 filter_args['idTideSearch'] = tide_search_row.idTideSearch
             else:
@@ -79,13 +79,13 @@ class PostProcessing(Base):
         if estimation_method:
             filter_args['estimation_method'] = estimation_method
         if len(filter_args.keys()) > 0:
-            return self.db_session.query(tPipeDB.AssignConfidence).filter_by(**filter_args).all()
+            return self.db_session.query(DB.AssignConfidence).filter_by(**filter_args).all()
         else:
-            return self.db_session.query(tPipeDB.AssignConfidence).all()
+            return self.db_session.query(DB.AssignConfidence).all()
         
     def assign_confidence(self, tide_search_name, assign_confidence_runner, assign_confidence_name):
-        tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
-        assign_confidence_row = self.db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
+        tide_search_row = self.db_session.query(DB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
+        assign_confidence_row = self.db_session.query(DB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
         if tide_search_row and (assign_confidence_row is None):
             #run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name)
             target_path = os.path.join(self.project_path, tide_search_row.targetPath)
@@ -104,8 +104,8 @@ class PostProcessing(Base):
                 raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
     def percolator(self, tide_search_name, percolator_runner, percolator_name):
-        tide_search_row = self.db_session.query(tPipeDB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
-        percolator_row = self.db_session.query(tPipeDB.Percolator).filter_by(PercolatorName = percolator_name).first()
+        tide_search_row = self.db_session.query(DB.TideSearch).filter_by(TideSearchName = tide_search_name).first()
+        percolator_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = percolator_name).first()
         if tide_search_row and (percolator_row is None):
             target_path = os.path.join(self.project_path, tide_search_row.targetPath)
             output_directory_name = str(uuid.uuid4().hex)

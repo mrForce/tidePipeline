@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 import os
@@ -26,7 +25,7 @@ comment = ''
 if args.FASTAComment:
     comment = args.FASTAComment[0]
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 project.add_fasta_file(args.FASTAPath[0], name, comment)
 project.end_command_session()

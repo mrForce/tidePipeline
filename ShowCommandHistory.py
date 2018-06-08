@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 
@@ -15,7 +14,7 @@ project_folder = args.project_folder[0]
 print('project folder: ' + project_folder)
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 
 for command in project.get_commands():
     print(command)

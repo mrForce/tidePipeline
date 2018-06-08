@@ -1,4 +1,4 @@
-import tPipeDB
+import DB
 from create_target_set import *
 import sys
 import tempfile
@@ -29,8 +29,8 @@ class Base:
             subprocess.call(['cat', 'reminder.txt'])
         self.project_path = project_path
         print('project path: ' + project_path)
-        self.db_session = tPipeDB.init_session(os.path.join(project_path, 'database.db'))
-        self.command = tPipeDB.Command(commandString = command)
+        self.db_session = DB.init_session(os.path.join(project_path, 'database.db'))
+        self.command = DB.Command(commandString = command)
         self.db_session.add(self.command)
         self.db_session.commit()
 
@@ -49,15 +49,15 @@ class Base:
             results.append({'ID': row.idFilteredNetMHC, 'Filtered NetMHC Name': row.FilteredNetMHCName, 'path': row.filtered_path, 'HLA': row.HLAName, 'rank cutoff': str(row.RankCutoff), 'PeptideList Name' : row.peptideListName})
         return (header, results)
     def get_filtered_netmhc_row(self, name):
-        return self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
+        return self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
 
     def get_target_set_row(self, name):
-        return self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = name).first()
+        return self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first()
     def get_peptide_list_row(self, name):
-        return self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = name).first()
+        return self.db_session.query(DB.PeptideList).filter_by(peptideListName = name).first()
 
     def list_targetsets(self):
-        rows = self.db_session.query(tPipeDB.TargetSet).all()
+        rows = self.db_session.query(DB.TargetSet).all()
         headers = ['ID', 'Name', 'Sources']
         results = []
         for row in rows:
@@ -74,7 +74,7 @@ class Base:
         peptide_list_locations = []
         if netmhc_filter_names:
             for name in netmhc_filter_names:
-                row  = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
+                row  = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
                 if row:
                     location = os.path.join(self.project_path, row.filtered_path)
                     netmhc_filter_locations.append((name, location))
@@ -82,13 +82,13 @@ class Base:
                     raise NoSuchFilteredNetMHCError(name)
         if peptide_list_names:
             for name in peptide_list_names:
-                row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = name).first()
+                row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = name).first()
                 if row:
                     location = os.path.join(self.project_path, row.PeptideListPath)
                     peptide_list_locations.append((name, location))
                 else:
                     raise NoSuchPeptideListError(name)
-        if self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = target_set_name).first():
+        if self.db_session.query(DB.TargetSet).filter_by(TargetSetName = target_set_name).first():
             raise TargetSetNameMustBeUniqueError(target_set_name)
         
         output_folder = str(uuid.uuid4())
@@ -99,40 +99,40 @@ class Base:
         output_json_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'sources.json')
 
         source_id_map = create_target_set(netmhc_filter_locations, peptide_list_locations, output_fasta_location, output_json_location)
-        target_set_row = tPipeDB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name)
+        target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name)
         self.db_session.add(target_set_row)
         self.db_session.commit()
     def verify_filtered_netMHC(self, name):
-        if self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first():
+        if self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first():
             return True
         else:
             return False
     def verify_target_set(self, name):
-        if self.db_session.query(tPipeDB.TargetSet).filter_by(TargetSetName = name).first():
+        if self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first():
             return True
         else:
             return False
 
     def add_mgf_file(self, path, name):
-        row = self.db_session.query(tPipeDB.MGFfile).filter_by(MGFName = name).first()
+        row = self.db_session.query(DB.MGFfile).filter_by(MGFName = name).first()
         if row:
             raise MGFNameMustBeUniqueError(name)
         else:
             newpath = self.copy_file('MGF', path)
-            mgf_record = tPipeDB.MGFfile(MGFName = name, MGFPath = newpath)
+            mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath)
             self.db_session.add(mgf_record)
             self.db_session.commit()
             return mgf_record.idMGFfile    
 
     def verify_peptide_list(self, peptide_list_name):
-        row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
+        row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
         if row is None:
             return False
         else:
             return True
 
     def verify_hla(self, hla):
-        row = self.db_session.query(tPipeDB.HLA).filter_by(HLAName = hla).first()
+        row = self.db_session.query(DB.HLA).filter_by(HLAName = hla).first()
         if row is None:
             return False
         else:
@@ -142,7 +142,7 @@ class Base:
         idNetMHC, pep_score_path = self._run_netmhc(peptide_list_name, hla, netmhcpan)
         print('idNetMHC: ' + str(idNetMHC))
         
-        row = self.db_session.query(tPipeDB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
+        row = self.db_session.query(DB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
         #to be clear, this means that 
         if row is None:
             file_name = str(uuid.uuid4())
@@ -162,7 +162,7 @@ class Base:
                                 g.write(peptide + '\n')
             
             
-            filtered_row = tPipeDB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+            filtered_row = DB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
             self.db_session.commit()
             
@@ -172,12 +172,12 @@ class Base:
 
 
     def add_peptide_list(self, name, length, fasta_name):
-        fasta_row = self.db_session.query(tPipeDB.FASTA).filter_by(Name=fasta_name).first()
+        fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
         if fasta_row is None:
             raise FASTAWithNameDoesNotExistError(fasta_name)
         print('length:')
         print(length)
-        peptide_row = self.db_session.query(tPipeDB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
+        peptide_row = self.db_session.query(DB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
         if peptide_row is None:
             fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
             peptide_filename = fasta_filename + '_' + str(length) + '.txt'
@@ -185,7 +185,7 @@ class Base:
             if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
                 peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
                 write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
-            peptide_list = tPipeDB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+            peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
             self.db_session.commit()
     def _run_netmhc(self, peptide_list_name, hla_name, netmhcpan = False):
@@ -194,13 +194,13 @@ class Base:
         
         If there isn't, then it runs NetMHC, inserts a row into the table, and returns (idNetMHC, PeptideScorePath)               
         """
-        peptide_list_row = self.db_session.query(tPipeDB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
+        peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
         if peptide_list_row is None:
             raise NoSuchPeptideListError(peptide_list_name)
-        hla_row = self.db_session.query(tPipeDB.HLA).filter_by(HLAName=hla_name).first()
+        hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla_name).first()
         if hla_row is None:
             raise NoSuchHLAError(hla_name)
-        netmhc_row = self.db_session.query(tPipeDB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
+        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
         if netmhc_row:
             return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
         else:
@@ -209,7 +209,7 @@ class Base:
                 netmhc_output_filename = str(uuid.uuid4().hex)
             call_netmhc(hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), netmhcpan)
             parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
-            netmhc_row = tPipeDB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
+            netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
             self.db_session.add(netmhc_row)
             self.db_session.commit()
             return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
@@ -217,7 +217,7 @@ class Base:
 
     def list_peptide_lists(self):
         peptide_lists = []
-        peptide_list_rows = self.db_session.query(tPipeDB.PeptideList).all()
+        peptide_list_rows = self.db_session.query(DB.PeptideList).all()
         for row in peptide_list_rows:
             peptide_list = {'id': row.idPeptideList, 'name': row.peptideListName, 'FASTAName': row.fasta.Name, 'FASTAPath': row.fasta.FASTAPath, 'length': int(row.length), 'path': row.PeptideListPath}
             peptide_lists.append(peptide_list)
@@ -230,7 +230,7 @@ class Base:
     def list_peptide_list_files(self):
         return self.list_files('peptides')
     def list_fasta_db(self):
-        rows = self.db_session.query(tPipeDB.FASTA).all()
+        rows = self.db_session.query(DB.FASTA).all()
         fastas = []
         for row in rows:
             fasta = {'id': row.idFASTA, 'name': row.Name, 'comment': row.Comment, 'path': row.FASTAPath, 'peptide_lists': []}
@@ -239,7 +239,7 @@ class Base:
             fastas.append(fasta)
         return fastas
     def list_mgf_db(self):
-        rows = self.db_session.query(tPipeDB.MGFfile).all()        
+        rows = self.db_session.query(DB.MGFfile).all()        
         mgfs = []
         for row in rows:
             mgf = {'id': row.idMGFfile, 'name': row.MGFName, 'path': row.MGFPath}
@@ -247,7 +247,7 @@ class Base:
         return mgfs
 
     def add_species(self, species_name):
-        species = tPipeDB.Species(SpeciesName = species_name)
+        species = DB.Species(SpeciesName = species_name)
         self.db_session.add(species)
     def validate_project_integrity(self, ignore_operation_lock = False):
         """
@@ -262,19 +262,19 @@ class Base:
         #if (not ignore_operation_lock) and os.path.isfile(os.path.join(self.project_path, 'operation_lock')):
         #    raise OperationsLockedError()
         print('going to check fasta rows')
-        fasta_rows = self.db_session.query(tPipeDB.FASTA).all()
+        fasta_rows = self.db_session.query(DB.FASTA).all()
         for row in fasta_rows:
             path = row.FASTAPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
                 raise FASTAMissingError(row.idFASTA, row.Name, row.FASTAPath)
         print('going to check peptide list rows')
-        peptide_list_rows = self.db_session.query(tPipeDB.PeptideList).all()
+        peptide_list_rows = self.db_session.query(DB.PeptideList).all()
         for row in peptide_list_rows:
             path = row.PeptideListPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
                 raise PeptideListFileMissingError(row.idPeptideList, row.peptideListName, row.PeptideListPath)
         print('going to check mgf rows')
-        mgf_rows = self.db_session.query(tPipeDB.MGFfile).all()
+        mgf_rows = self.db_session.query(DB.MGFfile).all()
         for row in mgf_rows:
             path = row.MGFPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
@@ -367,7 +367,7 @@ class Base:
         if not os.path.isfile(path):
             raise FileDoesNotExistError(path)
         #step one done
-        if len(self.db_session.query(tPipeDB.FASTA).filter_by(Name=name).all()) > 0:
+        if len(self.db_session.query(DB.FASTA).filter_by(Name=name).all()) > 0:
             raise FASTAWithNameAlreadyExistsError(name)
         #step 2 done
         try:
@@ -379,18 +379,18 @@ class Base:
         #step 3 done
         newpath = self.copy_file('FASTA', path)
         #did step 4
-        fasta_record = tPipeDB.FASTA(Name = name, FASTAPath = newpath, Comment = comment)
+        fasta_record = DB.FASTA(Name = name, FASTAPath = newpath, Comment = comment)
         self.db_session.add(fasta_record)
         self.db_session.commit()
         return fasta_record.idFASTA
     def get_commands(self):
         commands = []
-        for row in self.db_session.query(tPipeDB.Command):
+        for row in self.db_session.query(DB.Command):
             commands.append(row)
         return commands
     def get_species(self):
         species = []
-        for row in self.db_session.query(tPipeDB.Species):
+        for row in self.db_session.query(DB.Species):
             hla = []
             for hla_row in row.hlas:
                 hla.append(hla_row.HLAName)
@@ -400,12 +400,12 @@ class Base:
 
     def list_hla(self, species_name=None, species_id=None):
         if species_name:
-            species_row = self.db_session.query(tPipeDB.Species).filter_by(SpeciesName=species_name).first()
+            species_row = self.db_session.query(DB.Species).filter_by(SpeciesName=species_name).first()
             if species_row:
                 species_id = species_row.idSpecies
             else:
                 raise NoSuchSpeciesError(species_name)
-        query = self.db_session.query(tPipeDB.HLA)
+        query = self.db_session.query(DB.HLA)
         if species_id:
             query = query.filter_by(species_id=species_id)
         rows = query.all()
@@ -421,10 +421,10 @@ class Base:
             hlas.append(hla)
         return hlas
     def add_hla(self, hla_name):
-        hla_rows = self.db_session.query(tPipeDB.HLA).filter_by(HLAName = hla_name).all()
+        hla_rows = self.db_session.query(DB.HLA).filter_by(HLAName = hla_name).all()
         if len(hla_rows) > 0:
             raise HLAWithNameExistsError(hla_name)
-        hla = tPipeDB.HLA(HLAName = hla_name)
+        hla = DB.HLA(HLAName = hla_name)
         self.db_session.add(hla)
         self.db_session.commit()
         return hla.idHLA

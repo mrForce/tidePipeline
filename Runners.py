@@ -1,4 +1,4 @@
-import tPipeDB
+import DB
 import sys
 import os
 
@@ -19,7 +19,7 @@ class TideSearchRunner:
         return {'--mod-precision': {'type':int}, '--auto-precursor-window': {'choices': ['false', 'warn', 'fail']}, '--max-precursor-charge': {'type': int}, '--precursor-window': {'type': float}, '--precursor-window-type': {'choices': ['mass', 'mz', 'ppm']}, '--auto-mz-bin-width': {'choices': ['false', 'warn', 'fail']}, '--compute-sp': {'choices': ['T', 'F']}, '--deisotope': {'type': float}, '--exact-p-value': {'choices':['T', 'F']}, '--isotope-error': {'type': str}, '--min-peaks': {'type': int}, '--mz-bin-offset': {'type': float}, '--mz-bin-width': {'type': float}, '--peptide-centric-search': {'choices': ['T', 'F']}, '--score-function': {'choices': ['xcorr', 'residue-evidence', 'both']}, '--fragment-tolerance': {'type': float}, '--evidence-granularity': {'type': int}, '--remove-precursor-peak': {'choices': ['T', 'F']}, '--remove-precursor-tolerance': {'type': float}, '--scan-number': {'type': str}, '--skip-processing': {'choices': ['T', 'F']}, '--spectrum-charge': {'choices': ['1', '2', '3', 'all']}, '--spectrum-max-mz': {'type': float}, '--spectrum-min-mz': {'type': float}, '--use-flanking-peaks': {'choices': ['T', 'F']}, '--use-neutral-loss-peaks': {'choices': ['T', 'F']}, '--num-threads': {'type': int}, '--pm-charge': {'type': int}, '--pm-max-frag-mz': {'type': float}, '--pm-max-precursor-delta-ppm': {'type': float}, '--pm-max-precursor-mz': {'type': float}, '--pm-max-scan-seperation': {'type': int}, '--pm-min-common-frag-peaks': {'type': int}, '--pm-min-frag-mz': {'type': float}, '--pm-min-peak-pairs': {'type': int}, '--pm-min-precursor-mz': {'type': float}, '--pm-min-scan-frag-peaks': {'type': int}, '--pm-pair-top-n-frag-peaks': {'type': int}, '--pm-top-n-frag-peaks': {'type': int}, '--concat': {'choices': ['T', 'F']}, '--file-column': {'choices': ['T', 'F']}, '--fileroot': {'type': str}, '--mass-precision': {'type': int}, '--mzid-output': {'choices': ['T', 'F']}, '--precision': {'type': int}, '--spectrum-parser': {'choices': ['pwiz', 'mstoolkit']}, '--store-spectra': {'type': str}, '--top-match': {'type': int}, '--use-z-line': {'choices': ['T', 'F']}}
 
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, options, project_path, tide_search_row_name):        
+    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, options, project_path, tide_search_row_name):    
         """ First, decide the filename """
         param_filename = str(uuid.uuid4().hex) + '-param.txt'
         while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
@@ -35,7 +35,7 @@ class TideSearchRunner:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideSearchFailedError(' '.join(command))
-        search_row = tPipeDB.TideSearch(idTideIndex = index_row.idTideIndex, idMGF=mgf_row.idMGFfile, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), TideSearchName=tide_search_row_name)
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), TideSearchName=tide_search_row_name)
         return search_row
 
         
@@ -78,7 +78,7 @@ class TideIndexRunner:
             if column_name:
                 column_arguments[column_name] = v
         column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
-        return tPipeDB.TideIndex(**column_arguments)
+        return DB.TideIndex(**column_arguments)
 
 class AssignConfidenceRunner:
     def __init__(self, assign_confidence_options):
@@ -123,7 +123,7 @@ class AssignConfidenceRunner:
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db
         column_arguments['AssignConfidenceName'] = assign_confidence_name
         column_arguments['tideSearch'] = tide_search_row
-        return tPipeDB.AssignConfidence(**column_arguments)
+        return DB.AssignConfidence(**column_arguments)
 
 
 class PercolatorRunner:
@@ -163,4 +163,4 @@ class PercolatorRunner:
         column_arguments['PercolatorOutputPath'] = output_directory_db
         column_arguments['PercolatorName'] = percolator_name
         column_arguments['tideSearch'] = tide_search_row
-        return tPipeDB.Percolator(**column_arguments)
+        return DB.Percolator(**column_arguments)

@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 
@@ -17,7 +16,7 @@ project_folder = args.project_folder[0]
 
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 print('ID | FASTA name | Comment | path')
 for t in project.list_fasta_db():

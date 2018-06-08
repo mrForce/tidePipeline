@@ -1,4 +1,3 @@
-import tPipeDB
 import Base
 import argparse
 import sys

@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 import pprint
@@ -20,7 +19,7 @@ project_folder = args.project_folder
 
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 assign_confidence_runs = []
 for name in args.AssignConfidenceNames:

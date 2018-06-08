@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 
 import argparse
 import sys
@@ -21,7 +20,7 @@ print('project folder: ' + project_folder)
 if args.PeptideList is None and args.FilteredNetMHC is None:
     print('you need to specify at least one FilteredNetMHC or PeptideList')
 else:
-    project = tPipeProject.Project(project_folder, ' '.join(sys.argv))            
+    project = Base.Base(project_folder, ' '.join(sys.argv))            
     project.begin_command_session()
     project.add_targetset(args.FilteredNetMHC, args.PeptideList, args.TargetSetName)
     project.end_command_session()

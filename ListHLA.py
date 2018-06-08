@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 
@@ -19,7 +18,7 @@ args = parser.parse_args()
 project_folder = args.project_folder[0]
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 hlas = []
 if args.speciesName:

@@ -1,4 +1,3 @@
-import tPipeDB
 import TideEngine
 import argparse
 import sys

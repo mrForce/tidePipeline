@@ -1,4 +1,3 @@
-import tPipeDB
 import Base
 import PostProcessing
 import argparse
@@ -37,7 +36,7 @@ try:
         pass
 except:
     assert(False)
-project = Base.Project(project_folder, ' '.join(sys.argv))
+project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 row = None
 if args.CollectionType == 'TargetSet':

@@ -1,6 +1,5 @@
-import tPipeDB
-import tPipeProject
-
+import PostProcessing
+import Runners
 import argparse
 import sys
 import os
@@ -13,7 +12,7 @@ parser.add_argument('search_name', help='The name of the tide search to run assi
 parser.add_argument('assign_confidence_name', help='The name of the assign-confidence run')
 
 
-for k, v in tPipeProject.AssignConfidenceRunner.get_assign_confidence_options().items():
+for k, v in Runners.AssignConfidenceRunner.get_assign_confidence_options().items():
     parser.add_argument(k, **v)
 
 
@@ -22,7 +21,7 @@ project_folder = args.project_folder
 print('project folder: ' + project_folder)
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 arguments = vars(args)
 good_arguments = {}
 
@@ -35,7 +34,7 @@ for k, v in arguments.items():
         good_arguments[k] = v
 
 project.begin_command_session()
-assign_confidence_runner = tPipeProject.AssignConfidenceRunner(good_arguments)
+assign_confidence_runner =  Runners.AssignConfidenceRunner(good_arguments)
 project.assign_confidence(args.search_name, assign_confidence_runner, args.assign_confidence_name)
 project.end_command_session()
 

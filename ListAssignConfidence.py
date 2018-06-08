@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import PostProcessing
 import argparse
 import sys
 
@@ -15,7 +14,7 @@ project_folder = args.project_folder
 
 
 
-project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
+project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 rows = project.list_assign_confidence(tide_search_name = args.tideSearchName, estimation_method = args.estimationMethod)
 print('id   |   Name   |   Output Path   |   Tide Search Name   |   estimation method   |   score type   |   sidak')

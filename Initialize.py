@@ -1,5 +1,4 @@
-import tPipeDB
-import tPipeProject
+import Base
 import argparse
 import sys
 
@@ -13,7 +12,7 @@ args = parser.parse_args()
 project_folder = args.project_folder
 
 try:
-    tPipeProject.Project.createEmptyProject(project_folder)
+    Base.Base.createEmptyProject(project_folder)
 except tPipeProject.ProjectPathAlreadyExistsError as e:
     print('A file or directory already exists at that location. Exiting')
     sys.exit()
