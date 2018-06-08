@@ -26,5 +26,5 @@ project_folder = args.project_folder
 project = tPipeProject.Project(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 
-project.assign_confidence_to_filtered_search_result(args.assign_confidence_name, args.threshold, args.FilteredSearchResultName)            
+project.assign_confidence_to_filtered_search_result(args.assign_confidence_name, args.threshlod, args.FilteredSearchResultName)            
 project.end_command_session()
