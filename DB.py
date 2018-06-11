@@ -43,6 +43,8 @@ targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata,
 targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
+
+
 class TargetSet(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'TargetSet'
     idTargetSet = Column('idTargetSet', Integer, primary_key = True)
@@ -211,6 +213,7 @@ class SearchBase(BaseTable):
     __tablename__ = 'SearchBase'
     idSearch = Column('idSearch', Integer, primary_key=True)
     searchType = Column(String(50))
+    QValueBases = relationship('QValueBase', back_populates='searchbase')
     __mapper_args__ = {
         'polymorphic_identity': 'searchbase',
         'polymorphic_on': searchType
@@ -272,6 +275,9 @@ class QValueBase(BaseTable):
     __tablename__ = 'QValueBase'
     idQValue = Column('idQValue', Integer, primary_key=True)
     QValueType = Column(String(50))
+    filteredSearchResults = relationship('FilteredSearchResult', back_populates='QValue')
+    idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch'))
+    searchbase = relationship('SearchBase', back_populates='QValueBases')
     __mapper_args__ = {
         'polymorphic_identity': 'qvaluebase',
         'polymorphic_on': QValueType
@@ -281,6 +287,7 @@ class QValueBase(BaseTable):
 class MSGFPlusQValue(QValueBase):
     __tablename__ = 'MSGFPlusQValue'
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
+    idMSGFPlusSearch = Column(Integer, ForeignKey('MSGFPlusSearch.idSearch'))
     MSGFPlusSearch = relationship('MSGFPlusSearch', back_populates='MSGFPlusQValue')
     
 class AssignConfidence(QValueBase):
@@ -288,13 +295,14 @@ class AssignConfidence(QValueBase):
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
     AssignConfidenceOutputPath = Column('AssignConfidenceOutputPath', String)
     AssignConfidenceName = Column('AssignConfidenceName', String, unique=True)
-    idTideSearch = Column('idTideSearch', Integer, ForeignKey('TideSearch.idSearch'))
+    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch'))
     estimation_method = Column(String)
     score = Column(String)
     sidak = Column(String)
     top_match_in = Column(Integer)
     combine_charge_states = Column(String)
     combined_modified_peptides = Column(String)
+
     search = relationship('SearchBase')
     __mapper_args__ = {
         'polymorphic_identity': 'assignconfidence',
@@ -305,7 +313,7 @@ class AssignConfidence(QValueBase):
 class Percolator(QValueBase):
     __tablename__ = 'Percolator'
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
-    idSearch = Column('idSearch', Integer, ForeignKey('TideSearch.idSearch'))
+    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch'))
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
@@ -321,7 +329,9 @@ class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
     filteredSearchResultPath = Column('filteredSearchResultPath', String)
     q_value_threshold = Column('q_value_threshold', Float)
-    QValue = relationship('QValueBase', uselist=False)
+    idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue'))
+    QValue = relationship('QValueBase', back_populates='filteredSearchResults')
+    
     def get_peptides(self, project_path):
         peptides = set()
         with open(os.path.join(project_path, self.filteredSearchResultPath), 'r') as f:
