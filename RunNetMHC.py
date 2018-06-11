@@ -3,7 +3,7 @@ import Base
 import argparse
 import sys
 import os
-parser = argparse.ArgumentParser(description='Generate a Tide index')
+parser = argparse.ArgumentParser(description='Filter a PeptideList by NetMHC rank')
 
 parser.add_argument('project_folder', help='The location of the project folder')
 
