@@ -69,7 +69,7 @@ class HLA(BaseTable):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
     HLAName = Column('HLAName', String, unique=True)
-
+    netmhcs = relationship('NetMHC', back_populates='hla')
     def __repr__(self):
         return 'MHC ' + self.HLAName
 
@@ -120,8 +120,9 @@ class NetMHC(BaseTable):
     __tablename__ = 'NetMHC'
     idNetMHC = Column('idNetMHC', Integer, primary_key = True)
     peptidelistID = Column(Integer, ForeignKey('PeptideList.idPeptideList'))
-    idHLA = Column('idHLA', Integer, ForeignKey('HLA.idHLA'))
-    hla = relationship('HLA')
+    idHLA = Column(Integer, ForeignKey('HLA.idHLA'))
+    
+    hla = relationship('HLA', back_populates='netmhcs')
     #Raw output of NetMHC
     NetMHCOutputPath = Column('NetMHCOutputPath', String)
     #a TXT file, each line is a peptide, then a comma, then the rank
@@ -356,7 +357,11 @@ def init_session(db_path):
     session = Session()
     return session
 
-#session = init_session('database.db')
+#session = init_session('new_test/database.db')
+#a = session.query(FilteredNetMHC, NetMHC, HLA).join(NetMHC).join(HLA).filter(HLA.HLAName=='HLA-A0101').all()
+
+
+
 #session.commit()
 #engine = create_engine('sqlite:///database.db', echo=True)
 #BaseTable.metadata.create_all(engine)

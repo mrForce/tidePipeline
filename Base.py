@@ -37,16 +37,20 @@ class Base:
 
 
     def get_list_filtered_netmhc(self, peptide_list_name = None, hla=None):
-        joined = self.db_session.query(FilteredNetMHC).join(FilteredNetMHC.netmhcs).join(NetMHC.hla).join(NetMHC.peptidelist)
+        #joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC).join(DB.NetMHC).join(DB.FilteredNetMHC.netmhc).join(DB.NetMHC.hla).join(DB.NetMHC.peptidelist)
+        joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC, DB.PeptideList, DB.HLA).join(DB.NetMHC).join(DB.PeptideList).join(DB.HLA)
+        print('hla: ' + hla)
         if peptide_list_name:
-            joined = joined.filter(peptideListName = peptide_list_name)
+            joined = joined.filter(DB.PeptideList.peptideListName == peptide_list_name)
         if hla:
-            joined = joined.filter(HLAName = hla)
+            joined = joined.filter(DB.HLA.HLAName == hla)
         joined_rows = joined.all()
         results = []
         header = ['ID', 'Filtered NetMHC Name', 'path', 'HLA', 'rank cutoff', 'PeptideList Name']
         for row in joined_rows:
-            results.append({'ID': row.idFilteredNetMHC, 'Filtered NetMHC Name': row.FilteredNetMHCName, 'path': row.filtered_path, 'HLA': row.HLAName, 'rank cutoff': str(row.RankCutoff), 'PeptideList Name' : row.peptideListName})
+            print('row: ')
+            print(str(row))
+            results.append({'ID': str(row.FilteredNetMHC.idFilteredNetMHC), 'Filtered NetMHC Name': row.FilteredNetMHC.FilteredNetMHCName, 'path': row.FilteredNetMHC.filtered_path, 'HLA': row.HLA.HLAName, 'rank cutoff': str(row.FilteredNetMHC.RankCutoff), 'PeptideList Name' : row.PeptideList.peptideListName})
         return (header, results)
     def get_filtered_netmhc_row(self, name):
         return self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
