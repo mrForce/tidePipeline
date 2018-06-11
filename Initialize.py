@@ -12,7 +12,7 @@ args = parser.parse_args()
 project_folder = args.project_folder
 
 try:
-    Base.Base.createEmptyProject(project_folder)
+    Base.Base.createEmptyProject(project_folder, ' '.join(sys.argv))
 except ProjectPathAlreadyExistsError as e:
     print('A file or directory already exists at that location. Exiting')
     sys.exit()

@@ -4,16 +4,16 @@ from sqlalchemy.ext.declarative import declarative_base
 import datetime
 from abc import ABCMeta, abstractmethod
 import os
-BaseTable = declarative_base(metaclass=ABCMeta)
+#BaseTable = declarative_base(metaclass=ABCMeta)
+BaseTable = declarative_base()
 
-
-class AbstractPeptideCollection(BaseTable):
+"""class AbstractPeptideCollection(BaseTable):
     __abstract__ = True
     #get_peptides should return a set of peptides. Each peptide is a string.
     @abstractmethod
     def get_peptides(self, project_path):
         pass
-
+"""
 
     
 
@@ -40,7 +40,7 @@ targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata,
 targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
-class TargetSet(AbstractPeptideCollection):
+class TargetSet(BaseTable):
     __tablename__ = 'TargetSet'
     idTargetSet = Column('idTargetSet', Integer, primary_key = True)
     TargetSetFASTAPath = Column('TargetSetFASTAPath', String, unique=True)
@@ -87,7 +87,7 @@ class FASTA(BaseTable):
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
 
-class PeptideList(AbstractPeptideCollection):
+class PeptideList(BaseTable):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
     peptideListName = Column('peptideListName', String, unique=True)
@@ -122,7 +122,8 @@ class NetMHC(BaseTable):
     #a TXT file, each line is a peptide, then a comma, then the rank
     PeptideScorePath = Column('PeptideScorePath', String)
     peptidelist = relationship('PeptideList')
-class FilteredNetMHC(AbstractPeptideCollection):
+class FilteredNetMHC(BaseTable):
+    __abstract__ = False
     __tablename__ = 'FilteredNetMHC'
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
     idNetMHC = Column(Integer, ForeignKey('NetMHC.idNetMHC'))
@@ -311,7 +312,7 @@ class Percolator(QValueBase):
     }
 
 
-class FilteredSearchResult(AbstractPeptideCollection):
+class FilteredSearchResult(BaseTable):
     __tablename__ = 'FilteredSearchResult'
     idFilteredSearchResult = Column('idFilteredSearchResult', Integer, primary_key=True)
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
@@ -336,15 +337,16 @@ class Command(BaseTable):
     def __repr__(self):
         return str(self.idCommand) + ' | ' + self.executionDateTime.strftime('%A %d, %B %Y') + ' | ' + self.commandString + ' | ' + str(self.executionSuccess)
 def init_session(db_path):
+    print('db path: ' + os.path.abspath(db_path))
     engine = create_engine('sqlite:///' + db_path)
     BaseTable.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
     return session
 
-
-"""
-engine = create_engine('sqlite://', echo=True)
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
-"""
+#print('abstract: ' + str(FilteredNetMHC.__abstract__))
+#session = init_session('database.db')
+#session.commit()
+#engine = create_engine('sqlite:///database.db', echo=True)
+#BaseTable.metadata.create_all(engine)
+#Session = sessionmaker(bind=engine)

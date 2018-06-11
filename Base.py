@@ -433,7 +433,7 @@ class Base:
         
         
     @staticmethod
-    def createEmptyProject(project_path):
+    def createEmptyProject(project_path, command):
         if os.path.exists(project_path):
             raise ProjectPathAlreadyExistsError(project_path)
         else:
@@ -441,7 +441,7 @@ class Base:
             subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results']
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
-            return Project(project_path)
+            return Base(project_path, command)
 
 
 
