@@ -1,5 +1,9 @@
 from AbstractEngine import AbstractEngine
+import tempfile
 import DB
+import subprocess
+import uuid
+import os
 class TideEngine(AbstractEngine):
     def list_search(self, mgf_name = None, tide_index_name = None):
         """
@@ -86,7 +90,7 @@ class TideEngine(AbstractEngine):
         elif set_type == 'FilteredNetMHC':
             row = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = set_name).first()
             if row:
-                line_row = row
+                link_row = row
                 temp_fasta = tempfile.NamedTemporaryFile(mode='w')
                 subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.filtered_path), temp_fasta.name])
                 temp_files.append(temp_fasta)
@@ -115,6 +119,8 @@ class TideEngine(AbstractEngine):
         for x in temp_files:
             x.close()
         row.TideIndexName = tide_index_name
+        print('link row')
+        print(link_row)
         if set_type == 'TargetSet':
             row.targetsets = [link_row]
         elif set_type == 'FilteredNetMHC':

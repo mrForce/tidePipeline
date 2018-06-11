@@ -351,7 +351,7 @@ class Command(BaseTable):
     def __repr__(self):
         return str(self.idCommand) + ' | ' + self.executionDateTime.strftime('%A %d, %B %Y') + ' | ' + self.commandString + ' | ' + str(self.executionSuccess)
 def init_session(db_path):
-    engine = create_engine('sqlite:///' + db_path)
+    engine = create_engine('sqlite:///' + db_path, echo=True)
     BaseTable.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()

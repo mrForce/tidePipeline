@@ -44,6 +44,6 @@ elif args.set_type == 'TargetSet':
             
 project.begin_command_session()
 tide_index_runner = Runners.TideIndexRunner(good_arguments)
-project.create_tide_index(args.set_type, args.set_name, tide_index_runner, args.index_name)
+project.create_index(args.set_type, args.set_name, tide_index_runner, args.index_name)
 project.end_command_session()
 
