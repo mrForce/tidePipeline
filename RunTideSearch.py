@@ -40,6 +40,6 @@ project.begin_command_session()
 print('starting command session')
 tide_search_runner = Runners.TideSearchRunner(good_arguments)
 print('got tide search runner')
-project.run_tide_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name, good_arguments)
+project.run_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name, good_arguments)
 project.end_command_session()
 

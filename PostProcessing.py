@@ -49,14 +49,14 @@ class PostProcessing(Base):
             print('tide search')
             print(row.tideSearch)
             print('tide index')
-            print(row.tideSearch.tideIndex)
+            print(row.tideSearch.tideindex)
             print('filtered NetMHCs')
-            print(row.tideSearch.tideIndex.filteredNetMHCs)
+            print(row.tideSearch.tideindex.filteredNetMHCs)
             print('peptide lists')
-            print(row.tideSearch.tideIndex.peptidelists)
+            print(row.tideSearch.tideindex.peptidelists)
             print('target sets')
-            print(row.tideSearch.tideIndex.targetsets)
-            target_set_row = row.tideSearch.tideIndex.targetsets[0]
+            print(row.tideSearch.tideindex.targetsets)
+            target_set_row = row.tideSearch.tideindex.targetsets[0]
             q_val_column = 'tdc q-value'
             if row.estimation_method and len(row.estimation_method) > 0:
                 q_val_column = row.estimation_method + ' q-value'

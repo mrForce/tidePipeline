@@ -16,7 +16,7 @@ project_folder = args.project_folder
 
 project = TideEngine.TideEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-indices = project.get_tide_indices()
+indices = project.list_indices()
 printer = pprint.PrettyPrinter(indent=3)
 print('indices')
 printer.pprint(indices)

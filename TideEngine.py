@@ -55,7 +55,7 @@ class TideEngine(AbstractEngine):
         rows = self.db_session.query(DB.TideIndex).all()
         indices = []
         for row in rows:
-            index = {'name': row.TideIndexName, 'id': str(row.idTideIndex), 'path':row.TideIndexPath, 'peptide_lists':[], 'filteredNetMHCs':[], 'target_sets': []}
+            index = {'name': row.TideIndexName, 'id': str(row.idIndex), 'path':row.TideIndexPath, 'peptide_lists':[], 'filteredNetMHCs':[], 'target_sets': []}
             for r in row.targetsets:
                 index['target_sets'].append({'name': r.TargetSetName})
             for l in row.peptidelists:

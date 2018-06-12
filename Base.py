@@ -39,7 +39,6 @@ class Base:
     def get_list_filtered_netmhc(self, peptide_list_name = None, hla=None):
         #joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC).join(DB.NetMHC).join(DB.FilteredNetMHC.netmhc).join(DB.NetMHC.hla).join(DB.NetMHC.peptidelist)
         joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC, DB.PeptideList, DB.HLA).join(DB.NetMHC).join(DB.PeptideList).join(DB.HLA)
-        print('hla: ' + hla)
         if peptide_list_name:
             joined = joined.filter(DB.PeptideList.peptideListName == peptide_list_name)
         if hla:
