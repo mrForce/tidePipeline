@@ -19,5 +19,5 @@ project.begin_command_session(False)
 tide_searches = project.list_search(mgf_name = args.mgfName, tide_index_name = args.tideIndexName)
 print('id   |   Tide Search Name   |   Tide Index Name   |   MGF name   |   target path')
 for row in tide_searches:
-    print(str(row.idSearch) + '   |   ' + row.TideSearchName + '   |   ' + row.tideindex.TideIndexName + '   |   ' + row.mgf.MGFName + '   |   ' + row.targetPath)
+    print(str(row.idSearch) + '   |   ' + row.SearchName + '   |   ' + row.tideindex.TideIndexName + '   |   ' + row.mgf.MGFName + '   |   ' + row.targetPath)
 project.end_command_session(False)

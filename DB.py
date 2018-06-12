@@ -215,6 +215,7 @@ class SearchBase(BaseTable):
     idSearch = Column('idSearch', Integer, primary_key=True)
     searchType = Column(String(50))
     QValueBases = relationship('QValueBase', back_populates='searchbase')
+    SearchName = Column('SearchName', String, unique=True)
     __mapper_args__ = {
         'polymorphic_identity': 'searchbase',
         'polymorphic_on': searchType
@@ -225,7 +226,7 @@ class TideSearch(SearchBase):
     __tablename__ = 'TideSearch'
     idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
     idTideIndex = Column('idTideIndex', Integer, ForeignKey('TideIndex.idIndex'))
-    TideSearchName = Column('TideSearchName', String, unique=True)
+    #TideSearchName = Column('TideSearchName', String, unique=True)
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     targetPath = Column('targetPath', String)
     decoyPath = Column('decoyPath', String)
