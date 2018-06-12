@@ -33,7 +33,7 @@ class TideEngine(AbstractEngine):
         print('in tide search function')
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName=tide_index_name).first()
-        tide_search_row = self.db_session.query(DB.TideSearch).filter_by(TideSearchName=tide_search_name).first()
+        tide_search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName=tide_search_name).first()
         if mgf_row and tide_index_row and (tide_search_row is None):
             directory_name = str(uuid.uuid4().hex)
             full_directory_path = os.path.join(self.project_path, 'tide_search_results', directory_name)

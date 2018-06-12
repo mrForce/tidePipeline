@@ -36,17 +36,17 @@ try:
         pass
 except:
     assert(False)
-project = Base.Base(project_folder, ' '.join(sys.argv))
+project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 row = None
 if args.CollectionType == 'TargetSet':
-    row = Base.get_target_set_row(args.Name)
+    row = project.get_target_set_row(args.Name)
 elif args.CollectionType == 'PeptideList':
-    row = Base.get_peptide_list_row(args.Name)
+    row = project.get_peptide_list_row(args.Name)
 elif args.CollectionType == 'FilteredSearchResult':
-    row = PostProcessing.get_filtered_search_result_row(args.Name)
+    row = project.get_filtered_search_result_row(args.Name)
 elif args.CollectionType == 'FilteredNetMHC':
-    row = Base.get_filtered_netmhc_row(args.Name)
+    row = project.get_filtered_netmhc_row(args.Name)
 assert(row)
 peptides = row.get_peptides(project_folder)
 with open(args.export_location, 'w') as f:

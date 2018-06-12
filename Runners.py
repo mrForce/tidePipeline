@@ -35,7 +35,7 @@ class TideSearchRunner:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideSearchFailedError(' '.join(command))
-        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), TideSearchName=tide_search_row_name)
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
         return search_row
 
         
@@ -128,7 +128,7 @@ class AssignConfidenceRunner:
 
 class PercolatorRunner:
     def __init__(self, param_file_path = False):
-        if param_file:
+        if param_file_path:
             line_regex = re.compile('(?:#.*)|(\S+=\S+)|$')
             with open(param_file_path, 'r') as f:
                 for line in f:
@@ -162,5 +162,5 @@ class PercolatorRunner:
             raise PercolatorFailedError(' '.join(command))
         column_arguments['PercolatorOutputPath'] = output_directory_db
         column_arguments['PercolatorName'] = percolator_name
-        column_arguments['tideSearch'] = tide_search_row
+        column_arguments['search'] = tide_search_row
         return DB.Percolator(**column_arguments)

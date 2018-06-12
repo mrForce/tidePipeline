@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import subprocess
 import tempfile
+import DB
 import os
 import locale
 class Error(Exception):
@@ -84,7 +85,8 @@ class AssignConfidenceHandler(AbstractQValueHandler):
     PSMs
     """
     def __init__(self, name, threshold, project_path, db_session):
-        self.assign_confidence_row = db_session.query(tPipeDB.AssignConfidence).filter_by(AssignConfidenceName = name).first()
+        self.assign_confidence_row = db_session.query(DB.AssignConfidence).filter_by(AssignConfidenceName = name).first()
+        assert(self.assign_confidence_row)
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
@@ -115,7 +117,7 @@ class PercolatorHandler(AbstractQValueHandler):
     PSMs
     """
     def __init__(self, name, threshold, project_path, db_session):
-        self.percolator_row = tPipeDB.query(tPipeDB.Percolator).filter_by(PercolatorName = name).first()
+        self.percolator_row = db_session.query(DB.Percolator).filter_by(PercolatorName = name).first()
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
