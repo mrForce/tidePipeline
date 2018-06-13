@@ -298,6 +298,7 @@ class Base:
         for row in fasta_rows:
             path = row.FASTAPath
             if not os.path.isfile(os.path.join(self.project_path, path)):
+                print('FASTA path: ' + row.FASTAPath)
                 raise FASTAMissingError(row.idFASTA, row.Name, row.FASTAPath)
         print('going to check peptide list rows')
         peptide_list_rows = self.db_session.query(DB.PeptideList).all()

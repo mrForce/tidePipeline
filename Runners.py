@@ -53,6 +53,7 @@ class MSGFPlusIndexRunner:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise MSGFPlusIndexFailedError(' '.join(command))
+        os.chdir(current_path)
         return DB.MSGFPlusIndex(tda=2)
 
 class TideIndexRunner:
