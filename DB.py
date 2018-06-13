@@ -202,6 +202,8 @@ class MSGFPlusIndex(IndexBase):
     __tablename__ = 'MSGFPlusIndex'
     idIndex = Column(Integer, ForeignKey('IndexBase.idIndex'), primary_key=True)
     tda = Column('tda', Integer)
+    MSGFPlusIndexName = Column(String, nullable=False, unique=True)
+    MSGFPlusIndexPath = Column(String, nullable=False)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = msgfplus_index_filteredNetMHC, back_populates = 'msgfplusindices')
     peptidelists = relationship('PeptideList', secondary= msgfplus_index_peptidelists, back_populates = 'msgfplusindices')
     targetsets = relationship('TargetSet', secondary=msgfplus_index_targetset, back_populates='msgfplusindices')

@@ -69,7 +69,7 @@ class TideEngine(AbstractEngine):
                         index['filteredNetMHCs'].append({'hla': hla_row.HLAName, 'name': peptide_list_row.peptideListName, 'length': str(peptide_list_row.length), 'fasta_name': peptide_list_row.fasta.Name})
             indices.append(index)
         return indices
-
+    
 
 
     def create_index(self, set_type, set_name, tide_index_runner, tide_index_name):

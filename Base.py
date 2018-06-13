@@ -42,6 +42,13 @@ class Base:
         self.executables['crux'] = config['EXECUTABLES']['crux']
         self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
 
+    def get_netmhc_executable_path(self):
+        return self.executables['netmhc']
+    def get_crux_executable_path(self):
+        return self.executables['crux']
+    def get_msgfplus_executable_path(self):
+        return self.executables['msgfplus']
+    
     def create_storage_directory(self, parent_path):
         """
         This function is for creating a "storage directory", which is a randomly named (using uuid.uuid4) directory within parent_path. parent_path is relative to the project.
@@ -49,11 +56,14 @@ class Base:
         For example, if I wanted to create a new msgfplus index, I wolud first call create_storage_director('msgfplus_indices')
         """
         full_path = os.path.join(self.project_path, parent_path)
+        print('full path: ' + full_path)
         assert(os.path.isdir(full_path))
-        dir_name = uuid.uuid4()
+        dir_name = str(uuid.uuid4())
         while os.path.exists(os.path.join(full_path, dir_name)):
-            dir_name = uuid.uuid4()
-        return os.path.join(full_path, dir_name)
+            dir_name = str(uuid.uuid4())
+        long_path = os.path.join(full_path, dir_name)
+        os.makedirs(long_path)
+        return os.path.join(parent_path, dir_name)
         
     def get_list_filtered_netmhc(self, peptide_list_name = None, hla=None):
         #joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC).join(DB.NetMHC).join(DB.FilteredNetMHC.netmhc).join(DB.NetMHC.hla).join(DB.NetMHC.peptidelist)

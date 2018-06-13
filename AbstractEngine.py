@@ -1,5 +1,10 @@
 from abc import ABC, abstractmethod, ABCMeta
 from Base import Base
+import DB
+import tempfile
+from Errors import *
+import subprocess
+import os
 class AbstractEngine(Base, metaclass=ABCMeta):
     @abstractmethod
     def list_search(self, mgf_name = None, index_name=None):
@@ -44,11 +49,12 @@ class AbstractEngine(Base, metaclass=ABCMeta):
             if row:
                 link_row = row
                 temp_fasta = tempfile.NamedTemporaryFile(mode='w')
-                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListpath), temp_fasta.name])
+                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListPath), temp_fasta.name])
                 temp_files.append(temp_fasta)
                 fasta_file_location = temp_fasta.name
             else:
                 raise NoSuchPeptideListError(set_name)
         else:
             assert(False)
+        return (fasta_file_location, link_row, temp_files)
 
