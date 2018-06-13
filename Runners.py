@@ -38,7 +38,23 @@ class TideSearchRunner:
         search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
         return search_row
 
-        
+
+class MSGFPlusIndexRunner:
+    def __init__(self, jar_file_location):
+        self.jar_file_location = jar_file_location
+    def run_index_create_row(self, fasta_path, output_directory_path, output_directory_db):
+        #copy the FASTA file to output_directory_path
+        new_fasta_path = shutil.copy(fasta_path, output_directory_path)
+        new_fasta_head, new_fasta_tail = os.path.split(new_fasta_path)
+        current_path = os.getcwd()
+        os.chdir(output_directory_path)
+        command = ['java', '-Xmx3500M', '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', '2']
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise MSGFPlusIndexFailedError(' '.join(command))
+        return DB.MSGFPlusIndex(tda=2)
+
 class TideIndexRunner:
     def __init__(self, tide_index_options):
         #tide_index_options is a dictionary.

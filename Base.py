@@ -3,12 +3,14 @@ from create_target_set import *
 import sys
 import tempfile
 from tabulate import tabulate
+import configparser
 import os
 from Bio import SeqIO
 from NetMHC import *
 import glob
 import re
 import shutil
+import configparser
 import uuid
 from fileFunctions import *
 from datetime import datetime
@@ -33,9 +35,26 @@ class Base:
         self.command = DB.Command(commandString = command)
         self.db_session.add(self.command)
         self.db_session.commit()
+        config = configparser.ConfigParser()
+        config.read(os.path.join(project_path, 'config.ini'))
+        self.executables = {}
+        self.executables['netmhc'] = config['EXECUTABLES']['netmhc']
+        self.executables['crux'] = config['EXECUTABLES']['crux']
+        self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
 
+    def create_storage_directory(self, parent_path):
+        """
+        This function is for creating a "storage directory", which is a randomly named (using uuid.uuid4) directory within parent_path. parent_path is relative to the project.
 
-
+        For example, if I wanted to create a new msgfplus index, I wolud first call create_storage_director('msgfplus_indices')
+        """
+        full_path = os.path.join(self.project_path, parent_path)
+        assert(os.path.isdir(full_path))
+        dir_name = uuid.uuid4()
+        while os.path.exists(os.path.join(full_path, dir_name)):
+            dir_name = uuid.uuid4()
+        return os.path.join(full_path, dir_name)
+        
     def get_list_filtered_netmhc(self, peptide_list_name = None, hla=None):
         #joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC).join(DB.NetMHC).join(DB.FilteredNetMHC.netmhc).join(DB.NetMHC.hla).join(DB.NetMHC.peptidelist)
         joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC, DB.PeptideList, DB.HLA).join(DB.NetMHC).join(DB.PeptideList).join(DB.HLA)
@@ -436,14 +455,23 @@ class Base:
         
         
     @staticmethod
-    def createEmptyProject(project_path, command):
+    def createEmptyProject(project_path, command, config_location):
         if os.path.exists(project_path):
             raise ProjectPathAlreadyExistsError(project_path)
         else:
+            config = configparser.ConfigParser()
+            config.read(config_location)
+            assert('EXECUTABLES' in config.sections())
+            config_keys = ['netmhc', 'crux', 'msgfplus']
+            for key in config_keys:
+                assert(key in config['EXECUTABLES'])
+                value = config['EXECUTABLES'][key]
+                assert(len(value) > 0)
             os.mkdir(project_path)
             subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult']
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
+            shutil.copy(config_location, os.path.join(project_path, 'config.ini'))
             return Base(project_path, command)
 
 

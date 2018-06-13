@@ -8,5 +8,6 @@ class MSGFPlusEngine(AbstractEngine)
     def list_indices(self):
         pass
     def create_index(self, set_type, set_name, index_runner, index_name):
+        storage_dir = self.create_storage_directory('msgfplusindices')
         
     
