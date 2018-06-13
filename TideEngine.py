@@ -76,39 +76,7 @@ class TideEngine(AbstractEngine):
         """
         tide_index_runner is an instance of the TideIndexRunner class
         """
-        fasta_file_location = ''
-        temp_files = []
-        link_row = None
-        if set_type == 'TargetSet':
-            target_set_name = set_name
-            row = self.db_session.query(DB.TargetSet).filter_by(TargetSetName = target_set_name).first()
-            if row:
-                link_row = row
-                fasta_file_location = os.path.join(self.project_path, row.TargetSetFASTAPath)
-            else:
-                raise NoSuchTargetSetError(set_name)
-        elif set_type == 'FilteredNetMHC':
-            row = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = set_name).first()
-            if row:
-                link_row = row
-                temp_fasta = tempfile.NamedTemporaryFile(mode='w')
-                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.filtered_path), temp_fasta.name])
-                temp_files.append(temp_fasta)
-                fasta_file_location = temp_fasta.name
-            else:
-                raise NoSuchFilteredNetMHCError(set_name)
-        elif set_type == 'PeptideList':
-            row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = set_name).first()
-            if row:
-                link_row = row
-                temp_fasta = tempfile.NamedTemporaryFile(mode='w')
-                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListpath), temp_fasta.name])
-                temp_files.append(temp_fasta)
-                fasta_file_location = temp_fasta.name
-            else:
-                raise NoSuchPeptideListError(set_name)
-        else:
-            assert(False)
+        fasta_file_location, link_row, temp_files  = self.create_fasta_for_indexing(set_type, set_name)
         output_directory_name = str(uuid.uuid4().hex)
         output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         while os.path.isfile(output_directory_path) or os.path.isdir(output_directory_path):

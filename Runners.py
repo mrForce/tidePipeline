@@ -42,7 +42,7 @@ class TideSearchRunner:
 class MSGFPlusIndexRunner:
     def __init__(self, jar_file_location):
         self.jar_file_location = jar_file_location
-    def run_index_create_row(self, fasta_path, output_directory_path, output_directory_db):
+    def run_index_create_row(self, fasta_path, output_directory_path):
         #copy the FASTA file to output_directory_path
         new_fasta_path = shutil.copy(fasta_path, output_directory_path)
         new_fasta_head, new_fasta_tail = os.path.split(new_fasta_path)
