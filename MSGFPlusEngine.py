@@ -5,7 +5,15 @@ class MSGFPlusEngine(AbstractEngine):
     def list_search(self, mgf_name = None, index_name=None):
         pass
     def run_search(self, mgf_name, index_name, search_runner, search_name, options):
-        pass
+        mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+        assert(mgf_row)
+        index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName=index_name).first()
+        assert(index_row)
+        search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName=search_name).first()
+        assert(not search_row)
+        
+        
+            
     def list_indices(self):
         rows = self.db_session.query(DB.MSGFPlusIndex).all()
         indices = []
@@ -32,7 +40,7 @@ class MSGFPlusEngine(AbstractEngine):
         storage_dir = self.create_storage_directory('msgfplus_indices')
         print('storage dir: ' + storage_dir)
         fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name)
-        row = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir))
+        row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir))
         if set_type == 'TargetSet':
             row.targetsets = [link_row]
         elif set_type == 'FilteredNetMHC':
@@ -42,7 +50,7 @@ class MSGFPlusEngine(AbstractEngine):
         else:
             assert(False)
         row.MSGFPlusIndexName = index_name
-        row.MSGFPlusIndexPath = storage_dir
+        row.MSGFPlusIndexPath = os.path.join(storage_dir, fasta_name)
         self.db_session.add(row)
         self.db_session.commit()
     

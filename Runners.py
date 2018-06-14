@@ -38,6 +38,37 @@ class TideSearchRunner:
         search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
         return search_row
 
+class MSGFPlusSearchRunner:
+    def __init__(self, search_options, jar_file_location):
+        self.search_options = search_options
+        self.jar_file_location = jar_file_location
+    @staticmethod
+    def get_search_options():
+        return {'-t': {'type':str, 'help': 'PrecursorMassTolerance'}, '-ti': {'type': str, 'help': 'IsotopeErrorRange'}, '-thread': {'type': str, 'help': 'NumThreads'}, '-m': {'type': str, 'help':'FragmentMethodID'}, '-inst': {'type': str, 'help': 'MS2DetectorID'}, '-minLength': {'type': int, 'help': 'MinPepLength'}, '-maxLength': {'type': int, 'help': 'MaxPepLength'}, '-minCharge': {'type': int, 'help': 'MinCharge'}, 'maxCharge': {'type': int, 'help': 'MaxCharge'}, '-ccm': {'type': str, 'help': 'ChargeCarrierMass'}}
+
+    #change the options here
+    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, options, project_path, search_row_name):
+        mgf_location = os.path.join(project_path, mgf_row.MGFPath)
+        print('mgf location: ' + mgf_location)
+        
+        command = ['java', '-Xmx3500M', '-jar', self.jar_file_location, '-s', mgf_location, '-d', 
+        param_filename = str(uuid.uuid4().hex) + '-param.txt'
+        while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
+            param_filename = str(uuid.uuid4().hex) + '-param.txt'
+        with open(os.path.join(project_path, 'tide_param_files', param_filename), 'w') as f:        
+            for k, v in options.items():
+                f.write(k + '=' + str(v) + '\n')
+        spectra_file = os.path.join(project_path, mgf_row.MGFPath)
+        index_filename = os.path.join(project_path, index_row.TideIndexPath)
+        print('current working directory: ' + os.getcwd())
+        command = [CRUX_BINARY, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise TideSearchFailedError(' '.join(command))
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
+        return search_row
+
 
 class MSGFPlusIndexRunner:
     def __init__(self, jar_file_location):
@@ -54,7 +85,7 @@ class MSGFPlusIndexRunner:
         except subprocess.CalledProcessError:
             raise MSGFPlusIndexFailedError(' '.join(command))
         os.chdir(current_path)
-        return DB.MSGFPlusIndex(tda=2)
+        return (DB.MSGFPlusIndex(tda=2), new_fasta_tail)
 
 class TideIndexRunner:
     def __init__(self, tide_index_options):
