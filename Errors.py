@@ -6,6 +6,11 @@ class MSGFPlusIndexFailedError(Error):
         self.command = command
     def __repr__(self):
         return 'Failed to create MSGFPlus index using the command: ' + self.command
+class MSGFPlusSearchFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'Failed to run MSGF+ Search using the command: ' + self.command
     
 class NoSuchTargetSetError(Error):
     def __init__(self, target_set_name):

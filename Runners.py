@@ -44,29 +44,40 @@ class MSGFPlusSearchRunner:
         self.jar_file_location = jar_file_location
     @staticmethod
     def get_search_options():
-        return {'-t': {'type':str, 'help': 'PrecursorMassTolerance'}, '-ti': {'type': str, 'help': 'IsotopeErrorRange'}, '-thread': {'type': str, 'help': 'NumThreads'}, '-m': {'type': str, 'help':'FragmentMethodID'}, '-inst': {'type': str, 'help': 'MS2DetectorID'}, '-minLength': {'type': int, 'help': 'MinPepLength'}, '-maxLength': {'type': int, 'help': 'MaxPepLength'}, '-minCharge': {'type': int, 'help': 'MinCharge'}, 'maxCharge': {'type': int, 'help': 'MaxCharge'}, '-ccm': {'type': str, 'help': 'ChargeCarrierMass'}}
-
+        return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}}
+    @staticmethod
+    def convert_cmdline_option_to_column_name(option):
+        options = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm'}
+        if option in options:
+            return options[option]
+        else:
+            return None
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, options, project_path, search_row_name):
+    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, options, project_path, search_row_name):
+        #output directory relative to the project path
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         print('mgf location: ' + mgf_location)
-        
-        command = ['java', '-Xmx3500M', '-jar', self.jar_file_location, '-s', mgf_location, '-d', 
-        param_filename = str(uuid.uuid4().hex) + '-param.txt'
-        while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
-            param_filename = str(uuid.uuid4().hex) + '-param.txt'
-        with open(os.path.join(project_path, 'tide_param_files', param_filename), 'w') as f:        
-            for k, v in options.items():
-                f.write(k + '=' + str(v) + '\n')
-        spectra_file = os.path.join(project_path, mgf_row.MGFPath)
-        index_filename = os.path.join(project_path, index_row.TideIndexPath)
-        print('current working directory: ' + os.getcwd())
-        command = [CRUX_BINARY, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
+        fasta_index_location = os.path.join(project_path, index_row.MGFPlusIndexPath)
+            
+        command = ['java', '-Xmx3500M', '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-o', os.path.join(project_path, output_directory)]
+        column_args = {}
+        if modification_file_row:
+            modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
+            command.append('-mod')
+            command.append(modification_file_location)
+            column_args['modificationFile'] = modification_file_row        
+        for key, value in options.items():
+            if key and value:
+                command.append('--' + key)
+                command.append(str(value))
+                column_name = MSGFPlusSearchRunner.convert_cmdline_option_to_column_name(key)
+                column_args[column_name] = value
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
-            raise TideSearchFailedError(' '.join(command))
-        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
+            raise MSGFPlusSearchFailedError(' '.join(command))
+        
+        search_row = DB.MSGFPlusSearch(**column_args)
         return search_row
 
 
