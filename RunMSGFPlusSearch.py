@@ -32,7 +32,7 @@ arguments = vars(args)
 
 
 for k, v in arguments.items():
-    if k and v and k != 'project_folder' and k != 'mgf_name' and k != 'index_name' and k != 'search_name' and k != 'modifications_file':
+    if k and v and k != 'project_folder' and k != 'mgf_name' and k != 'index_name' and k != 'search_name' and k != 'modifications_file' and k != 'memory':
         k = k.replace('_', '-')
         good_arguments[k] = v
 print('going to begin command session')        

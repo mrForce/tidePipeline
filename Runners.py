@@ -61,7 +61,7 @@ class MSGFPlusSearchRunner:
         memory_string = '-Xmx3500M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
-        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-o', os.path.join(project_path, output_directory)]
+        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-o', os.path.join(project_path, output_directory, 'search.mzid')]
         column_args = {}
         if modifications_file_row:
             modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
@@ -73,7 +73,8 @@ class MSGFPlusSearchRunner:
                 command.append('--' + key)
                 command.append(str(value))
                 column_name = MSGFPlusSearchRunner.convert_cmdline_option_to_column_name(key)
-                column_args[column_name] = value
+                assert(column_name)
+                column_args[column_name] = str(value)
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
@@ -103,7 +104,6 @@ class MSGFPlusIndexRunner:
         command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', '2']
         print('index command: ' + ' '.join(command))
         print('ran in: ' + str(os.getcwd()))
-        assert(False)
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:

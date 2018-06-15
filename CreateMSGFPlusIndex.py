@@ -35,7 +35,7 @@ elif args.set_type == 'TargetSet':
 project.begin_command_session()
 msgfplus_index_runner = Runners.MSGFPlusIndexRunner(project.get_msgfplus_executable_path())
 if args.memory:
-    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, memory)
+    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, args.memory)
 else:
     project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name)
 project.end_command_session()
