@@ -1,17 +1,28 @@
 from AbstractEngine import AbstractEngine
 import DB
 import os
+import Runners
 class MSGFPlusEngine(AbstractEngine):
     def list_search(self, mgf_name = None, index_name=None):
         pass
-    def run_search(self, mgf_name, index_name, search_runner, search_name, options):
+    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None):
+        #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         assert(mgf_row)
         index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName=index_name).first()
         assert(index_row)
+        modifications_row = None
+        if modifications_name:
+            modifications_row = self.db_session.query(DB.MSGFPlusModificationFile).filter_by(MSGFPlusModificationFileName=modifications_name).first()
+            assert(modifications_row)
         search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName=search_name).first()
         assert(not search_row)
-        
+        output_directory = self.create_storage_directory('msgfplus_search_results')
+        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory)
+        q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
+        self.db_session.add(new_search_row)
+        self.db_session.add(q_value_row)
+        self.db_session.commit()
         
             
     def list_indices(self):
@@ -33,14 +44,14 @@ class MSGFPlusEngine(AbstractEngine):
             indices.append(index)
         return indices
 
-    def create_index(self, set_type, set_name, index_runner, index_name):
+    def create_index(self, set_type, set_name, index_runner, index_name, memory=None):
         #make sure there isn't an MSGFPlusIndex with the name index_name
         index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName=index_name).first()
         assert(not index_row)
         storage_dir = self.create_storage_directory('msgfplus_indices')
         print('storage dir: ' + storage_dir)
         fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name)
-        row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir))
+        row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir), memory)
         if set_type == 'TargetSet':
             row.targetsets = [link_row]
         elif set_type == 'FilteredNetMHC':

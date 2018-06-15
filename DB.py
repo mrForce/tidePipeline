@@ -272,7 +272,6 @@ class MSGFPlusSearch(SearchBase):
     maxPepLength = Column('maxPepLength', Integer)
     minPrecursorCharge = Column('minPrecursorCharge', Integer)
     maxPrecursorCharge = Column('maxPrecursorCharge', Integer)
-    MSGFPlusQValue = relationship('MSGFPlusQValue', uselist=False, back_populates='MSGFPlusSearch')
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplussearch',
     }
@@ -293,9 +292,10 @@ class QValueBase(BaseTable):
 class MSGFPlusQValue(QValueBase):
     __tablename__ = 'MSGFPlusQValue'
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
-    idMSGFPlusSearch = Column(Integer, ForeignKey('MSGFPlusSearch.idSearch'))
-    MSGFPlusSearch = relationship('MSGFPlusSearch', back_populates='MSGFPlusQValue')
-    
+    #the name is the name of the search
+    __mapper_args__ = {
+        'polymorphic_identity': 'msgfplus',
+    }
 class AssignConfidence(QValueBase):
     __tablename__ = 'AssignConfidence'
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)

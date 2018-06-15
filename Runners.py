@@ -39,9 +39,9 @@ class TideSearchRunner:
         return search_row
 
 class MSGFPlusSearchRunner:
-    def __init__(self, search_options, jar_file_location):
-        self.search_options = search_options
+    def __init__(self, args, jar_file_location):
         self.jar_file_location = jar_file_location
+        self.args = args
     @staticmethod
     def get_search_options():
         return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}}
@@ -53,20 +53,22 @@ class MSGFPlusSearchRunner:
         else:
             return None
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, options, project_path, search_row_name):
+    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None):
         #output directory relative to the project path
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         print('mgf location: ' + mgf_location)
-        fasta_index_location = os.path.join(project_path, index_row.MGFPlusIndexPath)
-            
-        command = ['java', '-Xmx3500M', '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-o', os.path.join(project_path, output_directory)]
+        fasta_index_location = os.path.join(project_path, index_row.MSGFPlusIndexPath)
+        memory_string = '-Xmx3500M'
+        if memory:
+            memory_string = '-Xmx' + str(memory) + 'M'
+        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-o', os.path.join(project_path, output_directory)]
         column_args = {}
-        if modification_file_row:
+        if modifications_file_row:
             modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
             command.append('-mod')
             command.append(modification_file_location)
-            column_args['modificationFile'] = modification_file_row        
-        for key, value in options.items():
+            column_args['modificationFile'] = modifications_file_row        
+        for key, value in self.args.items():
             if key and value:
                 command.append('--' + key)
                 command.append(str(value))
@@ -84,17 +86,29 @@ class MSGFPlusSearchRunner:
 class MSGFPlusIndexRunner:
     def __init__(self, jar_file_location):
         self.jar_file_location = jar_file_location
-    def run_index_create_row(self, fasta_path, output_directory_path):
+    def run_index_create_row(self, fasta_path, output_directory_path, memory=None):
         #copy the FASTA file to output_directory_path
-        new_fasta_path = shutil.copy(fasta_path, output_directory_path)
+        fasta_head, fasta_tail = os.path.split(fasta_path)
+        new_fasta_path = ''
+        if fasta_tail.endswith('.fasta'):
+            new_fasta_path = shutil.copy(fasta_path, output_directory_path)
+        else:
+            new_fasta_path = shutil.copy(fasta_path, os.path.join(output_directory_path, fasta_tail + '.fasta'))
         new_fasta_head, new_fasta_tail = os.path.split(new_fasta_path)
         current_path = os.getcwd()
         os.chdir(output_directory_path)
-        command = ['java', '-Xmx3500M', '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', '2']
+        memory_string = '-Xmx3500M'
+        if memory:
+            memory_string = '-Xmx' + str(memory) + 'M'
+        command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', '2']
+        print('index command: ' + ' '.join(command))
+        print('ran in: ' + str(os.getcwd()))
+        assert(False)
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
-            raise MSGFPlusIndexFailedError(' '.join(command))
+            assert(False)
+            #raise MSGFPlusIndexFailedError(' '.join(command))
         os.chdir(current_path)
         return (DB.MSGFPlusIndex(tda=2), new_fasta_tail)
 
