@@ -73,6 +73,40 @@ class AbstractQValueHandler(ABC):
     def get_row(self):
         pass
 
+class MSGFPlusQValueHandler(AbstractQValueHandler):
+
+    """
+    This needs to get several things:
+    The name of the row
+    The MGF name
+    MSGF+ Search name
+    Peptides
+    PSMs
+    """
+    def __init__(self, name, threshold, project_path, db_session):
+        self.msgfplus_search_row = db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
+        assert(self.msgfplus_search_row)
+        #need to parse the mzidentml file
+        self.peptides = set()
+        self.psms = set()
+        #we need to extract scan, peptide and q value
+        rows = extract_columns(os.path.join(project_path, self.assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', 'tdc q-value'])
+        for row in rows:
+            scan = int(row[0])
+            peptide = row[1]
+            q_val = float(row[2])
+            if q_val <= threshold:
+                self.peptides.add(peptide)
+                self.psms.add((scan, peptide))
+        
+
+    def get_peptides(self):
+        return self.peptides
+    def get_psms(self):
+        return self.psms
+    def get_row(self):
+        return self.assign_confidence_row
+
     
 class AssignConfidenceHandler(AbstractQValueHandler):
 
