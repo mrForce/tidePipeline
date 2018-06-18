@@ -208,6 +208,7 @@ class MSGFPlusIndex(IndexBase):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = msgfplus_index_filteredNetMHC, back_populates = 'msgfplusindices')
     peptidelists = relationship('PeptideList', secondary= msgfplus_index_peptidelists, back_populates = 'msgfplusindices')
     targetsets = relationship('TargetSet', secondary=msgfplus_index_targetset, back_populates='msgfplusindices')
+    searches = relationship('MSGFPlusSearch', back_populates='index')
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplusindex',
     }
@@ -272,6 +273,7 @@ class MSGFPlusSearch(SearchBase):
     maxPepLength = Column('maxPepLength', Integer)
     minPrecursorCharge = Column('minPrecursorCharge', Integer)
     maxPrecursorCharge = Column('maxPrecursorCharge', Integer)
+    index = relationship('MSGFPlusIndex', back_populates='searches')
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplussearch',
     }

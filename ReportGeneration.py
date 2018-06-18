@@ -87,21 +87,28 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
     def __init__(self, name, threshold, project_path, db_session):
         self.msgfplus_search_row = db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
         assert(self.msgfplus_search_row)
+        q_value_rows = self.msgfplus_search_row.QValueBases
+        self.q_value_row = None
+        for row in q_value_rows:
+            if row.QValueType == 'msgfplus':
+                self.q_value_row = row
+                break
+        assert(self.q_value_row)
         result_file_path = self.msgfplus_search_row.resultFilePath
         parser = Parsers.MSGFPlusSearchParser(result_file_path)
-        spectrum_matches = parser.get_spectrum_matches()
-        
+        spectrum_matches_list = parser.get_spectrum_matches()
         self.peptides = set()
         self.psms = set()
-        #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, self.assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', 'tdc q-value'])
-        for row in rows:
-            scan = int(row[0])
-            peptide = row[1]
-            q_val = float(row[2])
-            if q_val <= threshold:
-                self.peptides.add(peptide)
-                self.psms.add((scan, peptide))
+        for spectrum_matches in spectrum_matches_list:
+            scan = spectrum_matches.get_scan_number()
+            peptide_matches = spectrum_matches.get_peptide_matches()
+            for peptide_match in peptide_matches:
+                peptide = peptide_match.get_peptide()
+                q_value = peptide_match.get_q_value()
+                score = peptide_match.get_score()
+                if q_value <= threshold:
+                    self.peptides.add(peptide)
+                    self.psms.add((scan, peptide))
         
 
     def get_peptides(self):
@@ -109,7 +116,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
     def get_psms(self):
         return self.psms
     def get_row(self):
-        return self.assign_confidence_row
+        return self.q_value_row
 
     
 class AssignConfidenceHandler(AbstractQValueHandler):

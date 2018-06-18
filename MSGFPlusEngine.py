@@ -2,9 +2,32 @@ from AbstractEngine import AbstractEngine
 import DB
 import os
 import Runners
+from Errors import *
 class MSGFPlusEngine(AbstractEngine):
     def list_search(self, mgf_name = None, index_name=None):
-        pass
+        """
+        List the tide searches. You can specify an mgf name and/or tide index
+        """
+        filter_args = {}
+        if mgf_name:
+            mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+            if mgf_row:
+                filter_args['idMGF'] = mgf_row.idMGFfile
+            else:
+                raise MGFRowDoesNotExistError(mgf_name)
+        if msgf_index_name:
+            msgf_index_row = self.db_sesion.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = msgf_index_name).first()
+            if msgf_index_row:
+                filter_args['idMSGFPlusIndex'] = msgf_index_row.idMSGFPlusIndex
+            else:
+                raise NoSuchMSGFPlusIndexError(msgf_index_name)
+        rows = []
+        if len(filter_args.keys()) > 0:
+            rows = self.db_session.query(DB.MSGFPlusSearch).filter_by(**filter_args).all()
+        else:
+            rows = self.db_session.query(DB.MSGFPlusSearch).all()
+        return rows
+
     def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None):
         #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()

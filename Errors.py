@@ -6,6 +6,12 @@ class MSGFPlusIndexFailedError(Error):
         self.command = command
     def __repr__(self):
         return 'Failed to create MSGFPlus index using the command: ' + self.command
+
+class NoSuchMSGFPlusIndexError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'No such MSGF+ Index in command: ' + self.command
 class MSGFPlusSearchFailedError(Error):
     def __init__(self, command):
         self.command = command

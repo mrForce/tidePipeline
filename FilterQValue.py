@@ -26,7 +26,7 @@ project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 
 if args.type  == 'MSGF':
-    print('sorry, MSGF+ is not implemented yet')
+    project.filter_q_value_msgfplus(args.name, args.threshold, args.FilteredSearchResultName)
 else:
     if args.type == 'assign_confidence':
         project.filter_q_value_assign_confidence(args.name, args.threshold, args.FilteredSearchResultName)

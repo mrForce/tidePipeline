@@ -26,7 +26,13 @@ class PostProcessing(Base):
         assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(assign_confidence_name, q_value_threshold, self.project_path, self.db_session)
         peptides = assign_confidence_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, assign_confidence_handler.get_row() , q_value_threshold)
-        
+
+    def filter_q_value_msgfplus(self, msgfplus_search_name, q_value_threshold, filtered_search_result_name):
+        msgfplus_handler = ReportGeneration.MSGFPlusHandler(msgfplus_search_name, q_value_threshold, self.project_path, self.db_session)
+        row = msgfplus_handler.get_row()
+        peptides = msgfplus_handler.get_peptides()
+        self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold)
+
     def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name):
         percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, q_value_threshold, self.project_path, self.db_session)
         peptides = percolator_handler.get_peptides()
