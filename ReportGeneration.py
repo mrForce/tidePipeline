@@ -4,6 +4,7 @@ import tempfile
 import DB
 import os
 import locale
+import Parsers
 class Error(Exception):
     pass
 
@@ -86,7 +87,10 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
     def __init__(self, name, threshold, project_path, db_session):
         self.msgfplus_search_row = db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
         assert(self.msgfplus_search_row)
-        #need to parse the mzidentml file
+        result_file_path = self.msgfplus_search_row.resultFilePath
+        parser = Parsers.MSGFPlusSearchParser(result_file_path)
+        spectrum_matches = parser.get_spectrum_matches()
+        
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value

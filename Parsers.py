@@ -36,7 +36,7 @@ class MGFPlusSearchParser:
             peptide = peptide_sequence_element.text
             self.peptide_map[peptide_id] = peptide
         spectrum_identification_results = root.findall('./mz:DataCollection/mz:AnalysisData/mz:SpectrumIdentificationList/mz:SpectrumIdentificationResult', ns)
-        self.psms = []
+        self.spectrum_matches = []
         re_matcher = re.compile('index=(?P<index>\d+)')
         
         for result in spectrum_identification_results:
@@ -55,7 +55,7 @@ class MGFPlusSearchParser:
                 assert(score_item)
                 score = float(score_item.attrib['value'])
                 peptide_matches.append(PeptideMatch(peptide, q_value, score))
-            self.psms.append(SpectrumMatches(spectrum_id, peptide_matches))
+            self.spectrum_matches.append(SpectrumMatches(spectrum_id, peptide_matches))
 
-    def get_psms(self):
-        return self.psms
+    def get_spectrum_matches(self):
+        return self.spectrum_matches
