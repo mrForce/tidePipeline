@@ -274,6 +274,7 @@ class MSGFPlusSearch(SearchBase):
     minPrecursorCharge = Column('minPrecursorCharge', Integer)
     maxPrecursorCharge = Column('maxPrecursorCharge', Integer)
     index = relationship('MSGFPlusIndex', back_populates='searches')
+    mgf = relationship('MGFfile')
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplussearch',
     }

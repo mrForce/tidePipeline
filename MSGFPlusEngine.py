@@ -15,12 +15,12 @@ class MSGFPlusEngine(AbstractEngine):
                 filter_args['idMGF'] = mgf_row.idMGFfile
             else:
                 raise MGFRowDoesNotExistError(mgf_name)
-        if msgf_index_name:
-            msgf_index_row = self.db_sesion.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = msgf_index_name).first()
+        if index_name:
+            msgf_index_row = self.db_sesion.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = index_name).first()
             if msgf_index_row:
                 filter_args['idMSGFPlusIndex'] = msgf_index_row.idMSGFPlusIndex
             else:
-                raise NoSuchMSGFPlusIndexError(msgf_index_name)
+                raise NoSuchMSGFPlusIndexError(index_name)
         rows = []
         if len(filter_args.keys()) > 0:
             rows = self.db_session.query(DB.MSGFPlusSearch).filter_by(**filter_args).all()

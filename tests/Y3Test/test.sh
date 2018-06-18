@@ -3,12 +3,12 @@
 cd ..
 cd ..
 ls
-python Initialize.py Y3_test_project tests/Y3Test/config.ini
-python AddHLA.py Y3_test_project H-2-Kb
-python AddFASTA.py Y3_test_project tests/Y3Test/all_mouse_proteins.fasta MouseProteins
-python KChop.py Y3_test_project MouseProteins 9 MouseProteinNineMers
-python CreateMSGFPlusIndex.py Y3_test_project PeptideList MouseProteinNineMers MouseProteinNineMersIndex --memory 6000
-python AddMGF.py Y3_test_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
+#python Initialize.py Y3_test_project tests/Y3Test/config.ini
+#python AddHLA.py Y3_test_project H-2-Kb
+#python AddFASTA.py Y3_test_project tests/Y3Test/all_mouse_proteins.fasta MouseProteins
+#python KChop.py Y3_test_project MouseProteins 9 MouseProteinNineMers
+#python CreateMSGFPlusIndex.py Y3_test_project PeptideList MouseProteinNineMers MouseProteinNineMersIndex --memory 6000
+#python AddMGF.py Y3_test_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
 #zip -r Y3_test_project.zip Y3_test_project
 python RunMSGFPlusSearch.py Y3_test_project Y3_mgf MouseProteinNineMersIndex MouseMSGFSearch --memory 6000
 #python KChop.py Y3_test_project MouseProteins 10 MouseProteinTenMers
