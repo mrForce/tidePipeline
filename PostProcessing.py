@@ -1,6 +1,7 @@
 from Base import Base
 import DB
 import ReportGeneration
+from tabulate import tabulate
 import TargetSetSourceCount
 import os
 from create_target_set import *
@@ -8,6 +9,16 @@ import uuid
 from Errors import *
 
 class PostProcessing(Base):
+    def list_filtered_search_results(self):
+        headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
+        rows = []
+        for result in self.db_session.query(DB.FilteredSearchResult).all():
+            name = result.filteredSearchResultName
+            path = result.filteredSearchResultPath
+            threshold = str(result.q_value_threshold)
+            search_name = result.QValue.searchbase.SearchName
+            rows.append([name, path, threshold, search_name])
+        return tabulate(rows, headers=headers)
     def create_filtered_search_result(self, name, peptides, qvalue_row, threshold):
         row = self.get_filtered_search_result_row(name)
         if row:
