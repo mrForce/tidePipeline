@@ -1,4 +1,4 @@
-import tPipeDB
+import DB
 import sys
 import os
 
@@ -19,7 +19,7 @@ class TideSearchRunner:
         return {'--mod-precision': {'type':int}, '--auto-precursor-window': {'choices': ['false', 'warn', 'fail']}, '--max-precursor-charge': {'type': int}, '--precursor-window': {'type': float}, '--precursor-window-type': {'choices': ['mass', 'mz', 'ppm']}, '--auto-mz-bin-width': {'choices': ['false', 'warn', 'fail']}, '--compute-sp': {'choices': ['T', 'F']}, '--deisotope': {'type': float}, '--exact-p-value': {'choices':['T', 'F']}, '--isotope-error': {'type': str}, '--min-peaks': {'type': int}, '--mz-bin-offset': {'type': float}, '--mz-bin-width': {'type': float}, '--peptide-centric-search': {'choices': ['T', 'F']}, '--score-function': {'choices': ['xcorr', 'residue-evidence', 'both']}, '--fragment-tolerance': {'type': float}, '--evidence-granularity': {'type': int}, '--remove-precursor-peak': {'choices': ['T', 'F']}, '--remove-precursor-tolerance': {'type': float}, '--scan-number': {'type': str}, '--skip-processing': {'choices': ['T', 'F']}, '--spectrum-charge': {'choices': ['1', '2', '3', 'all']}, '--spectrum-max-mz': {'type': float}, '--spectrum-min-mz': {'type': float}, '--use-flanking-peaks': {'choices': ['T', 'F']}, '--use-neutral-loss-peaks': {'choices': ['T', 'F']}, '--num-threads': {'type': int}, '--pm-charge': {'type': int}, '--pm-max-frag-mz': {'type': float}, '--pm-max-precursor-delta-ppm': {'type': float}, '--pm-max-precursor-mz': {'type': float}, '--pm-max-scan-seperation': {'type': int}, '--pm-min-common-frag-peaks': {'type': int}, '--pm-min-frag-mz': {'type': float}, '--pm-min-peak-pairs': {'type': int}, '--pm-min-precursor-mz': {'type': float}, '--pm-min-scan-frag-peaks': {'type': int}, '--pm-pair-top-n-frag-peaks': {'type': int}, '--pm-top-n-frag-peaks': {'type': int}, '--concat': {'choices': ['T', 'F']}, '--file-column': {'choices': ['T', 'F']}, '--fileroot': {'type': str}, '--mass-precision': {'type': int}, '--mzid-output': {'choices': ['T', 'F']}, '--precision': {'type': int}, '--spectrum-parser': {'choices': ['pwiz', 'mstoolkit']}, '--store-spectra': {'type': str}, '--top-match': {'type': int}, '--use-z-line': {'choices': ['T', 'F']}}
 
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, options, project_path, tide_search_row_name):        
+    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, options, project_path, tide_search_row_name):    
         """ First, decide the filename """
         param_filename = str(uuid.uuid4().hex) + '-param.txt'
         while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
@@ -35,10 +35,83 @@ class TideSearchRunner:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideSearchFailedError(' '.join(command))
-        search_row = tPipeDB.TideSearch(idTideIndex = index_row.idTideIndex, idMGF=mgf_row.idMGFfile, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), TideSearchName=tide_search_row_name)
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
         return search_row
 
+class MSGFPlusSearchRunner:
+    def __init__(self, args, jar_file_location):
+        self.jar_file_location = jar_file_location
+        self.args = args
+    @staticmethod
+    def get_search_options():
+        return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}}
+    @staticmethod
+    def convert_cmdline_option_to_column_name(option):
+        options = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm'}
+        if option in options:
+            return options[option]
+        else:
+            return None
+    #change the options here
+    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None):
+        #output directory relative to the project path
+        mgf_location = os.path.join(project_path, mgf_row.MGFPath)
+        print('mgf location: ' + mgf_location)
+        fasta_index_location = os.path.join(project_path, index_row.MSGFPlusIndexPath)
+        memory_string = '-Xmx3500M'
+        if memory:
+            memory_string = '-Xmx' + str(memory) + 'M'
+        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', '1', '-o', os.path.join(project_path, output_directory, 'search.mzid')]
+        column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(project_path, output_directory, 'search.mzid')}
+        if modifications_file_row:
+            modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
+            command.append('-mod')
+            command.append(modification_file_location)
+            column_args['modificationFile'] = modifications_file_row        
+        for key, value in self.args.items():
+            if key and value:
+                command.append('--' + key)
+                command.append(str(value))
+                column_name = MSGFPlusSearchRunner.convert_cmdline_option_to_column_name(key)
+                assert(column_name)
+                column_args[column_name] = str(value)
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise MSGFPlusSearchFailedError(' '.join(command))
         
+        search_row = DB.MSGFPlusSearch(**column_args)
+        return search_row
+
+
+class MSGFPlusIndexRunner:
+    def __init__(self, jar_file_location):
+        self.jar_file_location = jar_file_location
+    def run_index_create_row(self, fasta_path, output_directory_path, memory=None):
+        #copy the FASTA file to output_directory_path
+        fasta_head, fasta_tail = os.path.split(fasta_path)
+        new_fasta_path = ''
+        if fasta_tail.endswith('.fasta'):
+            new_fasta_path = shutil.copy(fasta_path, output_directory_path)
+        else:
+            new_fasta_path = shutil.copy(fasta_path, os.path.join(output_directory_path, fasta_tail + '.fasta'))
+        new_fasta_head, new_fasta_tail = os.path.split(new_fasta_path)
+        current_path = os.getcwd()
+        os.chdir(output_directory_path)
+        memory_string = '-Xmx3500M'
+        if memory:
+            memory_string = '-Xmx' + str(memory) + 'M'
+        command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', '2']
+        print('index command: ' + ' '.join(command))
+        print('ran in: ' + str(os.getcwd()))
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            assert(False)
+            #raise MSGFPlusIndexFailedError(' '.join(command))
+        os.chdir(current_path)
+        return (DB.MSGFPlusIndex(tda=2), new_fasta_tail)
+
 class TideIndexRunner:
     def __init__(self, tide_index_options):
         #tide_index_options is a dictionary.
@@ -47,7 +120,7 @@ class TideIndexRunner:
 
     @staticmethod
     def get_tide_index_options():
-        return {'--clip-nterm-methionine': {'choices':['T', 'F']}, '--isotopic-mass': {'choices': ['average', 'mono']}, '--max-length': {'type': int}, '--max-mass': {'type':str}, '--min-length': {'type':int}, '--min-mass': {'type':str}, '--cterm-peptide-mods-spec': {'type': str}, '--max-mods': {'type': int}, '--min-mods': {'type':int}, '--mod-precision': {'type':int}, '--mods-spec': {'type': str}, '--nterm-peptide-mods-spec': {'type':str}, '--allow-dups': {'choices': ['T', 'F']}, '--decoy-format': {'choices': ['none', 'shuffle', 'peptide-reverse', 'protein-reverse']}, '--decoy-generator': {'type':str}, '--keep-terminal-aminos': {'choices': ['N', 'C', 'NC', 'none']}, '--seed': {'type':str}, '--custom-enzyme': {'type': str}, '--digestion': {'choices': ['full-digest', 'partial-digest', 'non-specific-digest']}, '--enzyme': {'choices': ['no-enzyme', 'trypsin', 'trypsin/p', 'chymotrypsin', 'elactase', 'clostripain', 'cyanogen-bromide', 'iodosobenzoat', 'proline-endopeptidase', 'staph-protease', 'asp-n', 'lys-c', 'lys-n', 'arg-c', 'glu-c', 'pepsin-a', 'elastase-trypsin-chymotrypsin', 'custom-enzyme']}, '--missed-cleavages': {'type': int}}
+        return {'--clip-nterm-methionine': {'choices':['T', 'F']}, '--isotopic-mass': {'choices': ['average', 'mono']}, '--max-length': {'type': int}, '--max-mass': {'type':str}, '--min-length': {'type':int}, '--min-mass': {'type':str}, '--cterm-peptide-mods-spec': {'type': str}, '--max-mods': {'type': int}, '--min-mods': {'type':int}, '--mod-precision': {'type':int}, '--mods-spec': {'type': str}, '--nterm-peptide-mods-spec': {'type':str}, '--allow-dups': {'choices': ['T', 'F']}, '--decoy-format': {'choices': ['none', 'shuffle', 'peptide-reverse', 'protein-reverse'], 'default':'peptide-reverse'}, '--decoy-generator': {'type':str}, '--keep-terminal-aminos': {'choices': ['N', 'C', 'NC', 'none']}, '--seed': {'type':str}, '--custom-enzyme': {'type': str, 'default':'[Z]|[Z]'}, '--digestion': {'choices': ['full-digest', 'partial-digest', 'non-specific-digest']}, '--enzyme': {'choices': ['no-enzyme', 'trypsin', 'trypsin/p', 'chymotrypsin', 'elactase', 'clostripain', 'cyanogen-bromide', 'iodosobenzoat', 'proline-endopeptidase', 'staph-protease', 'asp-n', 'lys-c', 'lys-n', 'arg-c', 'glu-c', 'pepsin-a', 'elastase-trypsin-chymotrypsin', 'custom-enzyme'], 'default':'custom-enzyme'}, '--missed-cleavages': {'type': int}}
     @staticmethod
     def convert_cmdline_option_to_column_name(option):
         converter = {'clip-nterm-methionine': 'clip_nterm_methionine', 'isotopic-mass': 'isotopic_mass', 'max-length': 'max_length', 'max-mass': 'max_mass', 'min-length': 'min_length', 'min-mass': 'min_mass', 'cterm-peptide-mods-spec': 'cterm_peptide_mods_spec', 'max-mods': 'max_mods', 'min-mods':'min_mods', 'mod-precision': 'mod_precision', 'mods-spec': 'mods_spec', 'nterm-peptide-mods-spec': 'nterm_peptide_mods_spec', 'allow-dups': 'allow_dups', 'decoy-format': 'decoy_format', 'decoy-generator': 'decoy_generator', 'keep-terminal-aminos': 'keep_terminal_aminos', 'seed': 'seed', 'custom-enzyme': 'custom_enzyme', 'digestion': 'digestion', 'enzyme': 'enzyme', 'missed-cleavages': 'missed_cleavages'}
@@ -78,7 +151,7 @@ class TideIndexRunner:
             if column_name:
                 column_arguments[column_name] = v
         column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
-        return tPipeDB.TideIndex(**column_arguments)
+        return DB.TideIndex(**column_arguments)
 
 class AssignConfidenceRunner:
     def __init__(self, assign_confidence_options):
@@ -122,13 +195,13 @@ class AssignConfidenceRunner:
                 column_arguments[column_name] = v
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db
         column_arguments['AssignConfidenceName'] = assign_confidence_name
-        column_arguments['tideSearch'] = tide_search_row
-        return tPipeDB.AssignConfidence(**column_arguments)
+        column_arguments['search'] = tide_search_row
+        return DB.AssignConfidence(**column_arguments)
 
 
 class PercolatorRunner:
     def __init__(self, param_file_path = False):
-        if param_file:
+        if param_file_path:
             line_regex = re.compile('(?:#.*)|(\S+=\S+)|$')
             with open(param_file_path, 'r') as f:
                 for line in f:
@@ -162,5 +235,5 @@ class PercolatorRunner:
             raise PercolatorFailedError(' '.join(command))
         column_arguments['PercolatorOutputPath'] = output_directory_db
         column_arguments['PercolatorName'] = percolator_name
-        column_arguments['tideSearch'] = tide_search_row
-        return tPipeDB.Percolator(**column_arguments)
+        column_arguments['search'] = tide_search_row
+        return DB.Percolator(**column_arguments)

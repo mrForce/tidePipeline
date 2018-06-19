@@ -1,6 +1,23 @@
 class Error(Exception):
     pass
 
+class MSGFPlusIndexFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'Failed to create MSGFPlus index using the command: ' + self.command
+
+class NoSuchMSGFPlusIndexError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'No such MSGF+ Index in command: ' + self.command
+class MSGFPlusSearchFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'Failed to run MSGF+ Search using the command: ' + self.command
+    
 class NoSuchTargetSetError(Error):
     def __init__(self, target_set_name):
         self.target_set_name = target_set_name
@@ -27,6 +44,11 @@ class TideSearchRowDoesNotExistError(Error):
     def __repr__(self):
         return 'There is no TideSearch row with the name: ' + str(self.tide_search_name)
 
+class FilteredSearchResultNameMustBeUniqueError(Error):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return 'There is already a FilteredSearchResult with the name: ' + self.name
 class AssignConfidenceNameMustBeUniqueError(Error):
     def __init__(self, assign_confidence_name):
         self.assign_confidence_name = assign_confidence_name

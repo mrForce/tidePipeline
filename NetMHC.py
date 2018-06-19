@@ -3,6 +3,7 @@ import os
 import subprocess
 import time
 import shutil
+import uuid
 import threading
 import functools
 class NetMHCCommand:
@@ -54,7 +55,8 @@ def get_num_lines(filepath):
     wc_process = subprocess.check_output(['wc', filepath])
     return int(wc_process.decode().split()[0])
 def call_netmhc(hla, peptide_file_path, output_path, netmhc_pan = False):
-    netmhc_location = '/home/code/IMPORT/netMHC-4.0/netMHC'
+    netmhc_location = '/usr/bin/netmhc'
+    #netmhc_location = '/home/code/IMPORT/netMHC-4.0/netMHC'
     if netmhc_pan:
         netmhc_location = '/home/code/IMPORT/netMHCpan-4.0/netMHCpan'
     num_peptides = get_num_lines(peptide_file_path)
@@ -85,7 +87,7 @@ def call_netmhc(hla, peptide_file_path, output_path, netmhc_pan = False):
     files = list(set(os.listdir()) - files_before)
     #we'll create a temporary folder to place the NetMHC output
     temp_folder_name = str(uuid.uuid4())
-    while not os.path.exists(temp_folder_name):
+    while os.path.exists(temp_folder_name):
         temp_folder_name = str(uuid.uuid4())
     os.makedirs(temp_folder_name)
     temp_folder_abs_path = os.path.abspath(temp_folder_name)
@@ -124,6 +126,6 @@ def call_netmhc(hla, peptide_file_path, output_path, netmhc_pan = False):
         t.join()
     os.chdir(cwd)
     subprocess.call(['bash_scripts/combine_files.sh'] + [os.path.join(folder, x) for x in output_file_list] + [output_path])
-    os.remove(temp_folder_abs_path)
+    shutil.rmtree(temp_folder_abs_path)
     
         
