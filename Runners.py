@@ -1,7 +1,7 @@
 import DB
 import sys
 import os
-
+import Parsers
 
 import re
 import shutil
@@ -38,6 +38,27 @@ class TideSearchRunner:
         search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
         return search_row
 
+class MaxQuantSearchRunner:
+    def __init__(self, exe_file_location):
+        self.exe_file_location = exe_file_location
+
+    def run_search_create_row(self, raw_row, fasta_path, param_file_row, output_directory, project_path, search_row_name):
+        param_file_path = os.path.join(project_path, param_file_row.Path)
+        custom_param_file_path = os.path.join(project_path, output_directory, os.path.split(param_file_row.Path)[1])
+        parser = Parsers.CustomizableMQParamParser(param_file_path)
+        parser.set_fasta(fasta_path)
+        parser.set_raw(os.path.join(project_path, raw_row.Path))
+        parser.write_mq(custom_param_file_path)
+        """
+        Need to figure out where output goes
+        """
+        command = ['mono', 'exe_file_location', custom_param_file_path]
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise MaxQuantSearchFailedError(' '.join(command))
+        row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory)
+        return row
 class MSGFPlusSearchRunner:
     def __init__(self, args, jar_file_location):
         self.jar_file_location = jar_file_location
@@ -111,6 +132,8 @@ class MSGFPlusIndexRunner:
             #raise MSGFPlusIndexFailedError(' '.join(command))
         os.chdir(current_path)
         return (DB.MSGFPlusIndex(tda=2), new_fasta_tail)
+
+
 
 class TideIndexRunner:
     def __init__(self, tide_index_options):

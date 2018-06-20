@@ -29,6 +29,11 @@ class MSGFPlusSearchFailedError(Error):
         self.command = command
     def __repr__(self):
         return 'Failed to run MSGF+ Search using the command: ' + self.command
+class MaxQuantSearchFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'Failed to run MaxQuant Search using the command: ' + self.command
     
 class NoSuchTargetSetError(Error):
     def __init__(self, target_set_name):
