@@ -81,6 +81,7 @@ class HLA(BaseTable):
         return 'MHC ' + self.HLAName
 
 
+
 class MGFfile(BaseTable):
     __tablename__ = 'MGFfile'
     idMGFfile = Column('idMGFfile', Integer, primary_key=True)

@@ -41,15 +41,17 @@ class Base:
         self.executables['netmhc'] = config['EXECUTABLES']['netmhc']
         self.executables['crux'] = config['EXECUTABLES']['crux']
         self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
-
+        self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
         return self.executables['crux']
     def get_msgfplus_executable_path(self):
         return self.executables['msgfplus']
-
-
+    def get_maxquant_executable_path(self):
+        return self.executables['maxquant']
+    def add_maxquant_parameter_file(self, path, name):
+        
     def create_storage_directory(self, parent_path):
         """
         This function is for creating a "storage directory", which is a randomly named (using uuid.uuid4) directory within parent_path. parent_path is relative to the project.
@@ -166,6 +168,16 @@ class Base:
             self.db_session.add(raw_record)
             self.db_session.commit()
             return raw_record.idRAWfile
+    def add_maxquant_param_file(self, path, name, comment = ''):
+        row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
+        if row:
+            raise MaxQuantParamFileNameMustBeUniqueError(name)
+        else:
+            newpath = self.copy_file('maxquant_param_files', path)
+            record = DB.MaxQuantParameterFile(Name = name, Path = newpath, Comment = comment)
+            self.db_session.add(record)
+            self.db_session.commit()
+            return raw_record.idMaxQuantParameterFile
     def verify_peptide_list(self, peptide_list_name):
         row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
         if row is None:
@@ -489,7 +501,7 @@ class Base:
                 value = config['EXECUTABLES'][key]
                 assert(len(value) > 0)
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult']
+            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult', 'maxquant_param_files', 'RAW']
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             shutil.copy(config_location, os.path.join(project_path, 'config.ini'))
