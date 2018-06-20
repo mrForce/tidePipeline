@@ -48,7 +48,8 @@ class Base:
         return self.executables['crux']
     def get_msgfplus_executable_path(self):
         return self.executables['msgfplus']
-    
+
+
     def create_storage_directory(self, parent_path):
         """
         This function is for creating a "storage directory", which is a randomly named (using uuid.uuid4) directory within parent_path. parent_path is relative to the project.
@@ -155,7 +156,16 @@ class Base:
             self.db_session.add(mgf_record)
             self.db_session.commit()
             return mgf_record.idMGFfile    
-
+    def add_raw_file(self, path, name):
+        row = self.db_session.query(DB.RAWfile).filter_by(RAWName = name).first()
+        if row:
+            raise RAWNameMustBeUniqueError(name)
+        else:
+            newpath = self.copy_file('RAW', path)
+            raw_record = DB.RAWfile(RAWName = name, RAWPath = newpath)
+            self.db_session.add(raw_record)
+            self.db_session.commit()
+            return raw_record.idRAWfile
     def verify_peptide_list(self, peptide_list_name):
         row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
         if row is None:

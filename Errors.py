@@ -1,6 +1,12 @@
 class Error(Exception):
     pass
 
+def RAWNameMustBeUniqueError(Error):
+    def __init__(self, raw_name):
+        self.raw_name = raw_name
+    def __repr__(self):
+        return 'There is already a RAW file with name: ' + self.raw_name
+    
 class MSGFPlusIndexFailedError(Error):
     def __init__(self, command):
         self.command = command
