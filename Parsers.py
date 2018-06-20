@@ -60,3 +60,40 @@ class MSGFPlusSearchParser:
 
     def get_spectrum_matches(self):
         return self.spectrum_matches
+
+class CustomizableMQParamParser:
+    """
+    There shouldn't be any FASTA files or RAW files specified in the mqpar.xml file
+    """
+    def __init__(self, location):
+        self.tree = ET.parse(location)
+        self.root = tree.getroot()
+        fasta_elements = self.root.findall('./fastaFiles')
+        for element in fasta_elements:
+            self.root.remove(element)
+        self.fasta_element = None
+        file_path_elements = self.root.findall('./filePaths/string')
+        for path_element in file_path_elements:
+            path = path_element.text
+            if path.endswith('.raw'):
+                self.root.remove(path_element)
+        self.raw_element = None
+    def set_fasta(self, path):
+        self.fasta_element = ET.Element('fastaFiles')
+        fasta_info_element = ET.SubElement(self.fasta_element, 'FastaFileInfo')
+        elements = [('fastaFilePath', path), ('identifierParseRule', '>.*\|(.*)\|'), ('descriptionParseRule', '>(.*)'), ('taxonomyParseRule', ''), ('variationParseRule', ''), ('modificationParseRule', ''), ('taxonomyId', '')]
+        for element_name, text in elements:
+            new_element = ET.SubElement(fasta_info_element, element_name)
+            new_element.text = text
+    def set_raw(self, raw_path):
+        self.raw_element = ET.Element('string')
+        self.raw_element.text = raw_path
+    def write_mq(self, location):
+        assert(self.raw_element is not None)
+        assert(self.fasta_element is not None)
+        self.root.append(self.fasta_element)
+        file_paths = self.root.find('./filePaths')
+        file_paths.append(self.raw_element)
+        self.tree.write(location)
+        
+        
