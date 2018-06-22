@@ -8,8 +8,8 @@ parser = argparse.ArgumentParser(description='Export the peptides from a TargetS
 
 parser.add_argument('project_folder', help='The location of the project folder')
 
-parser.add_argument('CollectionType', help='Is this a TargetSet, PeptideList, FilteredSearchResult or FilteredNetMHC?', choices=['TargetSet', 'PeptideList', 'FilteredSearchResult', 'FilteredNetMHC'])
-parser.add_argument('Name', help='The name of the TargetSet, PeptideList FilteredSearchResult or FilteredNetMHC to export')
+parser.add_argument('CollectionType', help='Is this a TargetSet, PeptideList, FilteredSearchResult MaxQuantSearch or FilteredNetMHC?', choices=['TargetSet', 'PeptideList', 'FilteredSearchResult', 'FilteredNetMHC', 'MaxQuantSearch'])
+parser.add_argument('Name', help='The name of the TargetSet, PeptideList FilteredSearchResult, MaxQuantSearch or FilteredNetMHC to export')
 
 parser.add_argument('export_location', help='File to put the peptides')
 
@@ -47,6 +47,8 @@ elif args.CollectionType == 'FilteredSearchResult':
     row = project.get_filtered_search_result_row(args.Name)
 elif args.CollectionType == 'FilteredNetMHC':
     row = project.get_filtered_netmhc_row(args.Name)
+elif args.CollectionType == 'MaxQuantSearch':
+    row = project.get_maxquant_search_row(args.Name)
 assert(row)
 peptides = row.get_peptides(project_folder)
 with open(args.export_location, 'w') as f:

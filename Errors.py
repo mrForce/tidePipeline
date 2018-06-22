@@ -1,6 +1,13 @@
 class Error(Exception):
     pass
 
+class RAWFileDoesNotExistError(Error):
+    def __init__(self, raw_name):
+        self.raw_name = raw_name
+    def __repr__(self):
+        return 'There is no RAW file with name: ' + self.raw_name
+
+
 class RAWNameMustBeUniqueError(Error):
     def __init__(self, raw_name):
         self.raw_name = raw_name

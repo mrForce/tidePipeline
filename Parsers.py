@@ -71,7 +71,15 @@ class CustomizableMQParamParser:
         fasta_elements = self.root.findall('./fastaFiles')
         for element in fasta_elements:
             self.root.remove(element)
+        fixed_combined_elements = self.root.findall('fixedCombinedFolder')
+        for element in fixed_combined_elements:
+            self.root.remove(element)
+        self.output_element = None
         self.fasta_element = None
+        peptide_fdr_elements = self.root.findall('peptideFdr')
+        for element in peptide_fdr_elements:
+            self.root.remove(element)
+        self.peptide_fdr_element = None
         file_path_elements = self.root.findall('./filePaths/string')
         for path_element in file_path_elements:
             path = path_element.text
@@ -88,10 +96,20 @@ class CustomizableMQParamParser:
     def set_raw(self, raw_path):
         self.raw_element = ET.Element('string')
         self.raw_element.text = raw_path
+    def set_output_location(self, path):
+        self.output_element = ET.Element('fixedCombinedFolder')
+        self.output_element.text = path
+    def set_peptide_fdr(self, fdr):
+        self.peptide_fdr_element = ET.Element('peptideFdr')
+        self.peptide_fdr_element.text = str(fdr)
     def write_mq(self, location):
         assert(self.raw_element is not None)
         assert(self.fasta_element is not None)
+        assert(self.output_element is not None)
+        assert(self.peptide_fdr_element is not None)
         self.root.append(self.fasta_element)
+        self.root.append(self.output_element)
+        self.root.append(self.peptide_fdr_element)
         file_paths = self.root.find('./filePaths')
         file_paths.append(self.raw_element)
         self.tree.write(location)

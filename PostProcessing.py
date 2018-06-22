@@ -19,6 +19,8 @@ class PostProcessing(Base):
             search_name = result.QValue.searchbase.SearchName
             rows.append([name, path, threshold, search_name])
         return tabulate(rows, headers=headers)
+        
+            
     def create_filtered_search_result(self, name, peptides, qvalue_row, threshold):
         row = self.get_filtered_search_result_row(name)
         if row:

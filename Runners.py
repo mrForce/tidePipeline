@@ -42,22 +42,21 @@ class MaxQuantSearchRunner:
     def __init__(self, exe_file_location):
         self.exe_file_location = exe_file_location
 
-    def run_search_create_row(self, raw_row, fasta_path, param_file_row, output_directory, project_path, search_row_name):
+    def run_search_create_row(self, raw_row, fasta_path, param_file_row, output_directory, project_path, search_row_name, fdr):
         param_file_path = os.path.join(project_path, param_file_row.Path)
         custom_param_file_path = os.path.join(project_path, output_directory, os.path.split(param_file_row.Path)[1])
         parser = Parsers.CustomizableMQParamParser(param_file_path)
         parser.set_fasta(fasta_path)
         parser.set_raw(os.path.join(project_path, raw_row.Path))
+        parser.set_output_location(os.path.join(project_path, output_directory))
         parser.write_mq(custom_param_file_path)
-        """
-        Need to figure out where output goes
-        """
-        command = ['mono', 'exe_file_location', custom_param_file_path]
+        parser.set_peptide_fdr(fdr)
+        command = ['mono', self.exe_file_location, custom_param_file_path]
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise MaxQuantSearchFailedError(' '.join(command))
-        row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory)
+        row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory, Name = search_row_name, fdr=str(fdr))
         return row
 class MSGFPlusSearchRunner:
     def __init__(self, args, jar_file_location):

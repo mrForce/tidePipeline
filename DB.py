@@ -256,15 +256,19 @@ class SearchBase(BaseTable):
     }
 
 
-class MaxQuantSearch(SearchBase):
+class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
     __tablename__ = 'MaxQuantSearch'
     idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
     idRAW = Column('idRAW', Integer, ForeignKey('RAWfile.idRAWfile'))
     Path = Column('Path', String, nullable=False)
     raw = relationship('RAWfile')
+    fdr = Column('fdr', String, nullable=False)    
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = maxquant_search_filteredNetMHC, back_populates = 'maxquantsearches')
     peptidelists = relationship('PeptideList', secondary= maxquant_search_peptidelists, back_populates = 'maxquantsearches')
     targetsets = relationship('TargetSet', secondary=maxquant_search_targetset, back_populates='maxquantsearches')
+
+    def get_peptides(self, project_path):
+        pass
     __mapper_args__ = {
         'polymorphic_identity': 'maxquantsearch',
     }
@@ -374,6 +378,7 @@ class Percolator(QValueBase):
         'polymorphic_identity': 'percolator',
     }
 
+    
 
 class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'FilteredSearchResult'
