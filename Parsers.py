@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import re
+import csv
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):
         self.peptide = peptide
@@ -113,5 +114,14 @@ class CustomizableMQParamParser:
         file_paths = self.root.find('./filePaths')
         file_paths.append(self.raw_element)
         self.tree.write(location)
+class MaxQuantPeptidesParser:
+    def __init__(self, location):
+        self.peptides = set()
+        with open(location, 'r') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                self.peptides.add(row['Sequence'])
+    def get_peptides(self):
+        return self.peptides
         
-        
+
