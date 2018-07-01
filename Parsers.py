@@ -68,7 +68,7 @@ class CustomizableMQParamParser:
     """
     def __init__(self, location):
         self.tree = ET.parse(location)
-        self.root = tree.getroot()
+        self.root = self.tree.getroot()
         fasta_elements = self.root.findall('./fastaFiles')
         for element in fasta_elements:
             self.root.remove(element)
@@ -82,10 +82,17 @@ class CustomizableMQParamParser:
             self.root.remove(element)
         self.peptide_fdr_element = None
         file_path_elements = self.root.findall('./filePaths/string')
+        for filePath in self.root.findall('filePaths'):
+            for string_element in filePath.findall('string'):
+                path = string_element.text
+                if path.endswith('.raw'):
+                    filePath.remove(string_element)
+        """
         for path_element in file_path_elements:
             path = path_element.text
             if path.endswith('.raw'):
                 self.root.remove(path_element)
+        """
         self.raw_element = None
     def set_fasta(self, path):
         self.fasta_element = ET.Element('fastaFiles')

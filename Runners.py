@@ -47,16 +47,18 @@ class MaxQuantSearchRunner:
         custom_param_file_path = os.path.join(project_path, output_directory, os.path.split(param_file_row.Path)[1])
         parser = Parsers.CustomizableMQParamParser(param_file_path)
         parser.set_fasta(fasta_path)
-        parser.set_raw(os.path.join(project_path, raw_row.Path))
-        parser.set_output_location(os.path.join(project_path, output_directory))
+        parser.set_raw(os.path.abspath(os.path.join(project_path, raw_row.RAWPath)))
+        parser.set_output_location(os.path.abspath(os.path.join(project_path, output_directory)))
+        parser.set_peptide_fdr(fdr)
         parser.write_mq(custom_param_file_path)
         parser.set_peptide_fdr(fdr)
-        command = ['mono', self.exe_file_location, custom_param_file_path]
+        command = ['mono', self.exe_file_location, os.path.abspath(custom_param_file_path)]
+        print('About to run mono command. Current location: ' + os.getcwd())
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise MaxQuantSearchFailedError(' '.join(command))
-        row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory, Name = search_row_name, fdr=str(fdr))
+        row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory, SearchName = search_row_name, fdr=str(fdr))
         return row
 class MSGFPlusSearchRunner:
     def __init__(self, args, jar_file_location):

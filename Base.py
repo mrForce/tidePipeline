@@ -195,7 +195,7 @@ class Base:
             record = DB.MaxQuantParameterFile(Name = name, Path = newpath, Comment = comment)
             self.db_session.add(record)
             self.db_session.commit()
-            return raw_record.idMaxQuantParameterFile
+            return record.idMaxQuantParameterFile
     def verify_peptide_list(self, peptide_list_name):
         row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
         if row is None:
