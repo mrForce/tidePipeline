@@ -90,7 +90,7 @@ class CustomizableMQParamParser:
     def set_fasta(self, path):
         self.fasta_element = ET.Element('fastaFiles')
         fasta_info_element = ET.SubElement(self.fasta_element, 'FastaFileInfo')
-        elements = [('fastaFilePath', path), ('identifierParseRule', '>.*\|(.*)\|'), ('descriptionParseRule', '>(.*)'), ('taxonomyParseRule', ''), ('variationParseRule', ''), ('modificationParseRule', ''), ('taxonomyId', '')]
+        elements = [('fastaFilePath', path), ('identifierParseRule', '>(.*)'), ('descriptionParseRule', '>(.*)'), ('taxonomyParseRule', ''), ('variationParseRule', ''), ('modificationParseRule', ''), ('taxonomyId', '')]
         for element_name, text in elements:
             new_element = ET.SubElement(fasta_info_element, element_name)
             new_element.text = text
@@ -117,11 +117,15 @@ class CustomizableMQParamParser:
 class MaxQuantPeptidesParser:
     def __init__(self, location):
         self.peptides = set()
+        self.num_psms = 0
         with open(location, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t')
             for row in reader:
                 self.peptides.add(row['Sequence'])
+                self.num_psms += 1
     def get_peptides(self):
         return self.peptides
+    def get_num_psms(self):
+        return self.num_psms
         
 

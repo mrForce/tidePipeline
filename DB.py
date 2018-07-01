@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 import datetime
+from Parsers import MaxQuantPeptidesParser
 from abc import ABCMeta, abstractmethod, ABC
 import os
 #BaseTable = declarative_base(metaclass=ABCMeta)
@@ -266,9 +267,11 @@ class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = maxquant_search_filteredNetMHC, back_populates = 'maxquantsearches')
     peptidelists = relationship('PeptideList', secondary= maxquant_search_peptidelists, back_populates = 'maxquantsearches')
     targetsets = relationship('TargetSet', secondary=maxquant_search_targetset, back_populates='maxquantsearches')
-
+    
     def get_peptides(self, project_path):
-        pass
+        peptides_location = os.path.join(project_path, self.Path, 'combined', 'txt', 'peptides.txt')
+        parser_object = MaxQuantPeptidesParser(peptides_location)
+        return parser_object.get_peptides()
     __mapper_args__ = {
         'polymorphic_identity': 'maxquantsearch',
     }

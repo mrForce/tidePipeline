@@ -48,6 +48,6 @@ class MaxQuantEngine(AbstractEngine):
         
             
     def list_indices(self):
-        return None
+        assert(False)
     def create_index(self, set_type, set_name, index_runner, index_name, memory=None):
-        return None
+        assert(False)

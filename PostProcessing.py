@@ -18,6 +18,11 @@ class PostProcessing(Base):
             threshold = str(result.q_value_threshold)
             search_name = result.QValue.searchbase.SearchName
             rows.append([name, path, threshold, search_name])
+        for result in self.db_session.query(DB.MaxQuantSearch).all():
+            search_name = result.SearchName
+            path = result.Path
+            threshold = str(result.fdr)
+            rows.append(['MaxQuant', path, threshold, search_name])
         return tabulate(rows, headers=headers)
         
             
