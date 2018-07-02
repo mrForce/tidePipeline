@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import re
 import csv
+from xml.sax.saxutils import unescape
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):
         self.peptide = peptide
@@ -120,7 +121,13 @@ class CustomizableMQParamParser:
         self.root.append(self.peptide_fdr_element)
         file_paths = self.root.find('./filePaths')
         file_paths.append(self.raw_element)
-        self.tree.write(location)
+        with open(location, 'w') as f:
+            text = ET.tostring(self.tree.getroot(), encoding='unicode')
+            print('text')
+            print(text)
+            f.write(unescape(text))
+
+        #self.tree.write(location)
 class MaxQuantPeptidesParser:
     def __init__(self, location):
         self.peptides = set()
