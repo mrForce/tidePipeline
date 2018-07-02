@@ -125,7 +125,7 @@
    <maxQuantVersion>1.6.2.3</maxQuantVersion>
    <tempFolder>/home/jforce/Desktop/temp</tempFolder>
    <pluginFolder></pluginFolder>
-   <numThreads>1</numThreads>
+   <numThreads>3</numThreads>
    <emailAddress></emailAddress>
    <smtpHost></smtpHost>
    <emailFromAddress></emailFromAddress>
