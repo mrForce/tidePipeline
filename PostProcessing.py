@@ -65,7 +65,12 @@ class PostProcessing(Base):
             return True
         else:
             return False
-    
+    def verify_maxquant_search(self, name):
+        row = self.db_session.query(DB.MaxQuantSearch).filter_by(SearchName = name).first()
+        if row:
+            return True
+        else:
+            return False
 
     def count_sources(self, assign_confidence_name, q_val_threshold):
         row = self.get_assign_confidence(assign_confidence_name)

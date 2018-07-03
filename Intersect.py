@@ -19,11 +19,11 @@ def extract_peptides_from_fasta(fasta_path, output_path):
                 
 
 
-union_parse = re.compile('(?P<type>TargetSet|FilteredNetMHC|PeptideList|FilteredSearchResult)\.(?P<name>\S+)(\s+|$)')
-parser = argparse.ArgumentParser(description = 'Take the intersection of two collections of peptides (each set may be composed of the union of multiple sets). \n Each set is identified by a string of the form: <type>.<name>, where <type> is either TargetSet, PeptideList, FilteredSearchResult, or FilteredNetMHC, and <name> is the name of the TargetSet/PeptideList/FilteredSearchResult/FilteredNetMHC')
+union_parse = re.compile('(?P<type>TargetSet|FilteredNetMHC|PeptideList|FilteredSearchResult|MaxQuantSearch)\.(?P<name>\S+)(\s+|$)')
+parser = argparse.ArgumentParser(description = 'Take the intersection of two collections of peptides (each set may be composed of the union of multiple sets). \n Each set is identified by a string of the form: <type>.<name>, where <type> is either TargetSet, PeptideList, MaxQuantSearch, FilteredSearchResult, or FilteredNetMHC, and <name> is the name of the TargetSet/PeptideList/FilteredSearchResult/FilteredNetMHC/MaxQuantSearch')
 parser.add_argument('project_folder', help='The location of the project folder', nargs=1)
-parser.add_argument('CollectionOne', help='This is a string that contains at least one set (if there are multiple sets, they should be seperated by whitespace)')
-parser.add_argument('CollectionTwo', help='This is a string that contains at least one set (if there are multiple sets, they should be seperated by whitespace)')
+parser.add_argument('CollectionOne', help='This is a string that contains at least one set (if there are multiple sets, they should be seperated by whitespace). Multiple sets will be unioned together.')
+parser.add_argument('CollectionTwo', help='This is a string that contains at least one set (if there are multiple sets, they should be seperated by whitespace). Multiple sets will be unioned together.')
 parser.add_argument('--output_location', help='This is where we write the peptides that result from the intersection. This is optional; if it is not specified, then the peptides are written to standard out')
 
 args = parser.parse_args()
@@ -52,6 +52,11 @@ for set_type, set_name in collection_one + collection_two:
         if not project.verify_filtered_netMHC(set_name):
             print('There is no FilteredNetMHC entry with the name: ' + set_name)
             project.end_command_session()
+            assert(False)
+    elif set_type == 'MaxQuantSearch':
+        if not project.verify_maxquant_search(set_name):
+            print('There is no MaxQuantSearch entry with the name: ' + set_name)
+            print.end_command_session()
             assert(False)
     elif set_type == 'TargetSet':
         if not project.verify_target_set(set_name):
@@ -83,6 +88,13 @@ def get_path(set_type, set_name):
         file_path = os.path.join(project_folder, project.get_peptide_list_row(set_name).PeptideListPath)
     elif set_type == 'FilteredSearchResult':
         file_path = os.path.join(project_folder, project.get_filtered_search_result_row(set_name).filteredSearchResultPath)
+    elif set_type == 'MaxQuantSearch':
+        """FINISH THIS LATER!"""
+        f = tempfile.NamedTemporaryFile()
+        fasta_file_path = os.path.join(project_folder, project.get_target_set_row(set_name).TargetSetFASTAPath)
+        extract_peptides_from_fasta(fasta_file_path, f.name)
+        file_path = f.name
+        temp_files.append(f)
     elif set_type == 'TargetSet':
         #this is a little more complicated -- need to create a temporary file
         f = tempfile.NamedTemporaryFile()

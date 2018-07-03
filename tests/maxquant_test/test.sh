@@ -9,8 +9,18 @@ python AddRAW.py MaxQuantTest ~/Downloads/160127_609_015_EL4_Y3.raw Y3RAW
 python AddHLA.py MaxQuantTest H-2-Kb
 python AddFASTA.py MaxQuantTest tests/Y3Test/all_mouse_proteins.fasta MouseProteins
 python KChop.py MaxQuantTest MouseProteins 9 MouseProteinNineMers
+python KChop.py MaxQuantTest MouseProteins 8 MouseProteinEightMers
+python KChop.py MaxQuantTest MouseProteins 10 MouseProteinTenMers
+python KChop.py MaxQuantTest MouseProteins 11 MouseProteinElevenMers
+python KChop.py MaxQuantTest MouseProteins 10 MouseProteinTwelveMers
+python RunNetMHC.py MaxQuantTest MouseProteinEightMers H-2-Kb 2 MouseProteinEightMersH2Kb
+python RunNetMHC.py MaxQuantTest MouseProteinNineMers H-2-Kb 2 MouseProteinNineMersH2Kb
+python RunNetMHC.py MaxQuantTest MouseProteinTenMers H-2-Kb 2 MouseProteinTenMersH2Kb
+python RunNetMHC.py MaxQuantTest MouseProteinElevenMers H-2-Kb 2 MouseProteinElevenMersH2Kb
+python RunNetMHC.py MaxQuantTest MouseProteinTwelveMers H-2-Kb 2 MouseProteinTwelveMersH2Kb
+python CreateTargetSet.py MaxQuantTest --FilteredNetMHC MouseProteinEightMersH2Kb --FilteredNetMHC MouseProteinNineMersH2Kb --FilteredNetMHC MouseProteinTenMersH2Kb --FilteredNetMHC MouseProteinElevenMersH2Kb --FilteredNetMHC MouseProteinTwelveMersH2Kb CombinedMousePeptides
 echo "about to do MaxQuant search"
-python RunMaxQuantSearch.py MaxQuantTest Y3RAW FirstMaxQuantConfig 0.05 PeptideList MouseProteinNineMers NineMerMaxQuantSearch
+python RunMaxQuantSearch.py MaxQuantTest Y3RAW FirstMaxQuantConfig 0.05 TargetSet CombinedMousePeptides CombinedMouseMaxQuantSearch
 
 #python CreateMSGFPlusIndex.py Y3_test_project PeptideList MouseProteinNineMers MouseProteinNineMersIndex --memory 6000
 #python AddMGF.py Y3_test_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
