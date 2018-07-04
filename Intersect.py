@@ -91,8 +91,10 @@ def get_path(set_type, set_name):
     elif set_type == 'MaxQuantSearch':
         """FINISH THIS LATER!"""
         f = tempfile.NamedTemporaryFile()
-        fasta_file_path = os.path.join(project_folder, project.get_target_set_row(set_name).TargetSetFASTAPath)
-        extract_peptides_from_fasta(fasta_file_path, f.name)
+        row = project.get_maxquant_search_row(set_name)
+        peptides = row.get_peptides(project_folder)
+        for peptide in list(peptides):
+            f.write(peptide)
         file_path = f.name
         temp_files.append(f)
     elif set_type == 'TargetSet':
