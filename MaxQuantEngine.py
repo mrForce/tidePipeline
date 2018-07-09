@@ -34,7 +34,8 @@ class MaxQuantEngine(AbstractEngine):
         assert(search_row is None)
         output_directory = self.create_storage_directory('maxquant_search')
         fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name)
-        new_search_row = search_runner.run_search_create_row(raw_row, fasta_file_location, param_file_row, output_directory, self.project_path, search_name, fdr)
+        print('fasta location: ' + fasta_file_location)
+        new_search_row = search_runner.run_search_create_row(raw_row, os.path.abspath(fasta_file_location), param_file_row, output_directory, self.project_path, search_name, fdr)
         if set_type == 'TargetSet':
             new_search_row.targetsets = [link_row]
         elif set_type == 'FilteredNetMHC':
