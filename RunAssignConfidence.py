@@ -22,6 +22,7 @@ print('project folder: ' + project_folder)
 
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
+crux_exec_path = project.get_crux_executable_path()
 arguments = vars(args)
 good_arguments = {}
 
@@ -34,7 +35,7 @@ for k, v in arguments.items():
         good_arguments[k] = v
 
 project.begin_command_session()
-assign_confidence_runner =  Runners.AssignConfidenceRunner(good_arguments)
+assign_confidence_runner =  Runners.AssignConfidenceRunner(good_arguments, crux_exec_path)
 project.assign_confidence(args.search_name, assign_confidence_runner, args.assign_confidence_name)
 project.end_command_session()
 

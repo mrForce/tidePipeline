@@ -25,6 +25,7 @@ print('project folder: ' + project_folder)
 
 
 project = TideEngine.TideEngine(project_folder, ' '.join(sys.argv))
+crux_exec_path = project.get_crux_executable_path()
 arguments = vars(args)
 good_arguments = {}
 
@@ -38,7 +39,7 @@ for k, v in arguments.items():
 print('going to begin command session')        
 project.begin_command_session()
 print('starting command session')
-tide_search_runner = Runners.TideSearchRunner(good_arguments)
+tide_search_runner = Runners.TideSearchRunner(good_arguments, crux_exec_path)
 print('got tide search runner')
 project.run_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name, good_arguments)
 project.end_command_session()
