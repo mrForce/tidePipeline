@@ -31,13 +31,13 @@ ls
 #python RunNetMHC.py Y3_test_project MouseProteinNineMers H-2-Kb 2 MouseProteinNineMersH2Kb
 #python RunNetMHC.py Y3_test_project MouseProteinTenMers H-2-Kb 2 MouseProteinTenMersH2Kb
 #python CreateTargetSet.py Y3_test_project --FilteredNetMHC MouseProteinNineMersH2Kb --FilteredNetMHC MouseProteinTenMersH2Kb H2KbPeptideSet
-python3 CreateTideIndex.py UnfilteredTest TargetSet CombinedMousePeptides CombinedMouseY3_index
+#python3 CreateTideIndex.py UnfilteredTest TargetSet CombinedMousePeptides CombinedMouseY3_index
 #python AddMGF.py Y3_test_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
 #python3 RunTideSearch.py UnfilteredTest Y3_mgf CombinedMouseY3_index CombinedMouseY3_search --num-threads=4
 
 #python3 RunAssignConfidence.py UnfilteredTest CombinedMouseY3_search Y3MouseTideSearchConfidence
-#python RunPercolator.py Y3_test_project H2KbTideSearch H2KbPercolator
-#python3 FilterQValue.py UnfilteredTest assign_confidence Y3MouseTideSearchConfidence 0.05 Y3MouseTideFiltered
-#python FilterQValue.py Y3_test_project percolator H2KbPercolator 0.05 H2KbPercolatorFiltered
+python3 RunPercolator.py Y3_test_project H2KbTideSearch H2KbPercolator
+python3 FilterQValue.py UnfilteredTest assign_confidence Y3MouseTideSearchConfidence 0.05 Y3MouseTideFiltered
+python3 FilterQValue.py Y3_test_project percolator H2KbPercolator 0.05 H2KbPercolatorFiltered
 #python ExportPeptides.py Y3_test_project FilteredSearchResult H2KbTideSearchConfidenceFiltered tests/Y3Test/assignconfidence.txt
 #python ExportPeptides.py Y3_test_project FilteredSearchResult H2KbPercolatorFiltered tests/Y3Test/percolator.txt
