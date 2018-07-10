@@ -16,7 +16,7 @@ project_folder = args.project_folder
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-rows = project.list_assign_confidence(tide_search_name = args.SearchName, estimation_method = args.estimationMethod)
+rows = project.list_percolator(tide_search_name = args.SearchName)
 print('id   |   Name   |   Output Path   |   Search Name   ')
 for row in rows:
     percolator_name = row.PercolatorName
