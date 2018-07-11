@@ -41,7 +41,7 @@ class PostProcessing(Base):
         self.db_session.commit()
 
     def filter_q_value_assign_confidence(self, assign_confidence_name, q_value_threshold, filtered_search_result_name):
-        assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(self.get_crux_executable_path(), assign_confidence_name, q_value_threshold, self.project_path, self.db_session)
+        assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(assign_confidence_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path())
         peptides = assign_confidence_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, assign_confidence_handler.get_row() , q_value_threshold)
 
@@ -52,7 +52,7 @@ class PostProcessing(Base):
         self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold)
 
     def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name):
-        percolator_handler = ReportGeneration.PercolatorHandler(self.get_crux_executable_path(), percolator_name, q_value_threshold, self.project_path, self.db_session)
+        percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path())
         peptides = percolator_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold)
 
@@ -89,7 +89,7 @@ class PostProcessing(Base):
             q_val_column = 'tdc q-value'
             if row.estimation_method and len(row.estimation_method) > 0:
                 q_val_column = row.estimation_method + ' q-value'
-            handler = ReportGeneration.AssignConfidenceHandler(self.get_crux_executable_path(), row, q_val_column, q_val_threshold, self.project_path)
+            handler = ReportGeneration.AssignConfidenceHandler(row, q_val_column, q_val_threshold, self.project_path, self.get_crux_executable_path())
             peptides = handler.getPeptides()
             
             return TargetSetSourceCount.count_sources(self.project_path, target_set_row, peptides)
