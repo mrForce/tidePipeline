@@ -220,7 +220,7 @@ class AssignConfidenceRunner:
                 column_arguments[column_name] = v
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db
         column_arguments['AssignConfidenceName'] = assign_confidence_name
-        column_arguments['search'] = tide_search_row
+        column_arguments['searchbase'] = tide_search_row
         return DB.AssignConfidence(**column_arguments)
 
 
@@ -260,5 +260,5 @@ class PercolatorRunner:
             raise PercolatorFailedError(' '.join(command))
         column_arguments['PercolatorOutputPath'] = output_directory_db
         column_arguments['PercolatorName'] = percolator_name
-        column_arguments['search'] = tide_search_row
+        column_arguments['searchbase'] = tide_search_row
         return DB.Percolator(**column_arguments)

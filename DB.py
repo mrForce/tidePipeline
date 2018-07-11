@@ -362,7 +362,7 @@ class AssignConfidence(QValueBase):
     combine_charge_states = Column(String)
     combined_modified_peptides = Column(String)
 
-    search = relationship('SearchBase')
+
     __mapper_args__ = {
         'polymorphic_identity': 'assignconfidence',
     }
@@ -376,7 +376,7 @@ class Percolator(QValueBase):
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
-    search = relationship('SearchBase')
+
     __mapper_args__ = {
         'polymorphic_identity': 'percolator',
     }
