@@ -37,11 +37,11 @@ class LatexTable(LatexObject):
         lines.append('\end{tabular}')
         return lines
 
-def extract_columns(file_path, column_names):
+def extract_columns(crux_location, file_path, column_names):
     #column_names should be a list
     encoding = locale.getpreferredencoding()
     columns_temp_file = tempfile.NamedTemporaryFile(mode='w+t', encoding=encoding)
-    command = ['crux extract-columns ' + file_path + ' "' + ','.join(column_names) + '" > ' + columns_temp_file.name]
+    command = [crux_location + ' extract-columns ' + file_path + ' "' + ','.join(column_names) + '" > ' + columns_temp_file.name]
     print('command: ' + ' '.join(command))
     subprocess.call(command, shell=True)
     rows = []

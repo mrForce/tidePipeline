@@ -36,8 +36,8 @@ ls
 #python3 RunTideSearch.py UnfilteredTest Y3_mgf CombinedMouseY3_index CombinedMouseY3_search --num-threads=4
 
 #python3 RunAssignConfidence.py UnfilteredTest CombinedMouseY3_search Y3MouseTideSearchConfidence
-#python3 RunPercolator.py UnfilteredTest CombinedMouseY3_search Y3Percolator
+#python3 RunPercolator.py UnfilteredTest CombinedMouseY3_search Y3PercolatorTwo
 #python3 FilterQValue.py UnfilteredTest assign_confidence Y3MouseTideSearchConfidence 0.01 Y3MouseTideFiltered
-python3 FilterQValue.py UnfilteredTest percolator Y3Percolator 0.01 Y3PercolatorFiltered
-#python ExportPeptides.py Y3_test_project FilteredSearchResult H2KbTideSearchConfidenceFiltered tests/Y3Test/assignconfidence.txt
-#python ExportPeptides.py Y3_test_project FilteredSearchResult H2KbPercolatorFiltered tests/Y3Test/percolator.txt
+python3 FilterQValue.py UnfilteredTest percolator Y3Percolator 0.01 Y3PercolatorFilteredThree
+#python3 ExportPeptides.py UnfilteredTest FilteredSearchResult Y3MouseTideFiltered tests/unfiltered_test/assignconfidence.txt
+#python3 ExportPeptides.py UnfilteredTest FilteredSearchResult Y3PercolatorFiltered tests/unfiltered_test/percolator.txt
