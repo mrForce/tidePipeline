@@ -22,7 +22,7 @@ for row in rows:
     percolator_name = row.PercolatorName
     
     percolator_output_path = row.PercolatorOutputPath
-    tide_search = row.search
+    tide_search = row.searchbase
     tide_search_name = 'None'
     if tide_search and tide_search.SearchName:
         tide_search_name = tide_search.SearchName
