@@ -16,8 +16,11 @@ class PostProcessing(Base):
             name = result.filteredSearchResultName
             path = result.filteredSearchResultPath
             threshold = str(result.q_value_threshold)
-            search_name = result.QValue.searchbase.SearchName
-            rows.append([name, path, threshold, search_name])
+            if result.QValue.searchbase is not None:
+                search_name = result.QValue.searchbase.SearchName
+                rows.append([name, path, threshold, search_name])
+            else:
+                print('Filtered search result searchbase is None: ' + name)
         for result in self.db_session.query(DB.MaxQuantSearch).all():
             search_name = result.SearchName
             path = result.Path
