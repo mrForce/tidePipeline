@@ -26,18 +26,20 @@ ls
 #python3 CreateMSGFPlusIndex.py UnfilteredTest TargetSet CombinedMousePeptides MousePeptideIndex --memory 6000
 #python3 AddMGF.py UnfilteredTest ~/Downloads/160127_609_015_EL4_Y3.mgf Y3_mgf
 #zip -r Y3_test_project.zip Y3_test_project
-#python3 RunMSGFPlusSearch.py UnfilteredTest Y3_mgf MousePeptideIndex MouseMSGFSearch --memory 6000
+#python3 RunMSGFPlusSearch.py UnfilteredTest Y3_mgf MousePeptideIndex MouseMSGFSearch_no_enzyme_four --thread 4 --memory 30000
 #python KChop.py Y3_test_project MouseProteins 10 MouseProteinTenMers
 #python RunNetMHC.py Y3_test_project MouseProteinNineMers H-2-Kb 2 MouseProteinNineMersH2Kb
 #python RunNetMHC.py Y3_test_project MouseProteinTenMers H-2-Kb 2 MouseProteinTenMersH2Kb
 #python CreateTargetSet.py Y3_test_project --FilteredNetMHC MouseProteinNineMersH2Kb --FilteredNetMHC MouseProteinTenMersH2Kb H2KbPeptideSet
-#python3 CreateTideIndex.py UnfilteredTest TargetSet CombinedMousePeptides CombinedMouseY3_index
+#python3 CreateTideIndex.py UnfilteredTest TargetSet CombinedMousePeptides CombinedMouseY3_index_custom_enzymes --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
 #python AddMGF.py Y3_test_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
-#python3 RunTideSearch.py UnfilteredTest Y3_mgf CombinedMouseY3_index CombinedMouseY3_search --num-threads=4
+#python3 RunTideSearch.py UnfilteredTest Y3_mgf CombinedMouseY3_index_custom_enzymes CombinedMouseY3_search_custom_enzyme --num-threads=4
 
-#python3 RunAssignConfidence.py UnfilteredTest CombinedMouseY3_search Y3MouseTideSearchConfidence
-#python3 RunPercolator.py UnfilteredTest CombinedMouseY3_search Y3PercolatorTwo
-#python3 FilterQValue.py UnfilteredTest assign_confidence Y3MouseTideSearchConfidence 0.01 Y3MouseTideFiltered
-python3 FilterQValue.py UnfilteredTest percolator Y3Percolator 0.01 Y3PercolatorFilteredThree
-#python3 ExportPeptides.py UnfilteredTest FilteredSearchResult Y3MouseTideFiltered tests/unfiltered_test/assignconfidence.txt
-#python3 ExportPeptides.py UnfilteredTest FilteredSearchResult Y3PercolatorFiltered tests/unfiltered_test/percolator.txt
+#python3 RunAssignConfidence.py UnfilteredTest CombinedMouseY3_search_custom_enzyme Y3MouseTideSearchConfidence_custom_enzyme
+#python3 RunPercolator.py UnfilteredTest CombinedMouseY3_search_custom_enzyme Y3Percolator_custom_enzyme
+#python3 FilterQValue.py UnfilteredTest assign_confidence Y3MouseTideSearchConfidence_custom_enzyme 0.01 Y3MouseTideFiltered_custom_enzyme
+#python3 FilterQValue.py UnfilteredTest percolator Y3Percolator_custom_enzyme 0.01 Y3PercolatorFiltered_custom_enzyme
+python3 FilterQValue.py UnfilteredTest MSGF MouseMSGFSearch_no_enzyme_four 0.01 Y3MSGFfiltered_no_enzyme_four
+python3 ExportPeptides.py UnfilteredTest FilteredSearchResult Y3MSGFfiltered_no_enzyme_four tests/unfiltered_test/msgf.txt
+#python3 ExportPeptides.py UnfilteredTest FilteredSearchResult Y3MouseTideFiltered_custom_enzyme tests/unfiltered_test/assignconfidence.txt
+#python3 ExportPeptides.py UnfilteredTest FilteredSearchResult Y3PercolatorFiltered_custom_enzyme tests/unfiltered_test/percolator.txt

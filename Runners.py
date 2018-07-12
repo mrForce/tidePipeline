@@ -93,7 +93,7 @@ class MSGFPlusSearchRunner:
             column_args['modificationFile'] = modifications_file_row        
         for key, value in self.args.items():
             if key and value:
-                command.append('--' + key)
+                command.append('-' + key)
                 command.append(str(value))
                 column_name = MSGFPlusSearchRunner.convert_cmdline_option_to_column_name(key)
                 assert(column_name)
