@@ -159,6 +159,7 @@ class PostProcessing(Base):
             while os.path.isdir(os.path.join(self.project_path, 'percolator_results', output_directory_name)):
                 output_directory_name = str(uuid.uuid4().hex)
             output_directory_tide = os.path.join(self.project_path, 'percolator_results', output_directory_name)
+            os.mkdir(output_directory_tide)
             output_directory_db = os.path.join('percolator_results', output_directory_name)
             new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row)
             self.db_session.add(new_row)
