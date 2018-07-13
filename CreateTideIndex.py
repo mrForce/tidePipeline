@@ -25,6 +25,7 @@ project_folder = args.project_folder
 print('project folder: ' + project_folder)
 
 project = TideEngine.TideEngine(project_folder, ' '.join(sys.argv))
+crux_exec_path = project.get_crux_executable_path()
 arguments = vars(args)
 good_arguments = {}
 
@@ -43,7 +44,7 @@ elif args.set_type == 'TargetSet':
     assert(project.verify_target_set(args.set_name))
             
 project.begin_command_session()
-tide_index_runner = Runners.TideIndexRunner(good_arguments)
+tide_index_runner = Runners.TideIndexRunner(good_arguments, crux_exec_path)
 project.create_index(args.set_type, args.set_name, tide_index_runner, args.index_name)
 project.end_command_session()
 

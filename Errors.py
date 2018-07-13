@@ -1,6 +1,25 @@
 class Error(Exception):
     pass
 
+class RAWFileDoesNotExistError(Error):
+    def __init__(self, raw_name):
+        self.raw_name = raw_name
+    def __repr__(self):
+        return 'There is no RAW file with name: ' + self.raw_name
+
+
+class RAWNameMustBeUniqueError(Error):
+    def __init__(self, raw_name):
+        self.raw_name = raw_name
+    def __repr__(self):
+        return 'There is already a RAW file with name: ' + self.raw_name
+class MaxQuantParamFileMustBeUniqueError(Error):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return 'There is already a MaxQuant Parameter file with name: ' + self.name
+
+    
 class MSGFPlusIndexFailedError(Error):
     def __init__(self, command):
         self.command = command
@@ -17,6 +36,11 @@ class MSGFPlusSearchFailedError(Error):
         self.command = command
     def __repr__(self):
         return 'Failed to run MSGF+ Search using the command: ' + self.command
+class MaxQuantSearchFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'Failed to run MaxQuant Search using the command: ' + self.command
     
 class NoSuchTargetSetError(Error):
     def __init__(self, target_set_name):

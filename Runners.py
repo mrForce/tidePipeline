@@ -1,19 +1,20 @@
 import DB
 import sys
 import os
-
+import Parsers
 
 import re
 import shutil
 import uuid
 from fileFunctions import *
-CRUX_BINARY = '/usr/bin/crux'
+
 from Errors import *
 
 
 class TideSearchRunner:
-    def __init__(self, tide_search_options):
+    def __init__(self, tide_search_options, crux_binary):
         self.tide_search_options = tide_search_options
+        self.crux_binary = crux_binary
     @staticmethod
     def get_tide_search_options():
         return {'--mod-precision': {'type':int}, '--auto-precursor-window': {'choices': ['false', 'warn', 'fail']}, '--max-precursor-charge': {'type': int}, '--precursor-window': {'type': float}, '--precursor-window-type': {'choices': ['mass', 'mz', 'ppm']}, '--auto-mz-bin-width': {'choices': ['false', 'warn', 'fail']}, '--compute-sp': {'choices': ['T', 'F']}, '--deisotope': {'type': float}, '--exact-p-value': {'choices':['T', 'F']}, '--isotope-error': {'type': str}, '--min-peaks': {'type': int}, '--mz-bin-offset': {'type': float}, '--mz-bin-width': {'type': float}, '--peptide-centric-search': {'choices': ['T', 'F']}, '--score-function': {'choices': ['xcorr', 'residue-evidence', 'both']}, '--fragment-tolerance': {'type': float}, '--evidence-granularity': {'type': int}, '--remove-precursor-peak': {'choices': ['T', 'F']}, '--remove-precursor-tolerance': {'type': float}, '--scan-number': {'type': str}, '--skip-processing': {'choices': ['T', 'F']}, '--spectrum-charge': {'choices': ['1', '2', '3', 'all']}, '--spectrum-max-mz': {'type': float}, '--spectrum-min-mz': {'type': float}, '--use-flanking-peaks': {'choices': ['T', 'F']}, '--use-neutral-loss-peaks': {'choices': ['T', 'F']}, '--num-threads': {'type': int}, '--pm-charge': {'type': int}, '--pm-max-frag-mz': {'type': float}, '--pm-max-precursor-delta-ppm': {'type': float}, '--pm-max-precursor-mz': {'type': float}, '--pm-max-scan-seperation': {'type': int}, '--pm-min-common-frag-peaks': {'type': int}, '--pm-min-frag-mz': {'type': float}, '--pm-min-peak-pairs': {'type': int}, '--pm-min-precursor-mz': {'type': float}, '--pm-min-scan-frag-peaks': {'type': int}, '--pm-pair-top-n-frag-peaks': {'type': int}, '--pm-top-n-frag-peaks': {'type': int}, '--concat': {'choices': ['T', 'F']}, '--file-column': {'choices': ['T', 'F']}, '--fileroot': {'type': str}, '--mass-precision': {'type': int}, '--mzid-output': {'choices': ['T', 'F']}, '--precision': {'type': int}, '--spectrum-parser': {'choices': ['pwiz', 'mstoolkit']}, '--store-spectra': {'type': str}, '--top-match': {'type': int}, '--use-z-line': {'choices': ['T', 'F']}}
@@ -30,7 +31,7 @@ class TideSearchRunner:
         spectra_file = os.path.join(project_path, mgf_row.MGFPath)
         index_filename = os.path.join(project_path, index_row.TideIndexPath)
         print('current working directory: ' + os.getcwd())
-        command = [CRUX_BINARY, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
+        command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
@@ -38,6 +39,28 @@ class TideSearchRunner:
         search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=os.path.join('tide_param_files', param_filename), logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
         return search_row
 
+class MaxQuantSearchRunner:
+    def __init__(self, exe_file_location):
+        self.exe_file_location = exe_file_location
+
+    def run_search_create_row(self, raw_row, fasta_path, param_file_row, output_directory, project_path, search_row_name, fdr):
+        param_file_path = os.path.join(project_path, param_file_row.Path)
+        custom_param_file_path = os.path.join(project_path, output_directory, os.path.split(param_file_row.Path)[1])
+        parser = Parsers.CustomizableMQParamParser(param_file_path)
+        parser.set_fasta(fasta_path)
+        parser.set_raw(os.path.abspath(os.path.join(project_path, raw_row.RAWPath)))
+        parser.set_output_location(os.path.abspath(os.path.join(project_path, output_directory)))
+        parser.set_peptide_fdr(fdr)
+        parser.write_mq(custom_param_file_path)
+        parser.set_peptide_fdr(fdr)
+        command = ['mono', self.exe_file_location, os.path.abspath(custom_param_file_path)]
+        print('About to run mono command. Current location: ' + os.getcwd())
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise MaxQuantSearchFailedError(' '.join(command))
+        row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory, SearchName = search_row_name, fdr=str(fdr))
+        return row
 class MSGFPlusSearchRunner:
     def __init__(self, args, jar_file_location):
         self.jar_file_location = jar_file_location
@@ -70,7 +93,7 @@ class MSGFPlusSearchRunner:
             column_args['modificationFile'] = modifications_file_row        
         for key, value in self.args.items():
             if key and value:
-                command.append('--' + key)
+                command.append('-' + key)
                 command.append(str(value))
                 column_name = MSGFPlusSearchRunner.convert_cmdline_option_to_column_name(key)
                 assert(column_name)
@@ -112,11 +135,13 @@ class MSGFPlusIndexRunner:
         os.chdir(current_path)
         return (DB.MSGFPlusIndex(tda=2), new_fasta_tail)
 
+
+
 class TideIndexRunner:
-    def __init__(self, tide_index_options):
+    def __init__(self, tide_index_options, crux_binary):
         #tide_index_options is a dictionary.
         self.tide_index_options = tide_index_options
-
+        self.crux_binary = crux_binary
 
     @staticmethod
     def get_tide_index_options():
@@ -130,7 +155,7 @@ class TideIndexRunner:
             return None
     def run_index_create_row(self, fasta_path, output_directory_tide, output_directory_db, index_filename):
         #first, need to create the tide-index command
-        command = [CRUX_BINARY, 'tide-index']
+        command = [self.crux_binary, 'tide-index']
         for k,v in self.tide_index_options.items():
             if k and v:
                 command.append('--' + k)
@@ -154,9 +179,9 @@ class TideIndexRunner:
         return DB.TideIndex(**column_arguments)
 
 class AssignConfidenceRunner:
-    def __init__(self, assign_confidence_options):
+    def __init__(self, assign_confidence_options, crux_binary):
         self.assign_confidence_options = assign_confidence_options
-
+        self.crux_binary = crux_binary
 
 
     @staticmethod
@@ -173,7 +198,7 @@ class AssignConfidenceRunner:
 
     def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row):
         #first, need to create the tide-index command
-        command = [CRUX_BINARY, 'assign-confidence']
+        command = [self.crux_binary, 'assign-confidence']
         for k,v in self.assign_confidence_options.items():
             if k and v:
                 command.append('--' + k)
@@ -195,12 +220,12 @@ class AssignConfidenceRunner:
                 column_arguments[column_name] = v
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db
         column_arguments['AssignConfidenceName'] = assign_confidence_name
-        column_arguments['search'] = tide_search_row
+        column_arguments['searchbase'] = tide_search_row
         return DB.AssignConfidence(**column_arguments)
 
 
 class PercolatorRunner:
-    def __init__(self, param_file_path = False):
+    def __init__(self, crux_binary, param_file_path = False):
         if param_file_path:
             line_regex = re.compile('(?:#.*)|(\S+=\S+)|$')
             with open(param_file_path, 'r') as f:
@@ -208,10 +233,10 @@ class PercolatorRunner:
                     if line_regex.match(line) is None:
                         raise InvalidParameterLineError(line)
         self.param_file_path = param_file_path
-
+        self.crux_binary = crux_binary
     
     def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row):
-        command = [CRUX_BINARY, 'percolator']
+        command = [self.crux_binary, 'percolator']
         print('running percolator command from: ' + os.getcwd())
         column_arguments = {}
         if self.param_file_path:
@@ -235,5 +260,5 @@ class PercolatorRunner:
             raise PercolatorFailedError(' '.join(command))
         column_arguments['PercolatorOutputPath'] = output_directory_db
         column_arguments['PercolatorName'] = percolator_name
-        column_arguments['search'] = tide_search_row
+        column_arguments['searchbase'] = tide_search_row
         return DB.Percolator(**column_arguments)

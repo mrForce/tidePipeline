@@ -37,11 +37,11 @@ class LatexTable(LatexObject):
         lines.append('\end{tabular}')
         return lines
 
-def extract_columns(file_path, column_names):
+def extract_columns(crux_location, file_path, column_names):
     #column_names should be a list
     encoding = locale.getpreferredencoding()
     columns_temp_file = tempfile.NamedTemporaryFile(mode='w+t', encoding=encoding)
-    command = ['crux extract-columns ' + file_path + ' "' + ','.join(column_names) + '" > ' + columns_temp_file.name]
+    command = [crux_location + ' extract-columns ' + file_path + ' "' + ','.join(column_names) + '" > ' + columns_temp_file.name]
     print('command: ' + ' '.join(command))
     subprocess.call(command, shell=True)
     rows = []
@@ -129,13 +129,13 @@ class AssignConfidenceHandler(AbstractQValueHandler):
     Peptides
     PSMs
     """
-    def __init__(self, name, threshold, project_path, db_session):
+    def __init__(self, name, threshold, project_path, db_session, crux_path):
         self.assign_confidence_row = db_session.query(DB.AssignConfidence).filter_by(AssignConfidenceName = name).first()
         assert(self.assign_confidence_row)
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, self.assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', 'tdc q-value'])
+        rows = extract_columns(crux_path, os.path.join(project_path, self.assign_confidence_row.AssignConfidenceOutputPath, 'assign-confidence.target.txt'), ['scan', 'sequence', 'tdc q-value'])
         for row in rows:
             scan = int(row[0])
             peptide = row[1]
@@ -161,12 +161,12 @@ class PercolatorHandler(AbstractQValueHandler):
     Peptides
     PSMs
     """
-    def __init__(self, name, threshold, project_path, db_session):
+    def __init__(self, name, threshold, project_path, db_session, crux_path):
         self.percolator_row = db_session.query(DB.Percolator).filter_by(PercolatorName = name).first()
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(os.path.join(project_path, self.percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', 'percolator q-value'])
+        rows = extract_columns(crux_path, os.path.join(project_path, self.percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', 'percolator q-value'])
         for row in rows:
             scan = int(row[0])
             peptide = row[1]

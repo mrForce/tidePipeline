@@ -21,7 +21,7 @@ print('id   |   Name   |   Output Path   |   Search Name   |   estimation method
 for row in rows:
     assign_confidence_name = row.AssignConfidenceName
     assign_confidence_output_path = row.AssignConfidenceOutputPath
-    tide_search = row.search
+    tide_search = row.searchbase
     tide_search_name = 'None'
     if tide_search and tide_search.SearchName:
         tide_search_name = tide_search.SearchName
@@ -35,5 +35,5 @@ for row in rows:
     sidak = 'False'
     if row.sidak:
         sidak = row.sidak
-    print(str(row.idAssignConfidence) + '   |   ' + assign_confidence_name + '   |   ' + assign_confidence_output_path + '   |   ' + tide_search_name + '   |   ' + estimation_method + '   |   ' + score_type + '   |   ' + sidak)
+    print(str(row.idQValue) + '   |   ' + assign_confidence_name + '   |   ' + assign_confidence_output_path + '   |   ' + tide_search_name + '   |   ' + estimation_method + '   |   ' + score_type + '   |   ' + sidak)
 project.end_command_session()

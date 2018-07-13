@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 import datetime
+from Parsers import MaxQuantPeptidesParser
 from abc import ABCMeta, abstractmethod, ABC
 import os
 #BaseTable = declarative_base(metaclass=ABCMeta)
@@ -25,16 +26,22 @@ tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', BaseTable.metadata,
 
 msgfplus_index_filteredNetMHC = Table('msgfplus_index_filteredNetMHC', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
+maxquant_search_filteredNetMHC = Table('maxquant_search_filteredNetMHC', BaseTable.metadata, Column('maxquant_search_id', ForeignKey('MaxQuantSearch.idSearch'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
+
 tideindex_peptidelists = Table('tideindex_peptidelists', BaseTable.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
 msgfplus_index_peptidelists = Table('msgfplus_index_peptidelists', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+
+maxquant_search_peptidelists = Table('maxquant_search_peptidelists', BaseTable.metadata, Column('maxquant_search_id', ForeignKey('MaxQuantSearch.idSearch'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
 """
 Need to add the following 3 tables in database revision 8d70dec8ab88
 """
 tideindex_targetset = Table('tideindex_targetset', BaseTable.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
+
+maxquant_search_targetset = Table('maxquant_search_targetset', BaseTable.metadata, Column('maxquant_search_id', ForeignKey('MaxQuantSearch.idSearch'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
 msgfplus_index_targetset = Table('msgfplus_index_targetset', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
@@ -56,6 +63,7 @@ class TargetSet(BaseTable, AbstractPeptideCollection):
     peptidelists = relationship('PeptideList', secondary=targetset_peptidelists, back_populates='targetsets')
     tideindices = relationship('TideIndex', secondary=tideindex_targetset, back_populates='targetsets')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_targetset, back_populates='targetsets')
+    maxquantsearches = relationship('MaxQuantSearch', secondary=maxquant_search_targetset, back_populates='targetsets')
     def get_peptides(self, project_path):
         fasta_location = os.path.join(project_path, self.TargetSetFASTAPath)
         with open(fasta_location, 'r') as f:
@@ -74,6 +82,7 @@ class HLA(BaseTable):
         return 'MHC ' + self.HLAName
 
 
+
 class MGFfile(BaseTable):
     __tablename__ = 'MGFfile'
     idMGFfile = Column('idMGFfile', Integer, primary_key=True)
@@ -82,6 +91,14 @@ class MGFfile(BaseTable):
     def __repr__(self):
         return 'MGF File found at: ' + self.MGFPath
 
+class RAWfile(BaseTable):
+    __tablename__ = 'RAWfile'
+    idRAWfile = Column('idRAWfile', Integer, primary_key=True)
+    RAWName = Column('RAWName', String, unique=True)
+    RAWPath = Column('RAWPath', String)
+    def __repr__(self):
+        return 'RAW File found at: ' + self.RAWPath
+    
 class FASTA(BaseTable):
     __tablename__ = 'FASTA'
     idFASTA = Column('idFASTA', Integer, primary_key=True)
@@ -92,6 +109,18 @@ class FASTA(BaseTable):
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
 
+class MaxQuantParameterFile(BaseTable):
+    __tablename__ = 'MaxQuantParameterFile'
+    idMaxQuantParameterFile = Column('idMaxQuantParameterFile', Integer, primary_key=True)
+    Name = Column('Name', String, unique=True, nullable=False)
+    Path = Column('Path', String, unique=True, nullable=False)
+    Comment = Column('Comment', String)
+    def __repr__(self):
+        if self.Comment is None:
+            return 'MaxQuant parameter file found at: ' + self.Path
+        else:
+            return 'MaxQuant parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
+    
 class PeptideList(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
@@ -104,6 +133,7 @@ class PeptideList(BaseTable, AbstractPeptideCollection):
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
     targetsets = relationship('TargetSet', secondary=targetset_peptidelists, back_populates='peptidelists')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_peptidelists, back_populates='peptidelists')
+    maxquantsearches = relationship('MaxQuantSearch', secondary=maxquant_search_peptidelists, back_populates='peptidelists')
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath
 
@@ -139,6 +169,7 @@ class FilteredNetMHC(BaseTable, AbstractPeptideCollection):
     tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
     targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_filteredNetMHC, back_populates='filteredNetMHCs')
+    maxquantsearches = relationship('MaxQuantSearch', secondary=maxquant_search_filteredNetMHC, back_populates='filteredNetMHCs')
     netmhc = relationship('NetMHC')
     def get_peptides(self, project_path):
         peptides = set()
@@ -225,6 +256,25 @@ class SearchBase(BaseTable):
         'polymorphic_on': searchType
     }
 
+
+class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
+    __tablename__ = 'MaxQuantSearch'
+    idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
+    idRAW = Column('idRAW', Integer, ForeignKey('RAWfile.idRAWfile'))
+    Path = Column('Path', String, nullable=False)
+    raw = relationship('RAWfile')
+    fdr = Column('fdr', String, nullable=False)    
+    filteredNetMHCs = relationship('FilteredNetMHC', secondary = maxquant_search_filteredNetMHC, back_populates = 'maxquantsearches')
+    peptidelists = relationship('PeptideList', secondary= maxquant_search_peptidelists, back_populates = 'maxquantsearches')
+    targetsets = relationship('TargetSet', secondary=maxquant_search_targetset, back_populates='maxquantsearches')
+    
+    def get_peptides(self, project_path):
+        peptides_location = os.path.join(project_path, self.Path, 'combined', 'txt', 'peptides.txt')
+        parser_object = MaxQuantPeptidesParser(peptides_location)
+        return parser_object.get_peptides()
+    __mapper_args__ = {
+        'polymorphic_identity': 'maxquantsearch',
+    }
     
 class TideSearch(SearchBase):
     __tablename__ = 'TideSearch'
@@ -312,7 +362,7 @@ class AssignConfidence(QValueBase):
     combine_charge_states = Column(String)
     combined_modified_peptides = Column(String)
 
-    search = relationship('SearchBase')
+
     __mapper_args__ = {
         'polymorphic_identity': 'assignconfidence',
     }
@@ -326,11 +376,12 @@ class Percolator(QValueBase):
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
-    search = relationship('SearchBase')
+
     __mapper_args__ = {
         'polymorphic_identity': 'percolator',
     }
 
+    
 
 class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'FilteredSearchResult'

@@ -38,7 +38,7 @@ class AbstractEngine(Base, metaclass=ABCMeta):
             row = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = set_name).first()
             if row:
                 link_row = row
-                temp_fasta = tempfile.NamedTemporaryFile(mode='w')
+                temp_fasta = tempfile.NamedTemporaryFile(mode='w', suffix='.fasta')
                 subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.filtered_path), temp_fasta.name])
                 temp_files.append(temp_fasta)
                 fasta_file_location = temp_fasta.name
@@ -48,7 +48,7 @@ class AbstractEngine(Base, metaclass=ABCMeta):
             row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = set_name).first()
             if row:
                 link_row = row
-                temp_fasta = tempfile.NamedTemporaryFile(mode='w')
+                temp_fasta = tempfile.NamedTemporaryFile(mode='w', suffix='.fasta')
                 subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListPath), temp_fasta.name])
                 temp_files.append(temp_fasta)
                 fasta_file_location = temp_fasta.name
