@@ -174,7 +174,7 @@ class MGFParser:
             for line in f:
                 if stage == 0:
                     assert(start_line == -1)
-                    assert(scan_number = -1)
+                    assert(scan_number == -1)
                     assert('END IONS' not in line)
                     if 'BEGIN IONS' in line:
                         start_line = i
@@ -214,12 +214,13 @@ class MGFParser:
         line_number = 0
         range_index = 0
         with open(location, 'w') as output_file:
-           with open(self.location, 'r') as input_file:
-               for line in input_file:
-                   while line_number > ranges[range_index].get_end_line():
-                       range_index += 1
-                   if line_number >= ranges[range_index].get_start_line() and line_number <= ranges[range_index].get_end_line():
-                       output_file.write(line)
+            with open(self.location, 'r') as input_file:
+                for line in input_file:
+                    while range_index < len(ranges) and line_number > ranges[range_index].get_end_line():
+                        range_index = range_index + 1
+                        
+                    if range_index < len(ranges) and line_number >= ranges[range_index].get_start_line() and line_number <= ranges[range_index].get_end_line():
+                        output_file.write(line)
                     line_number += 1
-            
+                    
             
