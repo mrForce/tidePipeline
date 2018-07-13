@@ -142,4 +142,84 @@ class MaxQuantPeptidesParser:
     def get_num_psms(self):
         return self.num_psms
         
+class MGFScan:
+    def __init__(self, start_line, end_line):
+        self.start_line = start_line
+        self.end_line = end_line
+        self.visible = True
+    def get_start_line(self):
+        return self.start_line
+    def get_end_line(self):
+        return self.end_line
+    def make_visible(self):
+        self.visible = True
+    def make_invisible(self):
+        self.visible = False
+    def get_visible(self):
+        return self.visible
+class MGFParser:
+    def __init__(self, location):
+        self.location = location
+        self.scans = {}
+        scan_number_re = re.compile('SCANS=(?P<scan>\d+)')
+        with open(location, 'r') as f:
+            i = 0
+            """
+            stage 0 is when we are between an END IONS line (or the begining of the file) and the next START IONS line (or after the last END IONS line)
+            stage 1 is when we are between a START IONS line and the corresponding END IONS line
+            """
+            stage = 0
+            start_line = -1
+            scan_number = -1
+            for line in f:
+                if stage == 0:
+                    assert(start_line == -1)
+                    assert(scan_number = -1)
+                    assert('END IONS' not in line)
+                    if 'BEGIN IONS' in line:
+                        start_line = i
+                        stage = 1
+                elif stage == 1:
+                    assert(start_line >= 0)
+                    assert('BEGIN IONS' not in line)
+                    if 'END IONS' in line:
+                        assert(scan_number > -1)
+                        self.scans[scan_number] = MGFScan(start_line, i)
+                        start_line = -1
+                        scan_number = -1
+                        stage = 0
+                    elif 'SCANS=' in line:
+                        match = scan_number_re.match(line)
+                        assert(match)
+                        scan_number = int(match.group('scan'))                        
+                i += 1
 
+    def remove_scans(self, scan_list):
+        """
+        Just pass a list of the scan numbers
+        """
+        for scan_num in set(scan_list):
+            mgfscan_object = self.scans[scan_num]
+            mgfscan_object.make_invisible()
+    def restore_scans(self, scan_list):
+        for scan_num in set(scan_list):
+            mgfscan_object = self.scans[scan_num]
+            mgfscan_object.make_visible()
+    def write_modified_mgf(self, location):
+        ranges = []
+        for key, mgfscan_object in self.scans.items():
+            if mgfscan_object.get_visible():
+                ranges.append(mgfscan_object)
+        ranges.sort(key = lambda x: x.get_start_line())
+        line_number = 0
+        range_index = 0
+        with open(location, 'w') as output_file:
+           with open(self.location, 'r') as input_file:
+               for line in input_file:
+                   while line_number > ranges[range_index].get_end_line():
+                       range_index += 1
+                   if line_number >= ranges[range_index].get_start_line() and line_number <= ranges[range_index].get_end_line():
+                       output_file.write(line)
+                    line_number += 1
+            
+            
