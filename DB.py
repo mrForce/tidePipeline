@@ -51,7 +51,35 @@ targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Col
 
 
 
-
+class TideIterativeFilteredSearchAssociation(BaseTable):
+    __tablename__ = 'TideIterativeFilteredSearchAssociation'
+    tideiterative_id = Column(Integer, ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True)
+    filteredsearch_id = Column(Integer, ForeignKey('FiltereSearchResult.idFilteredSearchResult'), primary_key=True)
+    step = Column('step', Integer)
+    filteredsearch_result = relationship('filteredsearch_result')
+    
+class TideIterativeRun(BaseTable, AbstractPeptideCollection):
+    __tablename__ = 'TideIterativeRun'
+    idTideIterativeRun = Column('idTideIterativeRun', Integer, primary_key=True)
+    TideIterativeRunName = Column('TideRunName', String, unique=True)
+    fdr = Column('fdr', String)
+    PeptideIdentifierName = Column('PeptideIdentifierName', String)
+    num_steps = Column('num_steps', Integer)
+    TideIterativeFilteredSearchAssociations = relationship('TideIterativeFilteredSearchAssociation')
+    idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
+    mgf = relationship('MGF')
+    def get_peptides(self, project_path):
+        associations = self.TideIterativeFilteredSearchAssociations
+        assert(len(associations) == self.num_steps)
+        last_step_row = associations[0]
+        for row in associations[1::]:
+            if last_step_row.step < row.step:
+                last_step_row = row
+        return last_step_row.filteresearch_result.get_peptides(project_path)
+            
+        
+    
+    
 class TargetSet(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'TargetSet'
     idTargetSet = Column('idTargetSet', Integer, primary_key = True)
