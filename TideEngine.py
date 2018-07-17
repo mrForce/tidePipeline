@@ -39,6 +39,7 @@ class TideEngine(AbstractEngine):
         crux_location = self.executables['crux']
         peptide_identifier = 'percolator'
         if mgf_row and (multistep_search_row is None) and (filtered_search_result_row is None):
+            mgf_location = os.path.abspath(os.path.join(self.project_path, mgf_row.MGFPath))
             #make sure the tide indices exist
             for name in tide_index_names:
                 tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = name).first()
@@ -70,28 +71,52 @@ class TideEngine(AbstractEngine):
                         raise MGFNameMustBeUniqueError(new_mgf_name)
                 else:
                      first_index = False   
-                    
+                new_filtered_name = new_percolator_name + '_filtered'
+                new_filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = new_filtered_name).first()
+                if not (new_filtered_row is None):
+                    raise FilteredSearchResultNameMustBeUniqueError(new_filtered_name)
+                
 
             """
             We're clear to start running the searches. We'll run the search on the mgf passed to us, then run Percolator, then extract the PSMs using PercolatorHandler from ReportGeneration. We'll extract the matched spectra from the MGF, creating a new MGF, and search it against the next tide index
             """
-            first_index = True
             new_mgf_name = mgf_name
-            for index_name in tide_index_names:
-                if not first_index:
+            mgf_parser = Parsers.MGFParser(mgf_location)
+            filtered_results = []
+            for i in range(0, len(tide_index_names)):
+                index_name = tide_index_names[i]
+                if i > 0:
                     new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
-                else:
-                    first_index = False
                 search_name = multistep_search_name + '_' + index_name
                 percolator_name = search_name + '_' + peptide_identifier
+                filtered_name = percolator_name + '_filtered'
                 search_runner = Runners.TideSearchRunner(search_options, crux_location)
                 self.run_search(new_mgf_name, index_name, search_runner, search_name, search_options)
                 #We ran the search, so now we need to call Percolator
                 postprocessing_object.percolator(search_name, Runners.PercolatorRunner(crux_location, percolator_param_file), percolator_name)
-                #open up the Percolator results using PercolatorHandler
-                percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, fdr, self.project_path, self.db_session, crux_location)
-                psms = percolator_handler.get_psms()
-                #parse the MGF file, and remove the scans corresponding to discovered peptides
+                postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
+                filtered_results.append((i, filtered_name))
+                if i < len(tide_index_names) - 1:
+                    #open up the Percolator results using PercolatorHandler
+                    percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, fdr, self.project_path, self.db_session, crux_location)
+                    psms = percolator_handler.get_psms()
+                    mgf_parser.remove_scans(list(set([x[0] for x in psms])))
+                    temp_file = tempfile.NamedTemporaryFile()
+                    mgf_parser.write_modified_mgf(temp_file.name)
+                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + tide_index_names[i + 1] + '_mgf')
+                    temp_file.close()
+            rows = []
+            iterativerun_row = DB.TideIterativeRun(TideIterativeRunName = multistep_search_name, fdr = str(fdr), PeptideIdentifierName = peptide_identifier, num_steps = len(tide_index_names), mgf = mgf_row)
+            rows.append(iterativerun_row)
+            for step, filtered_name in filtered_results:
+                filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_name).first()
+                association_row = DB.TideIterativeFilteredSearchAssociation(step = step)
+                association_row.filteredsearch_result = filtered_row
+                iterativerun_row.TideIterativeFilteredSearchAssociations.append(association_row)
+                rows.append(assocation_row)
+            self.db_session.add_all(rows)
+            self.db_session.commit()
+            
     def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options):
         print('in tide search function')
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()

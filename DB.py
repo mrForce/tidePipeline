@@ -54,10 +54,9 @@ targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Col
 class TideIterativeFilteredSearchAssociation(BaseTable):
     __tablename__ = 'TideIterativeFilteredSearchAssociation'
     tideiterative_id = Column(Integer, ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True)
-    filteredsearch_id = Column(Integer, ForeignKey('FiltereSearchResult.idFilteredSearchResult'), primary_key=True)
+    filteredsearch_id = Column(Integer, ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True)
     step = Column('step', Integer)
-    filteredsearch_result = relationship('filteredsearch_result')
-    
+    filteredsearch_result = relationship('FilteredSearchResult')
 class TideIterativeRun(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'TideIterativeRun'
     idTideIterativeRun = Column('idTideIterativeRun', Integer, primary_key=True)
@@ -67,7 +66,7 @@ class TideIterativeRun(BaseTable, AbstractPeptideCollection):
     num_steps = Column('num_steps', Integer)
     TideIterativeFilteredSearchAssociations = relationship('TideIterativeFilteredSearchAssociation')
     """
-    mgf is the mgf we started with.
+    mgf is the mgf we started with
     """
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGF')
