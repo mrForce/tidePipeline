@@ -32,13 +32,12 @@ class TideEngine(AbstractEngine):
     """
     peptide_identifier is either 'assign_confidence' or 'percolator'. 
     """
-    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, filtered_search_result_name, fdr, percolator_param_file, postprocess_object):
+    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, fdr, percolator_param_file, postprocess_object):
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = multistep_search_name).first()
-        filtered_search_result_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_search_result_name).first()
         crux_location = self.executables['crux']
         peptide_identifier = 'percolator'
-        if mgf_row and (multistep_search_row is None) and (filtered_search_result_row is None):
+        if mgf_row and (multistep_search_row is None):
             mgf_location = os.path.abspath(os.path.join(self.project_path, mgf_row.MGFPath))
             #make sure the tide indices exist
             for name in tide_index_names:
@@ -90,10 +89,14 @@ class TideEngine(AbstractEngine):
                 search_name = multistep_search_name + '_' + index_name
                 percolator_name = search_name + '_' + peptide_identifier
                 filtered_name = percolator_name + '_filtered'
-                search_runner = Runners.TideSearchRunner(search_options, crux_location)
+                search_runner = Runners.TideSearchRunner({}, crux_location)
                 self.run_search(new_mgf_name, index_name, search_runner, search_name, search_options)
                 #We ran the search, so now we need to call Percolator
-                postprocessing_object.percolator(search_name, Runners.PercolatorRunner(crux_location, percolator_param_file), percolator_name)
+                if percolator_param_file:
+                    percolator_runner = Runners.PercolatorRunner(crux_location, percolator_param_file)
+                else:
+                    percolator_runner = Runners.PercolatorRunner(crux_location)
+                postprocessing_object.percolator(search_name, percolator_runner, percolator_name)
                 postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
                 filtered_results.append((i, filtered_name))
                 if i < len(tide_index_names) - 1:
