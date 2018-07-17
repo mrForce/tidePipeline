@@ -29,6 +29,10 @@ class TideEngine(AbstractEngine):
         else:
             rows = self.db_session.query(DB.TideSearch).all()
         return rows
+
+    def list_multistep_search(self):
+        rows = self.db_session.query(DB.TideIterativeRun).all()
+        return rows
     """
     peptide_identifier is either 'assign_confidence' or 'percolator'. 
     """
