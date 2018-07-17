@@ -66,6 +66,9 @@ class TideIterativeRun(BaseTable, AbstractPeptideCollection):
     PeptideIdentifierName = Column('PeptideIdentifierName', String)
     num_steps = Column('num_steps', Integer)
     TideIterativeFilteredSearchAssociations = relationship('TideIterativeFilteredSearchAssociation')
+    """
+    mgf is the mgf we started with.
+    """
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGF')
     def get_peptides(self, project_path):

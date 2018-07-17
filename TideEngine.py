@@ -4,6 +4,7 @@ import DB
 import subprocess
 import uuid
 import os
+import Runners
 class TideEngine(AbstractEngine):
     def list_search(self, mgf_name = None, tide_index_name = None):
         """
@@ -28,7 +29,62 @@ class TideEngine(AbstractEngine):
         else:
             rows = self.db_session.query(DB.TideSearch).all()
         return rows
-        
+    """
+    peptide_identifier is either 'assign_confidence' or 'percolator'. 
+    """
+    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, filtered_search_result_name, fdr, percolator_param_file):
+        mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+        multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = multistep_search_name).first()
+        filtered_search_result_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_search_result_name).first()
+        crux_location = self.executables['crux']
+        peptide_identifier_name = 'percolator'
+        if mgf_row and (multistep_search_row is None) and (filtered_search_result_row is None):
+            #make sure the tide indices exist
+            for name in tide_index_names:
+                tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = name).first()
+                if tide_index_row is None:
+                    raise NoSuchTideIndexError(name)
+            """
+            The name of each TideSearch row should be multistep_search_name + '_' + tide_index_name. 
+            
+            For each TideSearch, there will be a corresponding Percolator row. The name of this row should be multistep_search_name + '_' + tide_index_name + '_percolator'. 
+
+            Each intermediate MGF file will be named multistep_search_name + '_' tide_index_name + '_mgf'
+
+            We need to make sure each of these rows doesn't exist!
+            """
+            first_index = True
+            for name in tide_index_names:
+                new_search_name = multistep_search_name + '_' + name
+                new_tide_search_row = self.db_session.query(DB.TideSearch).filter_by(TideSearchName = new_search_name).first()
+                if not (new_tide_search_row is None):
+                    raise TideSearchNameMustBeUniqueError(new_search_name)
+                new_percolator_name = new_search_name + '_' + peptide_identifier_name
+                new_percolator_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = new_percolator_name).first()
+                if not (new_percolator_row is None):
+                    raise PercolatorNameMustBeUniqueError(new_percolator_name)
+                if not first_index:
+                    new_mgf_name = multistep_search_name + '_' + name + '_mgf'
+                    new_mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = new_mgf_name).first()
+                    if not (new_mgf_row is None):
+                        raise MGFNameMustBeUniqueError(new_mgf_name)
+                else:
+                     first_index = False   
+                    
+
+            """
+            We're clear to start running the searches. We'll run the search on the mgf passed to us, then run Percolator, then extract the PSMs using PercolatorHandler from ReportGeneration. We'll extract the matched spectra from the MGF, creating a new MGF, and search it against the next tide index
+            """
+            first_index = True
+            new_mgf_name = mgf_name
+            for index_name in tide_index_names:
+                if not first_index:
+                    new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
+                search_name = multistep_search_name + '_' + index_name
+                search_runner = Runners.TideSearchRunner(search_options, crux_location)
+                self.run_search(new_mgf_name, index_name, search_runner, search_name, search_options)
+                #We ran the search, so now we need to call Percolator
+                
     def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options):
         print('in tide search function')
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()

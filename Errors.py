@@ -1,6 +1,8 @@
 class Error(Exception):
     pass
 
+
+
 class RAWFileDoesNotExistError(Error):
     def __init__(self, raw_name):
         self.raw_name = raw_name
