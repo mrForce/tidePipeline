@@ -1,7 +1,10 @@
 from AbstractEngine import AbstractEngine
 import tempfile
+from Errors import *
 import DB
+import ReportGeneration
 import subprocess
+import Parsers
 import uuid
 import os
 import Runners
@@ -36,7 +39,7 @@ class TideEngine(AbstractEngine):
     """
     peptide_identifier is either 'assign_confidence' or 'percolator'. 
     """
-    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, fdr, percolator_param_file, postprocess_object):
+    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, fdr, percolator_param_file, postprocessing_object):
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = multistep_search_name).first()
         crux_location = self.executables['crux']
@@ -60,7 +63,7 @@ class TideEngine(AbstractEngine):
             first_index = True
             for name in tide_index_names:
                 new_search_name = multistep_search_name + '_' + name
-                new_tide_search_row = self.db_session.query(DB.TideSearch).filter_by(TideSearchName = new_search_name).first()
+                new_tide_search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = new_search_name).first()
                 if not (new_tide_search_row is None):
                     raise TideSearchNameMustBeUniqueError(new_search_name)
                 new_percolator_name = new_search_name + '_' + peptide_identifier
