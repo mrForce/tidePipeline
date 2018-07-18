@@ -54,11 +54,9 @@ def get_num_lines(filepath):
     print('filepath: ' + filepath)
     wc_process = subprocess.check_output(['wc', filepath])
     return int(wc_process.decode().split()[0])
-def call_netmhc(hla, peptide_file_path, output_path, netmhc_pan = False):
-    netmhc_location = '/usr/bin/netmhc'
+def call_netmhc(netmhc_location, hla, peptide_file_path, output_path):
+
     #netmhc_location = '/home/code/IMPORT/netMHC-4.0/netMHC'
-    if netmhc_pan:
-        netmhc_location = '/home/code/IMPORT/netMHCpan-4.0/netMHCpan'
     num_peptides = get_num_lines(peptide_file_path)
     """
     We need to split the file (into 2000 line files), because it seems that NetMHC has a hard time handling large files. It's not open source, so I'm not entirely sure why, and I don't really have a good way to investigate it.
