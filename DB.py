@@ -73,11 +73,11 @@ class TideIterativeRun(BaseTable, AbstractPeptideCollection):
     def get_peptides(self, project_path):
         associations = self.TideIterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
-        last_step_row = associations[0]
-        for row in associations[1::]:
-            if last_step_row.step < row.step:
-                last_step_row = row
-        return last_step_row.filteresearch_result.get_peptides(project_path)
+        peptide_set_list = []
+        for row in associations:
+            peptide_set_list.append(row.filteredsearch_result.get_peptides(project_path))
+        return set([item for subset in peptide_set_list for item in subset])
+
             
         
     

@@ -36,6 +36,7 @@ class TideEngine(AbstractEngine):
     def list_multistep_search(self):
         rows = self.db_session.query(DB.TideIterativeRun).all()
         return rows
+    
     """
     peptide_identifier is either 'assign_confidence' or 'percolator'. 
     """
@@ -111,7 +112,7 @@ class TideEngine(AbstractEngine):
                     percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, fdr, self.project_path, self.db_session, crux_location)
                     psms = percolator_handler.get_psms()
                     mgf_parser.remove_scans(list(set([x[0] for x in psms])))
-                    temp_file = tempfile.NamedTemporaryFile()
+                    temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
                     self.add_mgf_file(temp_file.name, multistep_search_name + '_' + tide_index_names[i + 1] + '_mgf')
                     temp_file.close()
@@ -123,7 +124,7 @@ class TideEngine(AbstractEngine):
                 association_row = DB.TideIterativeFilteredSearchAssociation(step = step)
                 association_row.filteredsearch_result = filtered_row
                 iterativerun_row.TideIterativeFilteredSearchAssociations.append(association_row)
-                rows.append(assocation_row)
+                rows.append(association_row)
             self.db_session.add_all(rows)
             self.db_session.commit()
             

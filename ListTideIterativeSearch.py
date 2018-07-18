@@ -15,7 +15,7 @@ project_folder = args.project_folder
 
 project = TideEngine.TideEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session(False)
-searches = project.list_multistep_searches()
+searches = project.list_multistep_search()
 print('id   |   Iterative Search Name   |   FDR   |   MGF name   | Peptide Identifier | Num steps ')
 for row in searches:
     print(str(row.idTideIterativeRun) + '   |   ' + row.TideIterativeRunName + '   |   ' + row.fdr + '   |   ' + row.mgf.MGFName + '   |   ' + row.PeptideIdentifierName + '    |    '  + str(row.num_steps))

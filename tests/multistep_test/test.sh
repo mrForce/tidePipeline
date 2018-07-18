@@ -7,14 +7,15 @@ ls
 #python AddHLA.py multistep_project H-2-Kb
 #python AddFASTA.py multistep_project tests/multistep_test/all_mouse_proteins.fasta MouseProteins
 #python KChop.py multistep_project MouseProteins 9 MouseProteinNineMers
-#python CreateTideIndex.py multistep_project PeptideList MouseProteinNineMers NineMerIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
+#python CreateTideIndex.py multistep_project PeptideList MouseProteinNineMers NineMerIndexTwo --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
 #python AddMGF.py multistep_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
 #python RunNetMHC.py multistep_project MouseProteinNineMers H-2-Kb 2 MouseProteinNineMersH2KbTwoPercent
 #python CreateTideIndex.py multistep_project FilteredNetMHC MouseProteinNineMersH2KbTwoPercent TwoPercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
 #python RunNetMHC.py multistep_project MouseProteinNineMers H-2-Kb 1 MouseProteinNineMersH2KbOnePercent
 #python CreateTideIndex.py multistep_project FilteredNetMHC MouseProteinNineMersH2KbOnePercent OnePercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
 #zip -r multistep_project.zip multistep_project
-python RunIterativeTideSearch.py multistep_project Y3_mgf 0.01 mouseIter NineMerIndex TwoPercentIndex OnePercentIndex
+python RunIterativeTideSearch.py multistep_project Y3_mgf 0.01 mouseIterNine OnePercentIndex TwoPercentIndex --percolator_param_file tests/multistep_test/percolator.params
+
 #zip -r Y3_test_project.zip Y3_test_project
 #python RunMSGFPlusSearch.py Y3_test_project Y3_mgf MouseProteinNineMersIndex MouseMSGFSearch --memory 6000
 #python KChop.py Y3_test_project MouseProteins 10 MouseProteinTenMers

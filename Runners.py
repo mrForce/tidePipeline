@@ -226,12 +226,6 @@ class AssignConfidenceRunner:
 
 class PercolatorRunner:
     def __init__(self, crux_binary, param_file_path = False):
-        if param_file_path:
-            line_regex = re.compile('(?:#.*)|(\S+=\S+)|$')
-            with open(param_file_path, 'r') as f:
-                for line in f:
-                    if line_regex.match(line) is None:
-                        raise InvalidParameterLineError(line)
         self.param_file_path = param_file_path
         self.crux_binary = crux_binary
     
