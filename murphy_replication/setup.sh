@@ -1,7 +1,7 @@
 #!/bin/bash
 cd ..
 python3 Initialize.py MurphyReplication murphy_replication/config.ini
-python3 AddMaxQuantParamFile.py MurphyReplication  murpyh_replication/mqpar.xml MaxQuantConfig
+python3 AddMaxQuantParamFile.py MurphyReplication  murphy_replication/mqpar.xml MaxQuantConfig
 python3 AddRAW.py MurphyReplication ~/Downloads/160127_609_015_EL4_Y3.raw Y3RAW
 python3 AddRAW.py MurphyReplication ~/Downloads/160127_609_015_EL4_B22.raw B22RAW
 python3 AddMGF.py MurphyReplication ~/Downloads/160127_609_015_EL4_Y3.mgf Y3MGF
