@@ -35,7 +35,7 @@ for k, v in arguments.items():
         good_arguments[k] = v
 
 project.begin_command_session()
-assign_confidence_runner =  Runners.AssignConfidenceRunner(good_arguments, crux_exec_path)
+assign_confidence_runner =  Runners.AssignConfidenceRunner( crux_exec_path, good_arguments)
 project.assign_confidence(args.search_name, assign_confidence_runner, args.assign_confidence_name)
 project.end_command_session()
 

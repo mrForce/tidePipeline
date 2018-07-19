@@ -179,8 +179,9 @@ class TideIndexRunner:
         return DB.TideIndex(**column_arguments)
 
 class AssignConfidenceRunner:
-    def __init__(self, assign_confidence_options, crux_binary):
+    def __init__(self, crux_binary, assign_confidence_options, param_file = None):
         self.assign_confidence_options = assign_confidence_options
+        self.param_file = param_file
         self.crux_binary = crux_binary
 
 
@@ -203,6 +204,9 @@ class AssignConfidenceRunner:
             if k and v:
                 command.append('--' + k)
                 command.append(v)
+        if self.param_file:
+            command.append('--parameter-file')
+            command.append(self.param_file)
         command.append('--output-dir')
         command.append(output_directory_tide)
         command.append(target_path)

@@ -38,13 +38,14 @@ class TideEngine(AbstractEngine):
         return rows
     
     """
-    peptide_identifier is either 'assign_confidence' or 'percolator'. 
+    peptide_identifier is either 'assign-confidence' or 'percolator'. 
     """
-    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, fdr, percolator_param_file, postprocessing_object):
+    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, fdr, peptide_identifier, param_file, postprocessing_object):
+        assert(peptide_identifier in ['percolator', 'assign-confidence'])
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = multistep_search_name).first()
         crux_location = self.executables['crux']
-        peptide_identifier = 'percolator'
+
         if mgf_row and (multistep_search_row is None):
             mgf_location = os.path.abspath(os.path.join(self.project_path, mgf_row.MGFPath))
             #make sure the tide indices exist
@@ -67,10 +68,16 @@ class TideEngine(AbstractEngine):
                 new_tide_search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = new_search_name).first()
                 if not (new_tide_search_row is None):
                     raise TideSearchNameMustBeUniqueError(new_search_name)
-                new_percolator_name = new_search_name + '_' + peptide_identifier
-                new_percolator_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = new_percolator_name).first()
-                if not (new_percolator_row is None):
-                    raise PercolatorNameMustBeUniqueError(new_percolator_name)
+
+                new_peptide_identifier_name = new_search_name + '_' + peptide_identifier
+                if peptide_identifier == 'percolator':
+                    new_peptide_identifier_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = new_peptide_identifier_name).first()
+                    if not (new_peptide_identifier_row is None):
+                        raise PercolatorNameMustBeUniqueError(new_peptide_identifier_name)
+                elif peptide_identifier = 'assign-confidence':
+                    new_peptide_identifier_row = self.db_session.query(DB.AssignConfidence).filter_by(AssignConfidenceName = new_peptide_identifier_name).first()
+                    if not (new_peptide_identifier_row is None):
+                        raise AssignConfidenceNameMustBeUniqueError(new_peptide_identifier_name)
                 if not first_index:
                     new_mgf_name = multistep_search_name + '_' + name + '_mgf'
                     new_mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = new_mgf_name).first()
@@ -78,7 +85,7 @@ class TideEngine(AbstractEngine):
                         raise MGFNameMustBeUniqueError(new_mgf_name)
                 else:
                      first_index = False   
-                new_filtered_name = new_percolator_name + '_filtered'
+                new_filtered_name = new_peptide_identifier_name + '_filtered'
                 new_filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = new_filtered_name).first()
                 if not (new_filtered_row is None):
                     raise FilteredSearchResultNameMustBeUniqueError(new_filtered_name)
@@ -95,22 +102,34 @@ class TideEngine(AbstractEngine):
                 if i > 0:
                     new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
                 search_name = multistep_search_name + '_' + index_name
-                percolator_name = search_name + '_' + peptide_identifier
-                filtered_name = percolator_name + '_filtered'
+                peptide_identifier_name = search_name + '_' + peptide_identifier
+                filtered_name = peptide_identifier_name + '_filtered'
                 search_runner = Runners.TideSearchRunner({}, crux_location)
                 self.run_search(new_mgf_name, index_name, search_runner, search_name, search_options)
-                #We ran the search, so now we need to call Percolator
-                if percolator_param_file:
-                    percolator_runner = Runners.PercolatorRunner(crux_location, percolator_param_file)
-                else:
-                    percolator_runner = Runners.PercolatorRunner(crux_location)
-                postprocessing_object.percolator(search_name, percolator_runner, percolator_name)
-                postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
+                if peptide_identifier == 'percolator':
+                    #We ran the search, so now we need to call Percolator
+                    if param_file:
+                        percolator_runner = Runners.PercolatorRunner(crux_location, param_file)
+                    else:
+                        percolator_runner = Runners.PercolatorRunner(crux_location)
+                    postprocessing_object.percolator(search_name, percolator_runner, peptide_identifier_name)
+                    postprocessing_object.filter_q_value_percolator(peptide_identifier_name, fdr, filtered_name)
+                elif peptide_identifier == 'assign-confidence':
+                    if param_file:
+                        assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, {}, param_file)
+                    else:
+                        assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, {})
+                    postprocessing_object.assign_confidence(search_name, assign_confidence_runner, peptide_identifier_name)
+                    postprocessing_object.filter_q_value_assign_confidence(peptide_identifier_name, fdr, filtered_name)
                 filtered_results.append((i, filtered_name))
                 if i < len(tide_index_names) - 1:
-                    #open up the Percolator results using PercolatorHandler
-                    percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, fdr, self.project_path, self.db_session, crux_location)
-                    psms = percolator_handler.get_psms()
+                    if peptide_identifier == 'percolator':
+                        #open up the Percolator results using PercolatorHandler
+                        percolator_handler = ReportGeneration.PercolatorHandler(peptide_identifier_name, fdr, self.project_path, self.db_session, crux_location)
+                        psms = percolator_handler.get_psms()
+                    elif peptide_identifier == 'assign-confidence':
+                        assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(peptide_identifier_name, fdr, self.project_path, self.db_session, crux_location)
+                        psms = assign_confidence_handler.get_psms()
                     mgf_parser.remove_scans(list(set([x[0] for x in psms])))
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
