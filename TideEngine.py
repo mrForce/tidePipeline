@@ -40,7 +40,7 @@ class TideEngine(AbstractEngine):
     """
     peptide_identifier is either 'assign-confidence' or 'percolator'. 
     """
-    def multistep_search(self, mgf_name, tide_index_names, search_options, multistep_search_name, fdr, peptide_identifier, param_file, postprocessing_object):
+    def multistep_search(self, mgf_name, tide_index_names, search_param_file, multistep_search_name, fdr, peptide_identifier, param_file, postprocessing_object):
         assert(peptide_identifier in ['percolator', 'assign-confidence'])
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = multistep_search_name).first()
@@ -74,7 +74,7 @@ class TideEngine(AbstractEngine):
                     new_peptide_identifier_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = new_peptide_identifier_name).first()
                     if not (new_peptide_identifier_row is None):
                         raise PercolatorNameMustBeUniqueError(new_peptide_identifier_name)
-                elif peptide_identifier = 'assign-confidence':
+                elif peptide_identifier == 'assign-confidence':
                     new_peptide_identifier_row = self.db_session.query(DB.AssignConfidence).filter_by(AssignConfidenceName = new_peptide_identifier_name).first()
                     if not (new_peptide_identifier_row is None):
                         raise AssignConfidenceNameMustBeUniqueError(new_peptide_identifier_name)
@@ -104,8 +104,11 @@ class TideEngine(AbstractEngine):
                 search_name = multistep_search_name + '_' + index_name
                 peptide_identifier_name = search_name + '_' + peptide_identifier
                 filtered_name = peptide_identifier_name + '_filtered'
-                search_runner = Runners.TideSearchRunner({}, crux_location)
-                self.run_search(new_mgf_name, index_name, search_runner, search_name, search_options)
+                if search_param_file:
+                    search_runner = Runners.TideSearchRunner(crux_location, search_param_file)
+                else:
+                    search_runner = Runners.TideSearchRunner(crux_location)
+                self.run_search(new_mgf_name, index_name, search_runner, search_name)
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
                     if param_file:
@@ -147,7 +150,8 @@ class TideEngine(AbstractEngine):
             self.db_session.add_all(rows)
             self.db_session.commit()
             
-    def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options):
+    def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options=None):
+        #options doesn't do anything
         print('in tide search function')
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName=tide_index_name).first()
@@ -158,7 +162,7 @@ class TideEngine(AbstractEngine):
             while os.path.isfile(full_directory_path) or os.path.isdir(full_directory_path):
                 directory_name = str(uuid.uuid4().hex)
                 full_directory_path= os.path.join(self.project_path, 'tide_search_results', directory_name)
-            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), options, self.project_path, tide_search_name)
+            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), self.project_path, tide_search_name)
 
             self.db_session.add(row)
             self.db_session.commit()

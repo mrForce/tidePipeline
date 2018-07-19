@@ -27,6 +27,6 @@ crux_exec_path = project.get_crux_executable_path()
 arguments = vars(args)
 print('going to begin command session')        
 project.begin_command_session()
-project.multistep_search(args.mgf_name, args.tideindices, {}, args.iterativesearch_name, args.fdr, args.peptide_identifier, args.peptide_identifier_param_file, postprocessing_object)
+project.multistep_search(args.mgf_name, args.tideindices, args.tidesearch_param_file, args.iterativesearch_name, args.fdr, args.peptide_identifier, args.peptide_identifier_param_file, postprocessing_object)
 project.end_command_session()
 
