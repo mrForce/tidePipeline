@@ -57,6 +57,32 @@ class TideIterativeFilteredSearchAssociation(BaseTable):
     filteredsearch_id = Column(Integer, ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True)
     step = Column('step', Integer)
     filteredsearch_result = relationship('FilteredSearchResult')
+
+class MSGFPlusIterativeFilteredSearchAssociation(BaseTable):
+    __tablename__ = 'MSGFPlusIterativeFilteredSearchAssociation'
+    msgfplusiterative_id = Column(Integer, ForeignKey('MSGFPlusIterativeRun.idMSGFPlusIterativeRun'), primary_key=True)
+    filteredsearch_id = Column(Integer, ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True)
+    step = Column('step', Integer)
+    filteredsearch_result = relationship('FilteredSearchResult')
+
+
+class MSGFPlusIterativeRun(BaseTable, AbstractPeptideCollection):
+    __tablename__ = 'MSGFPlusIterativeRun'
+    idMSGFPlusIterativeRun = Column('idMSGFPlusIterativeRun', Integer, primary_key=True)
+    MSGFPlusIterativeRunName = Column('MSGFPlusIterativeRunName', String, unique=True)
+    fdr = Column('fdr', String)
+    num_steps = Column('num_steps', Integer)
+    MSGFPlusIterativeFilteredAssociations = relationship('MSGFPlusIterativeFilteredAssociation')
+    idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
+    mgf = relationship('MGFfile')
+
+    def get_peptides(self, project_path):
+        associations = self.MSGFPlusIterativeFilteredAssociations
+        assert(len(associations) == self.num_steps)
+        peptide_set_list = []
+        for row in associations:
+            peptide_set_list.append(row.filteredsearch_result.get_peptides(project_path))
+        return set([item for subset in peptide_set_list for item in subset])
 class TideIterativeRun(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'TideIterativeRun'
     idTideIterativeRun = Column('idTideIterativeRun', Integer, primary_key=True)

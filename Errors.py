@@ -229,6 +229,13 @@ class TideSearchNameMustBeUniqueError(Error):
     def __repr__(self):
         return self.message
 
+class MSGFPlusSearchNameMustBeUniqueError(Error):
+    def __init__(self, name):
+        self.message = 'There is already an MSGF+ Search with the name: ' + name
+    def __repr__(self):
+        return self.message
+
+    
 class InvalidParameterLineError(Error):
     def __init__(self, line):
         self.message = 'The line does not follow the format for a percolator parameter file: ' + line

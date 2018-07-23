@@ -4,6 +4,80 @@ import os
 import Runners
 from Errors import *
 class MSGFPlusEngine(AbstractEngine):
+
+    def list_multistep_search(self):
+        rows = self.db_session.query(DB.MSGFPlusIterativeRun).all()
+        return rows
+    
+
+    def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, modifications_name = None, memory = None):
+        mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+        multistep_search_row = self.db_session.query(DB.MSGFPlusIterativeRun).filter_by(MSGFPlusIterativeRunName = multistep_search_name).first()
+        msgf_location = self.executables['msgfplus']
+        search_runner = Runners.MSGFPlusSearchRunner(msgfplus_search_options, msgf_location)
+        if mgf_row and (multistep_search_row is None):
+            mgf_location = os.path.abspath(os.path.join(self.project_path, mgf_row.MGFPath))
+            #make sure the tide indices exist
+            for name in msgfplus_index_names:
+                index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = name).first()
+                if index_row is None:
+                    raise NoSuchMSGFPlusIndexError(name)
+            """
+            The name of each MSGFPlusSearch row should be multistep_search_name + '_' + msgfplus_index_name. 
+            
+
+            Each intermediate MGF file will be named multistep_search_name + '_' msgfplus_index_name + '_mgf'
+
+            We need to make sure each of these rows doesn't exist!
+            """
+            first_index = True
+            for name in msgfplus_index_names:
+                new_search_name = multistep_search_name + '_' + name
+                new_msgfplus_search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = new_search_name).first()
+                if not (new_msgfplus_search_row is None):
+                    raise MSGFPlusSearchNameMustBeUniqueError(new_search_name)
+ 
+                new_filtered_name = new_search_name + '_msgfplus_filtered'
+                new_filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = new_filtered_name).first()
+                if not (new_filtered_row is None):
+                    raise FilteredSearchResultNameMustBeUniqueError(new_filtered_name)
+                
+
+            """
+            We're clear to start running the searches. We'll run the search on the mgf passed to us, then run Percolator, then extract the PSMs using PercolatorHandler from ReportGeneration. We'll extract the matched spectra from the MGF, creating a new MGF, and search it against the next tide index
+            """
+            new_mgf_name = mgf_name
+            mgf_parser = Parsers.MGFParser(mgf_location)
+            filtered_results = []
+            for i in range(0, len(msgfplus_index_names)):
+                index_name = msgfplus_index_names[i]
+                if i > 0:
+                    new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
+                search_name = multistep_search_name + '_' + index_name
+                filtered_name = search_name + '_msgf_filtered'
+                self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory)
+                postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name)
+                filtered_results.append((i, filtered_name))
+                if i < len(tide_index_names) - 1:
+                    msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(filtered_name, fdr, self.project_path, self.db_session)
+                    psms = msgfplus_handler.get_psms()
+                    mgf_parser.remove_scans(list(set([x[0] for x in psms])))
+                    temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
+                    mgf_parser.write_modified_mgf(temp_file.name)
+                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf')
+                    temp_file.close()
+            rows = []
+            iterativerun_row = DB.MSGFPlusIterativeRun(MSGFPlusIterativeRunName = multistep_search_name, fdr = str(fdr), num_steps = len(msgfplus_index_names), mgf = mgf_row)
+            rows.append(iterativerun_row)
+            for step, filtered_name in filtered_results:
+                filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_name).first()
+                association_row = DB.MSGFPlusIterativeFilteredSearchAssociation(step = step)
+                association_row.filteredsearch_result = filtered_row
+                iterativerun_row.MSGFPlusIterativeFilteredSearchAssociations.append(association_row)
+                rows.append(association_row)
+            self.db_session.add_all(rows)
+            self.db_session.commit()
+
     def list_search(self, mgf_name = None, index_name=None):
         """
         List the tide searches. You can specify an mgf name and/or tide index
