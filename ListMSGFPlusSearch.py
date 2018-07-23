@@ -17,8 +17,8 @@ project_folder = args.project_folder
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session(False)
 searches = project.list_search(mgf_name = args.mgfName, index_name = args.msgfIndexName)
-print('id   |   MSGF+ Search Name   |   MSGF+ Index Name   |   MGF name')
+print('id   |   MSGF+ Search Name   | Result path |   MSGF+ Index Name   |   MGF name')
 for row in searches:
-    print(str(row.idSearch) + ' | ' + row.SearchName + ' | ' + row.index.MSGFPlusIndexName + ' | ' + row.mgf.MGFName)
+    print(str(row.idSearch) + ' | ' + row.SearchName + ' | ' + row.resultFilePath + ' | ' + row.index.MSGFPlusIndexName + ' | ' + row.mgf.MGFName)
 
 project.end_command_session(False)

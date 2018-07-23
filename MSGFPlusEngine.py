@@ -1,7 +1,10 @@
 from AbstractEngine import AbstractEngine
 import DB
+import Parsers
 import os
+import ReportGeneration
 import Runners
+import tempfile
 from Errors import *
 class MSGFPlusEngine(AbstractEngine):
 
@@ -58,8 +61,8 @@ class MSGFPlusEngine(AbstractEngine):
                 self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory)
                 postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name)
                 filtered_results.append((i, filtered_name))
-                if i < len(tide_index_names) - 1:
-                    msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(filtered_name, fdr, self.project_path, self.db_session)
+                if i < len(msgfplus_index_names) - 1:
+                    msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(search_name, fdr, self.project_path, self.db_session)
                     psms = msgfplus_handler.get_psms()
                     mgf_parser.remove_scans(list(set([x[0] for x in psms])))
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')

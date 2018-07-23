@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='Export the peptides from a TargetS
 
 parser.add_argument('project_folder', help='The location of the project folder')
 
-parser.add_argument('CollectionType', help='Is this a TargetSet, PeptideList, FilteredSearchResult, Tide Iterative Search, MaxQuantSearch or FilteredNetMHC?', choices=['TargetSet', 'PeptideList', 'FilteredSearchResult', 'FilteredNetMHC', 'MaxQuantSearch', 'TideIterativeSearch'])
+parser.add_argument('CollectionType', help='Is this a TargetSet, PeptideList, FilteredSearchResult, Tide Iterative Search, MaxQuantSearch or FilteredNetMHC?', choices=['TargetSet', 'PeptideList', 'FilteredSearchResult', 'FilteredNetMHC', 'MaxQuantSearch', 'TideIterativeSearch', 'MSGFPlusIterativeSearch'])
 parser.add_argument('Name', help='The name of the TargetSet, PeptideList FilteredSearchResult, TideIterativeSearch, MaxQuantSearch or FilteredNetMHC to export')
 
 parser.add_argument('export_location', help='File to put the peptides')
@@ -51,6 +51,8 @@ elif args.CollectionType == 'MaxQuantSearch':
     row = project.get_maxquant_search_row(args.Name)
 elif args.CollectionType == 'TideIterativeSearch':
     row = project.get_tideiterativerun_row(args.Name)
+elif args.CollectionType == 'MSGFPlusIterativeSearch':
+    row = project.get_msgfplusiterativesearch_row(args.Name)
 assert(row)
 peptides = row.get_peptides(project_folder)
 with open(args.export_location, 'w') as f:

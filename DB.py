@@ -72,12 +72,12 @@ class MSGFPlusIterativeRun(BaseTable, AbstractPeptideCollection):
     MSGFPlusIterativeRunName = Column('MSGFPlusIterativeRunName', String, unique=True)
     fdr = Column('fdr', String)
     num_steps = Column('num_steps', Integer)
-    MSGFPlusIterativeFilteredAssociations = relationship('MSGFPlusIterativeFilteredAssociation')
+    MSGFPlusIterativeFilteredSearchAssociations = relationship('MSGFPlusIterativeFilteredSearchAssociation')
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGFfile')
 
     def get_peptides(self, project_path):
-        associations = self.MSGFPlusIterativeFilteredAssociations
+        associations = self.MSGFPlusIterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
         peptide_set_list = []
         for row in associations:

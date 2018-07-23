@@ -43,9 +43,15 @@ class MSGFPlusSearchParser:
         re_matcher = re.compile('index=(?P<index>\d+)')
         
         for result in spectrum_identification_results:
+            spectrum_id_string = None
+            for param in result.findall('./mz:cvParam', ns):
+                if 'name' in param.attrib and param.attrib['name'] == 'scan number(s)':
+                    spectrum_id_string = param.attrib['value']
+            if spectrum_id_string is None:
+                print('Spectrum ID: ' + result.attrib['spectrumID'])
+            assert(spectrum_id_string)
             spectrum_identification_items = result.findall('./mz:SpectrumIdentificationItem', ns)
-            spectrum_id_string = result.attrib['spectrumID']
-            spectrum_id = int(re_matcher.match(spectrum_id_string).group('index'))
+            spectrum_id = int(spectrum_id_string)
             #sometimes there are multiple matches with the same score. For example, SLYDAFKV and SIYDAFPKV have the same mass (It's difficult to differentiate between L and I because they have the same mass).
             peptide_matches = []
             for item in spectrum_identification_items:

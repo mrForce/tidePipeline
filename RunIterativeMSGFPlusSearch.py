@@ -1,6 +1,8 @@
 import TideEngine
 import PostProcessing
+import MSGFPlusEngine
 import argparse
+import Runners
 import sys
 import os
 parser = argparse.ArgumentParser(description='Run an iterative MSGF+ search')
@@ -15,6 +17,10 @@ parser.add_argument('--modifications_name', help='Name of the modifications file
 parser.add_argument('--memory', help='The amount of memory to give the jar file. Default is 3500 megabytes', type=int)
 for k, v in Runners.MSGFPlusSearchRunner.get_search_options().items():
     parser.add_argument(k, **v)
+args = parser.parse_args()
+project_folder = args.project_folder
+print('project folder: ' + project_folder)
+
 
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
 msgfplus_jar = project.executables['msgfplus']
@@ -30,7 +36,7 @@ for k, v in arguments.items():
 postprocessing_object = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 
 
-arguments = vars(args)
+
 print('going to begin command session')        
 project.begin_command_session()
 project.multistep_search(args.mgf_name, args.msgfplusindices, good_arguments, args.iterativesearch_name, args.fdr, postprocessing_object, args.modifications_name, args.memory)

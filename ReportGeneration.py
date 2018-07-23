@@ -85,6 +85,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
     PSMs
     """
     def __init__(self, name, threshold, project_path, db_session):
+        print('search name: ' + name)
         self.msgfplus_search_row = db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
         assert(self.msgfplus_search_row)
         q_value_rows = self.msgfplus_search_row.QValueBases
