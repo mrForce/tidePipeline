@@ -3,6 +3,8 @@ import DB
 import ReportGeneration
 from tabulate import tabulate
 import TargetSetSourceCount
+import tempfile
+from NetMHC import *
 import os
 from create_target_set import *
 import uuid
@@ -172,3 +174,52 @@ class PostProcessing(Base):
                 raise TideSearchRowDoesNotExistError(tide_search_name)
             if percolator_row:
                 raise PercolatorNameMustBeUniqueError(percolator_name)
+    """
+    Returns a list of NetMHC ranks.
+    """
+    def netmhc_rank_distribution(self, peptide_set_type, peptide_set_name, hla_name, netmhcpan = False):
+        peptide_score_path = None
+        #add any tempfiles that will need to be cleaned up at end to this
+        tempfiles = []
+        if peptide_set_type == 'PeptideList':
+            netmhc_id, peptide_score_path = self._run_netmhc(peptide_set_name, hla_name, netmhcpan)
+        elif peptide_set_type == 'FilteredNetMHC':
+            row = self.get_filtered_netmhc_row(peptide_set_name)
+            peptide_score_path = row.netmhc.PeptideScorePath
+        else:
+            row = None
+            if peptide_set_type == 'TargetSet':
+                row = self.get_target_set_row(peptide_set_name)
+            elif peptide_set_type == 'FilteredSearchResult':
+                row = self.get_filtered_search_result_row(peptide_set_name)
+            elif peptide_set_type == 'MaxQuantSearch':
+                row = self.get_maxquant_search_row(peptide_set_name)
+            elif peptide_set_type == 'TideIterativeSearch':
+                row = self.get_tideiterativerun_row(peptide_set_name)
+            elif args.CollectionType == 'MSGFPlusIterativeSearch':
+                row = self.get_msgfplusiterativesearch_row(peptide_set_name)
+            assert(row)
+            peptides = row.get_peptides(self.project_path)
+            parsed_scores = tempfile.NamedTemporaryFile()
+            peptide_score_path=  parsed_scores.name
+            tempfiles.append(parsed_scores)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                peptide_file_path = os.path.join(temp_dir, 'peptides')
+                with open(os.path.join(temp_dir, 'peptides'), 'w') as f:
+                    for peptide in peptides:
+                        f.write(peptide + '\n')
+                netmhc_output_filepath = os.path.join(temp_dir, 'netmhcOutput')
+                call_netmhc(self.executables['netmhc'], hla_name, peptide_file_path, netmhc_output_filepath)
+                parse_netmhc(netmhc_output_filepath, peptide_score_path)
+        assert(peptide_score_path)
+        scores = []
+        with open(peptide_score_path, 'r') as f:
+            for line in f:
+                parts = line.split(',')
+                if len(parts) == 2:
+                    peptide = parts[0].strip()
+                    rank = float(parts[1])
+                    scores.append(rank)
+        for t in tempfiles:
+            t.close()
+        return scores

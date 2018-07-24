@@ -260,6 +260,12 @@ class Base:
             peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
             self.db_session.commit()
+
+    
+                    
+            
+            
+            
     def _run_netmhc(self, peptide_list_name, hla_name, netmhcpan = False):
         """
         This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (idNetMHC, PeptideScorePath)
@@ -471,26 +477,12 @@ class Base:
             species.append({'id': row.idSpecies, 'name': row.SpeciesName, 'hla':hla  })
         return species
 
-    def list_hla(self, species_name=None, species_id=None):
-        if species_name:
-            species_row = self.db_session.query(DB.Species).filter_by(SpeciesName=species_name).first()
-            if species_row:
-                species_id = species_row.idSpecies
-            else:
-                raise NoSuchSpeciesError(species_name)
+    def list_hla(self):
         query = self.db_session.query(DB.HLA)
-        if species_id:
-            query = query.filter_by(species_id=species_id)
         rows = query.all()
         hlas = []
         for row in rows:
             hla = {'name': row.HLAName, 'id': str(row.idHLA)}
-            if row.species:
-                hla['species_id'] = str(row.species.idSpecies)
-                hla['species_name'] = row.species.SpeciesName
-            else:
-                hla['species_id'] = 'None'
-                hla['species_name'] = 'None'
             hlas.append(hla)
         return hlas
     def add_hla(self, hla_name):
