@@ -113,6 +113,11 @@ class TideEngine(AbstractEngine):
                                 search_name = row.SearchName
                                 print('We can re-use the Tide Search with name: ' + search_name)
                                 break
+                        elif (search_param_file is None) as (row.paramsPath is None):
+                            need_search = False
+                            search_name = row.SearchName
+                            print('We can re-use the Tide Search with name: ' + search_name)
+                            break
                 
                 if i > 0:
                     new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
