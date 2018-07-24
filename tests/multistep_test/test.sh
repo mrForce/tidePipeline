@@ -14,7 +14,7 @@ ls
 #python RunNetMHC.py multistep_project MouseProteinNineMers H-2-Kb 1 MouseProteinNineMersH2KbOnePercent
 #python CreateTideIndex.py multistep_project FilteredNetMHC MouseProteinNineMersH2KbOnePercent OnePercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
 #zip -r multistep_project.zip multistep_project
-python RunIterativeTideSearch.py multistep_project Y3_mgf 0.01 mouseIterNine OnePercentIndex TwoPercentIndex --percolator_param_file tests/multistep_test/percolator.params
+python RunIterativeTideSearch.py multistep_project Y3_mgf 0.01 percolator mouseIterThirteen OnePercentIndex TwoPercentIndex --peptide_identifier_param_file tests/multistep_test/percolator.params --tidesearch_param_file tests/multistep_test/tide_search.params
 
 #zip -r Y3_test_project.zip Y3_test_project
 #python RunMSGFPlusSearch.py Y3_test_project Y3_mgf MouseProteinNineMersIndex MouseMSGFSearch --memory 6000

@@ -177,17 +177,18 @@ class PostProcessing(Base):
     """
     Returns a list of NetMHC ranks.
     """
-    def netmhc_rank_distribution(self, peptide_set_type, peptide_set_name, hla_name, netmhcpan = False):
-        peptide_score_path = None
+    def netmhc_rank_distribution(self, peptide_set_type, peptide_set_name, hla_names, netmhcpan = False):
+        peptide_score_paths = []
         #add any tempfiles that will need to be cleaned up at end to this
         tempfiles = []
         if peptide_set_type == 'PeptideList':
-            netmhc_id, peptide_score_path = self._run_netmhc(peptide_set_name, hla_name, netmhcpan)
-        elif peptide_set_type == 'FilteredNetMHC':
-            row = self.get_filtered_netmhc_row(peptide_set_name)
-            peptide_score_path = row.netmhc.PeptideScorePath
+            for hla in hla_names:
+                netmhc_id, peptide_score_path = self._run_netmhc(peptide_set_name, hla, netmhcpan)
+                peptide_score_paths.append(peptide_score_path)
         else:
             row = None
+            if peptide_set_type == 'FilteredNetMHC':
+                row = self.get_filtered_netmhc_row(peptide_set_name)
             if peptide_set_type == 'TargetSet':
                 row = self.get_target_set_row(peptide_set_name)
             elif peptide_set_type == 'FilteredSearchResult':
@@ -200,17 +201,22 @@ class PostProcessing(Base):
                 row = self.get_msgfplusiterativesearch_row(peptide_set_name)
             assert(row)
             peptides = row.get_peptides(self.project_path)
-            parsed_scores = tempfile.NamedTemporaryFile()
-            peptide_score_path=  parsed_scores.name
-            tempfiles.append(parsed_scores)
-            with tempfile.TemporaryDirectory() as temp_dir:
-                peptide_file_path = os.path.join(temp_dir, 'peptides')
-                with open(os.path.join(temp_dir, 'peptides'), 'w') as f:
-                    for peptide in peptides:
-                        f.write(peptide + '\n')
-                netmhc_output_filepath = os.path.join(temp_dir, 'netmhcOutput')
-                call_netmhc(self.executables['netmhc'], hla_name, peptide_file_path, netmhc_output_filepath)
-                parse_netmhc(netmhc_output_filepath, peptide_score_path)
+            for hla_name in hla_names:
+                parsed_scores = tempfile.NamedTemporaryFile()
+                peptide_score_path=  parsed_scores.name
+                tempfiles.append(parsed_scores)
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    peptide_file_path = os.path.join(temp_dir, 'peptides')
+                    with open(os.path.join(temp_dir, 'peptides'), 'w') as f:
+                        for peptide in peptides:
+                            f.write(peptide + '\n')
+                    netmhc_output_filepath = os.path.join(temp_dir, 'netmhcOutput')
+                    call_netmhc(self.executables['netmhc'], hla_name, peptide_file_path, netmhc_output_filepath)
+                    parse_netmhc(netmhc_output_filepath, peptide_score_path)
+
+        """
+        THIS IS WHERE I STOPPED! NEED TO FINISH HAVING MULTIPLE MHC alleles!
+        """
         assert(peptide_score_path)
         scores = []
         with open(peptide_score_path, 'r') as f:
