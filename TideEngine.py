@@ -1,4 +1,4 @@
-from AbstractEngine import AbstractEngine
+OBfrom AbstractEngine import AbstractEngine
 import tempfile
 from Errors import *
 import DB
@@ -8,6 +8,7 @@ import Parsers
 import uuid
 import os
 import Runners
+import filecmp
 class TideEngine(AbstractEngine):
     def list_search(self, mgf_name = None, tide_index_name = None):
         """
@@ -99,16 +100,32 @@ class TideEngine(AbstractEngine):
             filtered_results = []
             for i in range(0, len(tide_index_names)):
                 index_name = tide_index_names[i]
+                index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = index_name).first()
+                assert(not (index_row is None))
+                need_search = True
+                if i == 0:
+                    rows_same_mgf_index = self.db_session.query(DB.TideSearch).filter_by(idTideIndex =  index_row.idTideIndex, idMGF = mgf_row.idMGFfile).all()
+                    for row in rows_same_mgf_index:
+                        if search_param_file and row.paramsPath:
+                            if filecmp.cmp(search_param_file, os.path.join(self.project_path, row.paramsPath)):
+                                #same index, mgf and parameter file. So we can re-use this search!
+                                need_search = False
+                                search_name = row.SearchName
+                                print('We can re-use the Tide Search with name: ' + search_name)
+                                break
+                
                 if i > 0:
                     new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
-                search_name = multistep_search_name + '_' + index_name
-                peptide_identifier_name = search_name + '_' + peptide_identifier
+                if need_search:
+                    search_name = multistep_search_name + '_' + index_name
+                peptide_identifier_name = multistep_search_name + '_' + index_name + '_' + peptide_identifier
                 filtered_name = peptide_identifier_name + '_filtered'
-                if search_param_file:
-                    search_runner = Runners.TideSearchRunner(crux_location, search_param_file)
-                else:
-                    search_runner = Runners.TideSearchRunner(crux_location)
-                self.run_search(new_mgf_name, index_name, search_runner, search_name)
+                if need_search:
+                    if search_param_file:
+                        search_runner = Runners.TideSearchRunner(crux_location, search_param_file)
+                    else:
+                        search_runner = Runners.TideSearchRunner(crux_location)
+                    self.run_search(new_mgf_name, index_name, search_runner, search_name)
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
                     if param_file:
