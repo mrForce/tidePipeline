@@ -1,4 +1,4 @@
-OBfrom AbstractEngine import AbstractEngine
+from AbstractEngine import AbstractEngine
 import tempfile
 from Errors import *
 import DB
@@ -104,7 +104,7 @@ class TideEngine(AbstractEngine):
                 assert(not (index_row is None))
                 need_search = True
                 if i == 0:
-                    rows_same_mgf_index = self.db_session.query(DB.TideSearch).filter_by(idTideIndex =  index_row.idTideIndex, idMGF = mgf_row.idMGFfile).all()
+                    rows_same_mgf_index = self.db_session.query(DB.TideSearch).filter_by(idTideIndex =  index_row.idIndex, idMGF = mgf_row.idMGFfile).all()
                     for row in rows_same_mgf_index:
                         if search_param_file and row.paramsPath:
                             if filecmp.cmp(search_param_file, os.path.join(self.project_path, row.paramsPath)):
@@ -113,7 +113,7 @@ class TideEngine(AbstractEngine):
                                 search_name = row.SearchName
                                 print('We can re-use the Tide Search with name: ' + search_name)
                                 break
-                        elif (search_param_file is None) as (row.paramsPath is None):
+                        elif (search_param_file is None) and (row.paramsPath is None):
                             need_search = False
                             search_name = row.SearchName
                             print('We can re-use the Tide Search with name: ' + search_name)
