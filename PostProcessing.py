@@ -2,6 +2,7 @@ from Base import Base
 import DB
 import ReportGeneration
 from tabulate import tabulate
+import collections
 import TargetSetSourceCount
 import tempfile
 from NetMHC import *
@@ -205,6 +206,7 @@ class PostProcessing(Base):
                 parsed_scores = tempfile.NamedTemporaryFile()
                 peptide_score_path=  parsed_scores.name
                 tempfiles.append(parsed_scores)
+                peptide_score_paths.append((hla_name, peptide_score_path))
                 with tempfile.TemporaryDirectory() as temp_dir:
                     peptide_file_path = os.path.join(temp_dir, 'peptides')
                     with open(os.path.join(temp_dir, 'peptides'), 'w') as f:
@@ -217,15 +219,19 @@ class PostProcessing(Base):
         """
         THIS IS WHERE I STOPPED! NEED TO FINISH HAVING MULTIPLE MHC alleles!
         """
-        assert(peptide_score_path)
-        scores = []
-        with open(peptide_score_path, 'r') as f:
-            for line in f:
-                parts = line.split(',')
-                if len(parts) == 2:
-                    peptide = parts[0].strip()
-                    rank = float(parts[1])
-                    scores.append(rank)
+        assert(len(peptide_score_paths) == len(hla_names))        
+        #peptide_scores maps each peptide to a list of size len(hla_names), which by default contains 'NULL'.
+        peptide_scores = collections.defaultdict(lambda: ['NULL']*len(hla_names))
+        for hla, peptide_score_path in peptide_score_paths:
+            hla_index = hla_names.index(hla)
+            with open(peptide_score_path, 'r') as f:
+                for line in f:
+                    parts = line.split(',')
+                    if len(parts) == 2:
+                        peptide = parts[0].strip()
+                        rank = parts[1].strip()
+                        peptide_scores[peptide][hla_index] = rank
+            
         for t in tempfiles:
             t.close()
-        return scores
+        return peptide_scores
