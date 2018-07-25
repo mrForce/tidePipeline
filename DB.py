@@ -176,7 +176,56 @@ class MaxQuantParameterFile(BaseTable):
             return 'MaxQuant parameter file found at: ' + self.Path
         else:
             return 'MaxQuant parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
-    
+class TideSearchParameterFile(BaseTable):
+    __tablename__ = 'TideSearchParameterFile'
+    idTideSearchParameterFile = Column('idTideSearchParameterFile', Integer, primary_key=True)
+    Name = Column('Name', String, unique=True, nullable=False)
+    Path = Column('Path', String, unique=True, nullable=False)
+    Comment = Column('Comment', String)
+    def __repr__(self):
+        if self.Comment is None:
+            return 'Tide Search parameter file found at: ' + self.Path
+        else:
+            return 'Tide Search parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
+
+class TideIndexParameterFile(BaseTable):
+    __tablename__ = 'TideIndexParameterFile'
+    idTideIndexParameterFile = Column('idTideIndexParameterFile', Integer, primary_key=True)
+    Name = Column('Name', String, unique=True, nullable=False)
+    Path = Column('Path', String, unique=True, nullable=False)
+    Comment = Column('Comment', String)
+    def __repr__(self):
+        if self.Comment is None:
+            return 'Tide Index parameter file found at: ' + self.Path
+        else:
+            return 'Tide Index parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
+
+class AssignConfidenceParameterFile(BaseTable):
+    __tablename__ = 'AssignConfidenceParameterFile'
+    idAssignConfidenceParameterFile = Column('idAssignConfidenceParameterFile', Integer, primary_key=True)
+    Name = Column('Name', String, unique=True, nullable=False)
+    Path = Column('Path', String, unique=True, nullable=False)
+    Comment = Column('Comment', String)
+    def __repr__(self):
+        if self.Comment is None:
+            return 'Assign Confidence parameter file found at: ' + self.Path
+        else:
+            return 'Assign Confidence parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
+
+
+class PercolatorParameterFile(BaseTable):
+    __tablename__ = 'PercolatorParameterFile'
+    idPercolatorParameterFile = Column('idPercolatorParameterFile', Integer, primary_key=True)
+    Name = Column('Name', String, unique=True, nullable=False)
+    Path = Column('Path', String, unique=True, nullable=False)
+    Comment = Column('Comment', String)
+    def __repr__(self):
+        if self.Comment is None:
+            return 'Percolator parameter file found at: ' + self.Path
+        else:
+            return 'Percolator parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
+
+        
 class PeptideList(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'PeptideList'
     idPeptideList = Column('idPeptideList', Integer, primary_key=True)
@@ -249,6 +298,8 @@ class IndexBase(BaseTable):
 class TideIndex(IndexBase):
     __tablename__ = 'TideIndex'
     idIndex = Column(Integer, ForeignKey('IndexBase.idIndex'), primary_key=True)
+    idParameterFile = Column('idParameterFile', Integer, ForeignKey('TideIndexParameterFile.idTideIndexParameterFile'))
+    parameterFile = relationship('TideIndexParameterFile')
     #the name of the index is given by the user
     TideIndexName = Column('TideIndexName', String, unique=True)
     TideIndexPath = Column('TideIndexPath', String)
@@ -317,9 +368,11 @@ class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
     __tablename__ = 'MaxQuantSearch'
     idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
     idRAW = Column('idRAW', Integer, ForeignKey('RAWfile.idRAWfile'))
+    idParameterFile = Column('idParameterFile', Integer, ForeignKey('MaxQuantParameterFile.idMaxQuantParameterFile'), nullable=True)
+    parameterFile = relationship('MaxQuantParameterFile')
     Path = Column('Path', String, nullable=False)
     raw = relationship('RAWfile')
-    fdr = Column('fdr', String, nullable=False)    
+    fdr = Column('fdr', String, nullable=False)
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = maxquant_search_filteredNetMHC, back_populates = 'maxquantsearches')
     peptidelists = relationship('PeptideList', secondary= maxquant_search_peptidelists, back_populates = 'maxquantsearches')
     targetsets = relationship('TargetSet', secondary=maxquant_search_targetset, back_populates='maxquantsearches')
@@ -336,6 +389,8 @@ class TideSearch(SearchBase):
     __tablename__ = 'TideSearch'
     idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
     idTideIndex = Column('idTideIndex', Integer, ForeignKey('TideIndex.idIndex'))
+    idParameterFile = Column('idParameterFile', Integer, ForeignKey('TideSearchParameterFile.idTideSearchParameterFile'))
+    parameterFile = relationship('TideSearchParameterFile')
     #TideSearchName = Column('TideSearchName', String, unique=True)
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     targetPath = Column('targetPath', String)
@@ -410,6 +465,8 @@ class AssignConfidence(QValueBase):
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
     AssignConfidenceOutputPath = Column('AssignConfidenceOutputPath', String)
     AssignConfidenceName = Column('AssignConfidenceName', String, unique=True)
+    idParameterFile = Column('idParemeterFile', Integer, ForeignKey('AssignConfidenceParameterFile.idAssignConfidenceParameterFile'))
+    parameterFile = relationship('AssignConfidenceParameterFile')
     idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch'))
     estimation_method = Column(String)
     score = Column(String)
@@ -432,7 +489,8 @@ class Percolator(QValueBase):
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
-
+    idParameterFile = Column('idParameterFile', Integer, ForeignKey('PercolatorParameterFile.idPercolatorParameterFile'))
+    parameterFile = relationship('PercolatorParameterFile')
     __mapper_args__ = {
         'polymorphic_identity': 'percolator',
     }
