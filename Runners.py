@@ -10,6 +10,17 @@ from fileFunctions import *
 
 from Errors import *
 
+class MSGF2PinRunner:
+    def __init__(self, msgf2pin_binary):
+        self.msgf2pin_binary = msgf2pin_binary
+    def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern):
+        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme', '--crux-ptm']
+        print('going to run MSGF2pin conversion') 
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise MSGF2PinFailedError(' '.join(command))
+        
 
 class TideSearchRunner:
     def __init__(self, crux_binary, tide_search_param_file = None):
@@ -89,13 +100,13 @@ class MSGFPlusSearchRunner:
         memory_string = '-Xmx3500M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
-        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', '1', '-o', os.path.join(project_path, output_directory, 'search.mzid')]
+        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', '1', '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(project_path, output_directory, 'search.mzid')}
         if modifications_file_row:
             modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
             command.append('-mod')
             command.append(modification_file_location)
-            column_args['modificationFile'] = modifications_file_row        
+            column_args['modificationFile'] = modifications_file_row
         for key, value in self.args.items():
             if key and value:
                 command.append('-' + key)

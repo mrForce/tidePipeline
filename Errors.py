@@ -1,6 +1,11 @@
 class Error(Exception):
     pass
 
+class MSGF2PinFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'The MSGF2Pin call failed: ' + self.command
 
 
 class RAWFileDoesNotExistError(Error):

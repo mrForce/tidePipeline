@@ -42,6 +42,7 @@ class Base:
         self.executables['crux'] = config['EXECUTABLES']['crux']
         self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
         self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
+        self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
@@ -50,6 +51,8 @@ class Base:
         return self.executables['msgfplus']
     def get_maxquant_executable_path(self):
         return self.executables['maxquant']
+    def get_msgf2pin_executable_path(self):
+        return self.executables['msgf2pin']
     def add_maxquant_parameter_file(self, path, name, comment = None):
         internal_filename = str(uuid.uuid4()) + '.xml'
         while os.path.exists(os.path.join(self.project_path, 'maxquant_param_files', internal_filename)):

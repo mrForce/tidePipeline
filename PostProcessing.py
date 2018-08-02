@@ -12,6 +12,8 @@ import uuid
 from Errors import *
 
 class PostProcessing(Base):
+    def call_msgf2pin(self, msgf_search_name, 
+    
     def list_filtered_search_results(self):
         headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
         rows = []
