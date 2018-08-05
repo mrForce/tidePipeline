@@ -12,8 +12,10 @@ import uuid
 from Errors import *
 
 class PostProcessing(Base):
-    def call_msgf2pin(self, msgf_search_name, 
-    
+    def call_msgf2pin(self, msgf_search_name, percolator_location, msgf2pin_runner):
+        msgf_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = msgf_search_name).first()
+        assert(msgf_row is not None)
+        msgf2pin_runner.runConversion(msgf_row.resultFilePath, os.path.join(percolator_location, 'msgf.pin')
     def list_filtered_search_results(self):
         headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
         rows = []
