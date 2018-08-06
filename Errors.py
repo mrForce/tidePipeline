@@ -43,6 +43,7 @@ class MSGFPlusSearchFailedError(Error):
         self.command = command
     def __repr__(self):
         return 'Failed to run MSGF+ Search using the command: ' + self.command
+    
 class MaxQuantSearchFailedError(Error):
     def __init__(self, command):
         self.command = command
@@ -74,6 +75,13 @@ class TideSearchRowDoesNotExistError(Error):
         self.tide_search_name = tide_search_name
     def __repr__(self):
         return 'There is no TideSearch row with the name: ' + str(self.tide_search_name)
+
+
+class MSGFPlusSearchRowDoesNotExistError(Error):
+    def __init__(self, search_name):
+        self.search_name = search_name
+    def __repr__(self):
+        return 'There is no MSGFPlusSearch row with the name: ' + str(self.search_name)
 
 class FilteredSearchResultNameMustBeUniqueError(Error):
     def __init__(self, name):

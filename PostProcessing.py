@@ -3,6 +3,7 @@ import DB
 import ReportGeneration
 from tabulate import tabulate
 import collections
+import Runners
 import TargetSetSourceCount
 import tempfile
 from NetMHC import *
@@ -15,7 +16,7 @@ class PostProcessing(Base):
     def call_msgf2pin(self, msgf_search_name, percolator_location, msgf2pin_runner, fasta_files, decoy_pattern):
         msgf_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = msgf_search_name).first()
         assert(msgf_row is not None)
-        msgf2pin_runner.runConversion(msgf_row.resultFilePath, os.path.join(percolator_location, 'msgf.pin'), fasta_files, decoy_pattern)
+        msgf2pin_runner.runConversion(msgf_row.resultFilePath, percolator_location, fasta_files, decoy_pattern)
     def list_filtered_search_results(self):
         headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
         rows = []
@@ -168,8 +169,7 @@ class PostProcessing(Base):
             search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = search_name).first()
             assert(search_row.addFeatures == 1)
         percolator_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = percolator_name).first()
-        if tide_search_row and (percolator_row is None):
-            
+        if search_row and (percolator_row is None):            
             output_directory_name = str(uuid.uuid4().hex)
             while os.path.isdir(os.path.join(self.project_path, 'percolator_results', output_directory_name)):
                 output_directory_name = str(uuid.uuid4().hex)
@@ -179,20 +179,23 @@ class PostProcessing(Base):
             if search_type == 'tide':
                 target_path = os.path.join(self.project_path, search_row.targetPath)
             elif search_type == 'msgfplus':
-                target_path = os.path.join(self.project_path, search_row.resultFilePath + '.pin')
+                target_path = search_row.resultFilePath + '.pin'
                 if not os.path.exists(target_path):
-                    msgf2pin_runner = MSGF2PinRunner(self.executables['msgf2pin'], os.path.join(self.project_path, 'unimod.xml'))
+                    msgf2pin_runner = Runners.MSGF2PinRunner(self.executables['msgf2pin'], os.path.join(self.project_path, 'unimod.xml'))
                     head, tail = os.path.split(search_row.index.MSGFPlusIndexPath)
                     fasta_index = tail.rfind('.fasta')
                     new_tail = tail[:fasta_index] + '.revCat.fasta'
                     fasta_files = [os.path.join(self.project_path, head, new_tail)]
-                    self.call_msgf2pin(self, search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
+                    self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
             new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row)
             self.db_session.add(new_row)
             self.db_session.commit()
         else:
-            if tide_search_row is None:
-                raise TideSearchRowDoesNotExistError(tide_search_name)
+            if search_row is None:
+                if search_type == 'tide':
+                    raise TideSearchRowDoesNotExistError(search_name)
+                elif search_type == 'msgfplus':
+                    raise MSGFPlusSearchRowDoesNotExistError(search_name)
             if percolator_row:
                 raise PercolatorNameMustBeUniqueError(percolator_name)
     """

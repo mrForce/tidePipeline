@@ -1,4 +1,4 @@
-\import Base
+import Base
 import argparse
 import sys
 from Errors import *
