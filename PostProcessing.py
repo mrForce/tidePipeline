@@ -166,6 +166,7 @@ class PostProcessing(Base):
             search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = search_name).first()
         elif search_type == 'msgfplus':
             search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = search_name).first()
+            assert(search_row.addFeatures == 1)
         percolator_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = percolator_name).first()
         if tide_search_row and (percolator_row is None):
             
