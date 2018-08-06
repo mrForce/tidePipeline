@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_engine, Float, BLOB, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_engine, Float, BLOB, DateTime, Boolean
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 import datetime
@@ -434,6 +434,7 @@ class MSGFPlusSearch(SearchBase):
     maxPepLength = Column('maxPepLength', Integer)
     minPrecursorCharge = Column('minPrecursorCharge', Integer)
     maxPrecursorCharge = Column('maxPrecursorCharge', Integer)
+    addFeatures = Column('addFeatures', Integer)
     index = relationship('MSGFPlusIndex', back_populates='searches')
     mgf = relationship('MGFfile')
     __mapper_args__ = {

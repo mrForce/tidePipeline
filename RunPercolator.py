@@ -7,6 +7,8 @@ parser = argparse.ArgumentParser(description='Run percolator')
 
 parser.add_argument('project_folder', help='The location of the project folder')
 
+parser.add_argument('search_type', help='What search engine was used?', choices=['tide', 'msgfplus'])
+
 parser.add_argument('search_name', help='The name of the tide search to percolator on')
 
 parser.add_argument('percolator_name', help='The name of the percolator run')
@@ -30,6 +32,6 @@ if args.param_file:
 else:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path)
 percolator_name = args.percolator_name
-project.percolator(args.search_name, percolator_runner, percolator_name)
+project.percolator(args.search_name, args.search_type, percolator_runner, percolator_name)
 project.end_command_session()
 

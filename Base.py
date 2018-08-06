@@ -501,14 +501,14 @@ class Base:
         
         
     @staticmethod
-    def createEmptyProject(project_path, command, config_location):
+    def createEmptyProject(project_path, command, config_location, unimod_xml_location):
         if os.path.exists(project_path):
             raise ProjectPathAlreadyExistsError(project_path)
         else:
             config = configparser.ConfigParser()
             config.read(config_location)
             assert('EXECUTABLES' in config.sections())
-            config_keys = ['netmhc', 'crux', 'msgfplus']
+            config_keys = ['netmhc', 'crux', 'msgfplus', 'msgf2pin']
             for key in config_keys:
                 assert(key in config['EXECUTABLES'])
                 value = config['EXECUTABLES'][key]
@@ -518,6 +518,7 @@ class Base:
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             shutil.copy(config_location, os.path.join(project_path, 'config.ini'))
+            shutil.copy(unimod_xml_location, os.path.join(project_path, 'unimod.xml'))
             return Base(project_path, command)
 
 

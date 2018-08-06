@@ -13,7 +13,7 @@ from Errors import *
 class MSGF2PinRunner:
     def __init__(self, msgf2pin_binary, unimodXMLLocation):
         self.msgf2pin_binary = msgf2pin_binary
-        self.unimodXMLLocation
+        self.unimodXMLLocation = unimodXMLLocation
     def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern):
         command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme', '-r', '-u', self.unimodXMLLocation]
         print('going to run MSGF2pin conversion') 
