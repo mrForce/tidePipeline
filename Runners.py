@@ -10,6 +10,20 @@ from fileFunctions import *
 
 from Errors import *
 
+class MSGF2PinRunner:
+    def __init__(self, msgf2pin_binary, unimodXMLLocation):
+        self.msgf2pin_binary = msgf2pin_binary
+        self.unimodXMLLocation = unimodXMLLocation
+    def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern):
+        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme', '-r', '-u', self.unimodXMLLocation, '-P', decoy_pattern]
+        
+        print('going to run MSGF2pin conversion')
+        print(command)
+        try:
+            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise MSGF2PinFailedError(' '.join(command))
+        
 
 class TideSearchRunner:
     def __init__(self, crux_binary, tide_search_param_file = None):
@@ -95,7 +109,8 @@ class MSGFPlusSearchRunner:
             modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
             command.append('-mod')
             command.append(modification_file_location)
-            column_args['modificationFile'] = modifications_file_row        
+            column_args['modificationFile'] = modifications_file_row
+        column_args['addFeatures'] = 1
         for key, value in self.args.items():
             if key and value:
                 command.append('-' + key)
@@ -265,3 +280,4 @@ class PercolatorRunner:
         column_arguments['PercolatorName'] = percolator_name
         column_arguments['searchbase'] = tide_search_row
         return DB.Percolator(**column_arguments)
+

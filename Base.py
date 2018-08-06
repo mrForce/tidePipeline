@@ -42,6 +42,7 @@ class Base:
         self.executables['crux'] = config['EXECUTABLES']['crux']
         self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
         self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
+        self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
@@ -50,6 +51,8 @@ class Base:
         return self.executables['msgfplus']
     def get_maxquant_executable_path(self):
         return self.executables['maxquant']
+    def get_msgf2pin_executable_path(self):
+        return self.executables['msgf2pin']
     def add_maxquant_parameter_file(self, path, name, comment = None):
         internal_filename = str(uuid.uuid4()) + '.xml'
         while os.path.exists(os.path.join(self.project_path, 'maxquant_param_files', internal_filename)):
@@ -498,14 +501,14 @@ class Base:
         
         
     @staticmethod
-    def createEmptyProject(project_path, command, config_location):
+    def createEmptyProject(project_path, command, config_location, unimod_xml_location):
         if os.path.exists(project_path):
             raise ProjectPathAlreadyExistsError(project_path)
         else:
             config = configparser.ConfigParser()
             config.read(config_location)
             assert('EXECUTABLES' in config.sections())
-            config_keys = ['netmhc', 'crux', 'msgfplus']
+            config_keys = ['netmhc', 'crux', 'msgfplus', 'msgf2pin']
             for key in config_keys:
                 assert(key in config['EXECUTABLES'])
                 value = config['EXECUTABLES'][key]
@@ -515,6 +518,7 @@ class Base:
             for subfolder in subfolders:
                 os.mkdir(os.path.join(project_path, subfolder))
             shutil.copy(config_location, os.path.join(project_path, 'config.ini'))
+            shutil.copy(unimod_xml_location, os.path.join(project_path, 'unimod.xml'))
             return Base(project_path, command)
 
 

@@ -2,22 +2,15 @@ from Base import Base
 import DB
 import ReportGeneration
 from tabulate import tabulate
-import collections
-import Runners
 import TargetSetSourceCount
-import tempfile
-from NetMHC import *
 import os
 from create_target_set import *
 import uuid
 from Errors import *
 
-class PostProcessing(Base):
-    def call_msgf2pin(self, msgf_search_name, percolator_location, msgf2pin_runner, fasta_files, decoy_pattern):
-        msgf_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = msgf_search_name).first()
-        assert(msgf_row is not None)
-        msgf2pin_runner.runConversion(msgf_row.resultFilePath, percolator_location, fasta_files, decoy_pattern)
-    def list_filtered_search_results(self):
+class MultistepFiltering(Base):
+
+    def list_filtered_search_results(self):        
         headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
         rows = []
         for result in self.db_session.query(DB.FilteredSearchResult).all():
@@ -69,10 +62,7 @@ class PostProcessing(Base):
 
     def get_filtered_search_result_row(self, name):
         return self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
-    def get_tideiterativerun_row(self, name):
-        return self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = name).first()
-    def get_msgfplusiterativesearch_row(self, name):
-        return self.db_session.query(DB.MSGFPlusIterativeRun).filter_by(MSGFPlusIterativeRunName = name).first()
+    
     def verify_filtered_search_result(self, name):
         row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
         if row:
@@ -161,100 +151,22 @@ class PostProcessing(Base):
             if assign_confidence_row:
                 raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
-    def percolator(self, search_name, search_type, percolator_runner, percolator_name):
-        search_row = None
-        if search_type == 'tide':
-            search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = search_name).first()
-        elif search_type == 'msgfplus':
-            search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = search_name).first()
-            assert(search_row.addFeatures == 1)
+    def percolator(self, tide_search_name, percolator_runner, percolator_name):
+        tide_search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = tide_search_name).first()
         percolator_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = percolator_name).first()
-        if search_row and (percolator_row is None):            
+        if tide_search_row and (percolator_row is None):
+            target_path = os.path.join(self.project_path, tide_search_row.targetPath)
             output_directory_name = str(uuid.uuid4().hex)
             while os.path.isdir(os.path.join(self.project_path, 'percolator_results', output_directory_name)):
                 output_directory_name = str(uuid.uuid4().hex)
             output_directory_tide = os.path.join(self.project_path, 'percolator_results', output_directory_name)
             os.mkdir(output_directory_tide)
             output_directory_db = os.path.join('percolator_results', output_directory_name)
-            if search_type == 'tide':
-                target_path = os.path.join(self.project_path, search_row.targetPath)
-            elif search_type == 'msgfplus':
-                target_path = search_row.resultFilePath + '.pin'
-                if not os.path.exists(target_path):
-                    msgf2pin_runner = Runners.MSGF2PinRunner(self.executables['msgf2pin'], os.path.join(self.project_path, 'unimod.xml'))
-                    head, tail = os.path.split(search_row.index.MSGFPlusIndexPath)
-                    fasta_index = tail.rfind('.fasta')
-                    new_tail = tail[:fasta_index] + '.revCat.fasta'
-                    fasta_files = [os.path.join(self.project_path, head, new_tail)]
-                    self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
-            new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row)
+            new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row)
             self.db_session.add(new_row)
             self.db_session.commit()
         else:
-            if search_row is None:
-                if search_type == 'tide':
-                    raise TideSearchRowDoesNotExistError(search_name)
-                elif search_type == 'msgfplus':
-                    raise MSGFPlusSearchRowDoesNotExistError(search_name)
+            if tide_search_row is None:
+                raise TideSearchRowDoesNotExistError(tide_search_name)
             if percolator_row:
                 raise PercolatorNameMustBeUniqueError(percolator_name)
-    """
-    Returns a list of NetMHC ranks.
-    """
-    def netmhc_rank_distribution(self, peptide_set_type, peptide_set_name, hla_names, netmhcpan = False):
-        peptide_score_paths = []
-        #add any tempfiles that will need to be cleaned up at end to this
-        tempfiles = []
-        if peptide_set_type == 'PeptideList':
-            for hla in hla_names:
-                netmhc_id, peptide_score_path = self._run_netmhc(peptide_set_name, hla, netmhcpan)
-                peptide_score_paths.append(peptide_score_path)
-        else:
-            row = None
-            if peptide_set_type == 'FilteredNetMHC':
-                row = self.get_filtered_netmhc_row(peptide_set_name)
-            if peptide_set_type == 'TargetSet':
-                row = self.get_target_set_row(peptide_set_name)
-            elif peptide_set_type == 'FilteredSearchResult':
-                row = self.get_filtered_search_result_row(peptide_set_name)
-            elif peptide_set_type == 'MaxQuantSearch':
-                row = self.get_maxquant_search_row(peptide_set_name)
-            elif peptide_set_type == 'TideIterativeSearch':
-                row = self.get_tideiterativerun_row(peptide_set_name)
-            elif args.CollectionType == 'MSGFPlusIterativeSearch':
-                row = self.get_msgfplusiterativesearch_row(peptide_set_name)
-            assert(row)
-            peptides = row.get_peptides(self.project_path)
-            for hla_name in hla_names:
-                parsed_scores = tempfile.NamedTemporaryFile()
-                peptide_score_path=  parsed_scores.name
-                tempfiles.append(parsed_scores)
-                peptide_score_paths.append((hla_name, peptide_score_path))
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    peptide_file_path = os.path.join(temp_dir, 'peptides')
-                    with open(os.path.join(temp_dir, 'peptides'), 'w') as f:
-                        for peptide in peptides:
-                            f.write(peptide + '\n')
-                    netmhc_output_filepath = os.path.join(temp_dir, 'netmhcOutput')
-                    call_netmhc(self.executables['netmhc'], hla_name, peptide_file_path, netmhc_output_filepath)
-                    parse_netmhc(netmhc_output_filepath, peptide_score_path)
-
-        """
-        THIS IS WHERE I STOPPED! NEED TO FINISH HAVING MULTIPLE MHC alleles!
-        """
-        assert(len(peptide_score_paths) == len(hla_names))        
-        #peptide_scores maps each peptide to a list of size len(hla_names), which by default contains 'NULL'.
-        peptide_scores = collections.defaultdict(lambda: ['NULL']*len(hla_names))
-        for hla, peptide_score_path in peptide_score_paths:
-            hla_index = hla_names.index(hla)
-            with open(peptide_score_path, 'r') as f:
-                for line in f:
-                    parts = line.split(',')
-                    if len(parts) == 2:
-                        peptide = parts[0].strip()
-                        rank = parts[1].strip()
-                        peptide_scores[peptide][hla_index] = rank
-            
-        for t in tempfiles:
-            t.close()
-        return peptide_scores
