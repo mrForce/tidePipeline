@@ -89,7 +89,7 @@ class MSGFPlusSearchRunner:
         memory_string = '-Xmx3500M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
-        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', '1', '-o', os.path.join(project_path, output_directory, 'search.mzid')]
+        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', '1', '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(project_path, output_directory, 'search.mzid')}
         if modifications_file_row:
             modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
