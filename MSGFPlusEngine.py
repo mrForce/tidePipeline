@@ -59,6 +59,11 @@ class MSGFPlusEngine(AbstractEngine):
                 search_name = multistep_search_name + '_' + index_name
                 filtered_name = search_name + '_msgf_filtered'
                 self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory)
+                """
+                if use_percolator:
+                    percolator_runner = Runners.PercolatorRunner(self.executables['crux'], 
+                    postprocessing_object.percolator(search_name, 'msgfplus', 
+                """
                 postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name)
                 filtered_results.append((i, filtered_name))
                 if i < len(msgfplus_index_names) - 1:

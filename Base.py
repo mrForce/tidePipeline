@@ -514,9 +514,9 @@ class Base:
                 value = config['EXECUTABLES'][key]
                 assert(len(value) > 0)
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search']
+            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search', 'tide_param_files/assign_confidence_param_files', 'tide_param_files/percolator_param_files', 'tide_param_files/tide_search_param_files', 'tide_param_files/tide_index_param_files']
             for subfolder in subfolders:
-                os.mkdir(os.path.join(project_path, subfolder))
+                os.makedirs(os.path.join(project_path, subfolder))
             shutil.copy(config_location, os.path.join(project_path, 'config.ini'))
             shutil.copy(unimod_xml_location, os.path.join(project_path, 'unimod.xml'))
             return Base(project_path, command)
