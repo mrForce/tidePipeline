@@ -21,9 +21,12 @@ branch_labels = None
 depends_on = None
 
 class File:
-    def __init__(self, file_path, name):
+    def __init__(self, file_path, name, row_id):
         self.file_path = file_path
+        self.row_id
         self.name = name
+    def get_row_id(self):
+        return self.row_id
     def get_file_path(self):
         return self.file_path
     def get_name(self):
@@ -113,17 +116,20 @@ def upgrade():
     for row in connection.execute(sa.select([maxquant, searchbase]).where(maxquant.c.idSearch == searchbase.c.idSearch)):
         name = row.SearchName
         location = os.path.abspath(os.path.join(project_location, row.Path, 'mqpar.xml'))
-        maxquant_files.append(File(location, name))
+        maxquant_files.append(File(location, name, row.idSearch))
     groups = FileGroup.from_files_list(maxquant_files)
     maxquant_param_file = sa.Table('MaxQuantParameterFile', metadata, sa.Column('idMaxQuantParameterFile', sa.Integer, primary_key=True), sa.Column('Name', sa.String, unique=True, nullable=False), sa.Column('Path', sa.String, unique=True, nullable=False), sa.Column('Comment', sa.String))
-    table_inserts = []
     for group in groups:
         file_to_copy = group[0]
         new_basename = copy_file_unique_basename(file_to_copy.get_file_path(), os.path.join(project_location, 'maxquant_param_files'), 'xml')
         search_names = [x.get_name() for x.get_files() in group]
         name = input('Please give this mqpar file a name. It was used in the following MaxQuant searches: ' + ', '.join(search_names))
         new_location = os.path.join('maxquant_param_files', new_basename)
-        table_inserts.append(maxquant_param_file.insert().values(Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        result = connection.execute(maxquant_param_file.insert().values(Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        param_id = result.inserted_primary_key[0]
+        for f in group.get_files():
+            row_id = f.get_row_id()
+            connection.execute(maxquant.update().where(maxquant.c.idSearch == row_id).values(idParameterFile = param_id))
 
     new_directories = ['tide_param_files/assign_confidence_param_files', 'tide_param_files/percolator_param_files', 'tide_param_files/tide_search_param_files', 'tide_param_files/tide_index_param_files']
     for new_directory in new_directories:
@@ -136,7 +142,7 @@ def upgrade():
     for row in connection.execute(sa.select([tidesearch, searchbase]).where(tidesearch.c.idSearch == searchbase.c.idSearch)):
         name = row.SearchName
         if row.paramsPath and len(row.paramsPath) > 0:
-            param_files.append(File(os.path.join(project_location, row.paramsPath), row.SearchName))
+            param_files.append(File(os.path.join(project_location, row.paramsPath), row.SearchName, row.idSearch))
     groups = FileGroup.from_files_list(param_files)
     tidesearch_param_file = sa.Table('TideSearchParameterFile', metadata, sa.Column('idTideSearchParameterFile', sa.Integer, primary_key=True), sa.Column('Name', sa.String, unique=True, nullable=False), sa.Column('Path', sa.String, unique=True, nullable=False), sa.Column('Comment', sa.String))
     for group in groups:
@@ -145,7 +151,11 @@ def upgrade():
         search_names = [x.get_name() for x.get_files() in group]
         new_location = os.path.join('tide_param_files', 'tide_search_param_files', new_basename)
         name = input('Please give this Tide Search param file a name. It was used in the following Tide searches: ' + ', '.join(search_names))
-        table_inserts.append(tidesearch_param_file.insert().values( Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        result = connection.execute(tidesearch_param_file.insert().values( Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        param_id = result.inserted_primary_key[0]
+        for f in group.get_files():
+            row_id = f.get_row_id()
+            connection.execute(tidesearch.update().where(tidesearch.c.idSearch == row_id).values(idTideSearchParameterFile = param_id))
     
 
  
@@ -157,7 +167,7 @@ def upgrade():
     for row in connection.execute(sa.select([tideindex])):
         name = row.Name
         path = row.Path
-        param_files.append(File(os.path.join(project_location, os.path.dirname(path), 'tide-index.params.txt'), name))
+        param_files.append(File(os.path.join(project_location, os.path.dirname(path), 'tide-index.params.txt'), name, row.idIndex))
     groups = FileGroup.from_files_list(param_files)
     for group in groups:
         file_to_copy = group[0]
@@ -165,7 +175,12 @@ def upgrade():
         index_names = [x.get_name() for x.get_files() in group]
         new_location = os.path.join('tide_param_files', 'tide_index_param_files', new_basename)
         name = input('Please give this Tide Index param file a name. It was used in the following Tide indices: ' + ', '.join(index_names))
-        table_inserts.append(tidesearch_param_file.insert().values( Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        result = connection.execute(tideindex_param_file.insert().values( Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        param_id = result.inserted_primary_key[0]
+        for f in group.get_files():
+            row_id = f.get_row_id()
+            connection.execute(tideindex.update().where(tideindex.c.idIndex == row_id).values(idTideIndexParameterFile = param_id))
+
 
 
     assignconfidence = sa.Table('AssignConfidence', metadata, sa.Column('idQValue', sa.Integer, sa.ForeignKey('QValueBase.idQValue'), primary_key=True), sa.Column('AssignConfidenceOutputPath', sa.String), sa.Column('AssignConfidenceName', sa.String, unique=True), sa.Column('idParameterFile', sa.Integer, sa.ForeignKey('AssignConfidenceParameterFile.idAssignConfidenceParameterFile')))
@@ -175,7 +190,7 @@ def upgrade():
     for row in connection.execute(sa.select([assignconfidence])):
         name = row.AssignConfidenceName
         path = row.AssignConfidenceOutputPath
-        param_files.append(File(os.path.join(project_location, path, 'assign-confidence.params.txt'), name))
+        param_files.append(File(os.path.join(project_location, path, 'assign-confidence.params.txt'), name, row.idQValue))
     groups = FileGroup.from_files_list(param_files)
     for group in groups:
         file_to_copy = group[0]
@@ -183,10 +198,14 @@ def upgrade():
         assignconfidence_names = [x.get_name() for x.get_files() in group]
         new_location = os.path.join('tide_param_files', 'assign_confidence_param_files', new_basename)
         name = input('Please give this Assign-Confidence param file a name. It was used in the following Assign-Confidence runs: ' + ', '.join(assignconfidence_names))
-        table_inserts.append(assignconfidence_param_file.insert().values(Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        result = connection.execute(assignconfidence_param_file.insert().values(Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        param_id = result.inserted_primary_key[0]
+        for f in group.get_files():
+            row_id = f.get_row_id()
+            connection.execute(assignconfidence.update().where(assignconfidence.c.idQValue == row_id).values(idAssignConfidenceParameterFile = param_id))
 
 
-    percolator = sa.Table('Percolator', metadata, sa.Column('PercolatorName', sa.String, unique=True), sa.Column('inputParamFilePath', sa.String), sa.Column('idParameterFile', sa.Integer, sa.ForeignKey('PercolatorParameterFile.idPercolatorParameterFile')))
+    percolator = sa.Table('Percolator', metadata, sa.Column('idQValue', sa.Integer, ForeignKey('QValueBase.idQValue'), primary_key=True), sa.Column('PercolatorName', sa.String, unique=True), sa.Column('inputParamFilePath', sa.String), sa.Column('idParameterFile', sa.Integer, sa.ForeignKey('PercolatorParameterFile.idPercolatorParameterFile')))
 
     percolator_parameter_file = sa.Table('PercolatorParameterFile', metadata, sa.Column('idPercolatorParameterFile', sa.Integer, primary_key=True), sa.Column('Name', sa.String, unique=True, nullable=False), sa.Column('Path', sa.String, unique=True, nullable=False), sa.Column('Comment', sa.String))
 
@@ -195,7 +214,7 @@ def upgrade():
     for row in connection.execute(sa.select([percolator])):
         name = row.PercolatorName
         path = row.inputParamFilePath
-        param_files.append(File(os.path.join(project_location, path), name))
+        param_files.append(File(os.path.join(project_location, path), name, row.idQValue))
     groups = FileGroup.from_files_list(param_files)
     for group in groups:
         file_to_copy = group[0]
@@ -203,7 +222,11 @@ def upgrade():
         percolator_names = [x.get_name() for x.get_files() in group]
         new_location = os.path.join('tide_param_files', 'percolator_param_files', new_basename)
         name = input('Please give this Percolator param file a name. It was used in the following Percolator runs: ' + ', '.join(percolator_names))
-        table_inserts.append(percolator_param_file.insert().values(Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        result = connection.execute(percolator_param_file.insert().values(Name = name, Path = new_location, Comment = 'Created by alembic upgrade'))
+        param_id = result.inserted_primary_key[0]
+        for f in group.get_files():
+            row_id = f.get_row_id()
+            connection.execute(percolator.update().where(percolator.c.idQValue == row_id).values(idPercolatorParameterFile = param_id))
     # ### end Alembic commands ###
 
 
