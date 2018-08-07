@@ -28,7 +28,9 @@ arguments = vars(args)
 project.begin_command_session()
 percolator_runner = None
 if args.param_file:
-    percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, args.param_file)
+    row = project.get_percolator_parameter_file(args.param_file)
+    assert(row is not None)
+    percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, row)
 else:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
 percolator_name = args.percolator_name

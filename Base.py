@@ -53,6 +53,24 @@ class Base:
         return self.executables['maxquant']
     def get_msgf2pin_executable_path(self):
         return self.executables['msgf2pin']
+
+    def get_percolator_parameter_file(self, name):
+        row = self.db_session.query(DB.PercolatorParameterFile).filter_by(Name = name).first()
+        return row
+    def get_assign_confidence_parameter_file(self, name):
+        row = self.db_session.query(DB.AssignConfidenceParameterFile).filter_by(Name = name).first()
+        return row
+    def get_tide_search_parameter_file(self, name):
+        row = self.db_session.query(DB.TideSearchParameterFile).filter_by(Name = name).first()
+        return row
+    def get_tide_index_parameter_file(self, name):
+        row = self.db_session.query(DB.TideIndexParameterFile).filter_by(Name = name).first()
+        return row
+    
+    #returns row or None
+    def get_maxquant_parameter_file(self, name):
+        row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
+        return row
     def add_maxquant_parameter_file(self, path, name, comment = None):
         internal_filename = str(uuid.uuid4()) + '.xml'
         while os.path.exists(os.path.join(self.project_path, 'maxquant_param_files', internal_filename)):
@@ -189,16 +207,6 @@ class Base:
             self.db_session.add(raw_record)
             self.db_session.commit()
             return raw_record.idRAWfile
-    def add_maxquant_param_file(self, path, name, comment = ''):
-        row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
-        if row:
-            raise MaxQuantParamFileNameMustBeUniqueError(name)
-        else:
-            newpath = self.copy_file('maxquant_param_files', path)
-            record = DB.MaxQuantParameterFile(Name = name, Path = newpath, Comment = comment)
-            self.db_session.add(record)
-            self.db_session.commit()
-            return record.idMaxQuantParameterFile
     def verify_peptide_list(self, peptide_list_name):
         row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
         if row is None:

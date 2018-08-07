@@ -134,16 +134,24 @@ class TideEngine(AbstractEngine):
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
                     if param_file:
-                        percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path, param_file)
+                        row = self.get_percolator_parameter_file(param_file)
+                        if row is None:
+                            print('Invalid percolator parameter file name')
+                            assert(False)
+                        percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path, row)
                     else:
                         percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path)
                     postprocessing_object.percolator(search_name, percolator_runner, peptide_identifier_name)
                     postprocessing_object.filter_q_value_percolator(peptide_identifier_name, fdr, filtered_name)
                 elif peptide_identifier == 'assign-confidence':
                     if param_file:
-                        assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, {}, param_file)
+                        row = self.get_assign_confidence_parameter_file(param_file)
+                        if row is None:
+                            print('Not a valid assign confidence param file: ' + param_file)
+                        assert(row)
+                        assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, self.project_path, row)
                     else:
-                        assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, {})
+                        assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, self.project_path)
                     postprocessing_object.assign_confidence(search_name, assign_confidence_runner, peptide_identifier_name)
                     postprocessing_object.filter_q_value_assign_confidence(peptide_identifier_name, fdr, filtered_name)
                 filtered_results.append((i, filtered_name))

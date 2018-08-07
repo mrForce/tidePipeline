@@ -197,9 +197,9 @@ class TideIndexRunner:
         return DB.TideIndex(**column_arguments)
 
 class AssignConfidenceRunner:
-    def __init__(self, crux_binary, assign_confidence_options, param_file = None):
-        self.assign_confidence_options = assign_confidence_options
-        self.param_file = param_file
+    def __init__(self, crux_binary, project_path, param_file_row = None):
+        self.project_path = project_path
+        self.param_file_row = param_file_row
         self.crux_binary = crux_binary
 
 
@@ -207,6 +207,7 @@ class AssignConfidenceRunner:
     def get_assign_confidence_options():
         return {'--estimation-method': {'choices': ['mix-max', 'tdc', 'peptide-level']}, '--score': {'type': str}, '--sidak': {'choices': ['T', 'F']}, '--top-match-in': {'type': int}, '--combine-charge-states': {'choices': ['T', 'F']}, '--combine-modified-peptides': {'choices': ['T', 'F']}}
 
+        
     @staticmethod
     def convert_cmdline_option_to_column_name(option):
         converter = {'estimation-method': 'estimation_method', 'score': 'score', 'sidak': sidak, 'top-match-in': 'top_match_in', 'combine-charge-states': 'combine_charge_states', 'combine-modified-peptides': 'combine_modified_peptides'}
@@ -218,13 +219,9 @@ class AssignConfidenceRunner:
     def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row):
         #first, need to create the tide-index command
         command = [self.crux_binary, 'assign-confidence']
-        for k,v in self.assign_confidence_options.items():
-            if k and v:
-                command.append('--' + k)
-                command.append(v)
         if self.param_file:
             command.append('--parameter-file')
-            command.append(self.param_file)
+            command.append(os.path.join(self.project_path, self.param_file_row.Path))
         command.append('--output-dir')
         command.append(output_directory_tide)
         command.append(target_path)
@@ -240,6 +237,8 @@ class AssignConfidenceRunner:
             column_name = AssignConfidenceRunner.convert_cmdline_option_to_column_name(k)
             if column_name:
                 column_arguments[column_name] = v
+        if self.param_file_row:
+            column_arguments['parameterFile'] = self.param_file_row
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db
         column_arguments['AssignConfidenceName'] = assign_confidence_name
         column_arguments['searchbase'] = tide_search_row
