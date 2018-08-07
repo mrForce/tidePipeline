@@ -227,6 +227,7 @@ def upgrade():
         for f in group.get_files():
             row_id = f.get_row_id()
             connection.execute(percolator.update().where(percolator.c.idQValue == row_id).values(idPercolatorParameterFile = param_id))
+
     # ### end Alembic commands ###
 
 

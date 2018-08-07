@@ -247,23 +247,19 @@ class AssignConfidenceRunner:
 
 
 class PercolatorRunner:
-    def __init__(self, crux_binary, param_file_path = False):
-        self.param_file_path = param_file_path
+    def __init__(self, crux_binary, project_path, param_file_row = False):
+        self.param_file_row = param_file_row
         self.crux_binary = crux_binary
+        self.project_path = project_path
     
     def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row):
         command = [self.crux_binary, 'percolator']
         print('running percolator command from: ' + os.getcwd())
         column_arguments = {}
-        if self.param_file_path:
-            #copy the param file into output_directory_tide
-            param_filename = os.path.basename(self.param_file_path)
-            assert(len(param_filename) > 0)
-            assert(param_filename not in ['percolator.target.proteins.txt', 'percolator.decoy.proteins.txt', 'percolator.target.peptides.txt', 'percolator.decoy.peptides.txt', 'percolator.target.psms.txt', 'percolator.decoy.psms.txt', 'percolator.params.txt', 'percolator.pep.xml', 'percolator.mzid', 'percolator.log.txt'])
-            copy_path = shutil.copy2(self.param_file_path, output_directory_tide)
+        if self.param_file_row:
             command.append('--parameter-file')
-            command.append(copy_path)
-            column_arguments['inputParamFilePath'] = os.path.join(output_directory_db, param_filename)
+            command.append(os.path.join(self.project_path, self.param_file_row.Path))
+            column_arguments['parameterFile'] = self.param_file_row
         command.append('--output-dir')
         command.append(output_directory_tide)
         command.append(target_path)

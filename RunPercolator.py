@@ -9,12 +9,12 @@ parser.add_argument('project_folder', help='The location of the project folder')
 
 parser.add_argument('search_type', help='What search engine was used?', choices=['tide', 'msgfplus'])
 
-parser.add_argument('search_name', help='The name of the tide search to percolator on')
+parser.add_argument('search_name', help='The name of the search to percolator on')
 
 parser.add_argument('percolator_name', help='The name of the percolator run')
 
 
-parser.add_argument('--param_file', help='The path to a param file')
+parser.add_argument('--param_file', help='The Name of a parameter file to use')
 
 
 args = parser.parse_args()
@@ -28,9 +28,9 @@ arguments = vars(args)
 project.begin_command_session()
 percolator_runner = None
 if args.param_file:
-    percolator_runner = Runners.PercolatorRunner(crux_exec_path, args.param_file)
+    percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, args.param_file)
 else:
-    percolator_runner = Runners.PercolatorRunner(crux_exec_path)
+    percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
 percolator_name = args.percolator_name
 project.percolator(args.search_name, args.search_type, percolator_runner, percolator_name)
 project.end_command_session()

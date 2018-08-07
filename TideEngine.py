@@ -134,9 +134,9 @@ class TideEngine(AbstractEngine):
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
                     if param_file:
-                        percolator_runner = Runners.PercolatorRunner(crux_location, param_file)
+                        percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path, param_file)
                     else:
-                        percolator_runner = Runners.PercolatorRunner(crux_location)
+                        percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path)
                     postprocessing_object.percolator(search_name, percolator_runner, peptide_identifier_name)
                     postprocessing_object.filter_q_value_percolator(peptide_identifier_name, fdr, filtered_name)
                 elif peptide_identifier == 'assign-confidence':
