@@ -16,14 +16,12 @@ class MSGF2PinRunner:
         self.unimodXMLLocation = unimodXMLLocation
     def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern):
         command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme', '-r', '-u', self.unimodXMLLocation, '-P', decoy_pattern]
-        
         print('going to run MSGF2pin conversion')
         print(command)
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise MSGF2PinFailedError(' '.join(command))
-        
 
 class TideSearchRunner:
     def __init__(self, crux_binary, tide_search_param_file = None):
