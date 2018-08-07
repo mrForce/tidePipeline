@@ -24,36 +24,29 @@ class MSGF2PinRunner:
             raise MSGF2PinFailedError(' '.join(command))
 
 class TideSearchRunner:
-    def __init__(self, crux_binary, tide_search_param_file = None):
-        self.tide_search_param_file = tide_search_param_file
+    def __init__(self, crux_binary, project_path, param_file_row = None):
+        self.param_file_row = param_file_row
+        self.project_path = project_path
         self.crux_binary = crux_binary
     @staticmethod
     def get_tide_search_options():
         return {'--mod-precision': {'type':int}, '--auto-precursor-window': {'choices': ['false', 'warn', 'fail']}, '--max-precursor-charge': {'type': int}, '--precursor-window': {'type': float}, '--precursor-window-type': {'choices': ['mass', 'mz', 'ppm']}, '--auto-mz-bin-width': {'choices': ['false', 'warn', 'fail']}, '--compute-sp': {'choices': ['T', 'F']}, '--deisotope': {'type': float}, '--exact-p-value': {'choices':['T', 'F']}, '--isotope-error': {'type': str}, '--min-peaks': {'type': int}, '--mz-bin-offset': {'type': float}, '--mz-bin-width': {'type': float}, '--peptide-centric-search': {'choices': ['T', 'F']}, '--score-function': {'choices': ['xcorr', 'residue-evidence', 'both']}, '--fragment-tolerance': {'type': float}, '--evidence-granularity': {'type': int}, '--remove-precursor-peak': {'choices': ['T', 'F']}, '--remove-precursor-tolerance': {'type': float}, '--scan-number': {'type': str}, '--skip-processing': {'choices': ['T', 'F']}, '--spectrum-charge': {'choices': ['1', '2', '3', 'all']}, '--spectrum-max-mz': {'type': float}, '--spectrum-min-mz': {'type': float}, '--use-flanking-peaks': {'choices': ['T', 'F']}, '--use-neutral-loss-peaks': {'choices': ['T', 'F']}, '--num-threads': {'type': int}, '--pm-charge': {'type': int}, '--pm-max-frag-mz': {'type': float}, '--pm-max-precursor-delta-ppm': {'type': float}, '--pm-max-precursor-mz': {'type': float}, '--pm-max-scan-seperation': {'type': int}, '--pm-min-common-frag-peaks': {'type': int}, '--pm-min-frag-mz': {'type': float}, '--pm-min-peak-pairs': {'type': int}, '--pm-min-precursor-mz': {'type': float}, '--pm-min-scan-frag-peaks': {'type': int}, '--pm-pair-top-n-frag-peaks': {'type': int}, '--pm-top-n-frag-peaks': {'type': int}, '--concat': {'choices': ['T', 'F']}, '--file-column': {'choices': ['T', 'F']}, '--fileroot': {'type': str}, '--mass-precision': {'type': int}, '--mzid-output': {'choices': ['T', 'F']}, '--precision': {'type': int}, '--spectrum-parser': {'choices': ['pwiz', 'mstoolkit']}, '--store-spectra': {'type': str}, '--top-match': {'type': int}, '--use-z-line': {'choices': ['T', 'F']}}
 
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, project_path, tide_search_row_name):    
-        """ First, decide the filename """
-        if self.tide_search_param_file:
-            param_filename = str(uuid.uuid4().hex) + '-param.txt'
-            while os.path.isfile(os.path.join(project_path, 'tide_param_files', param_filename)):
-                param_filename = str(uuid.uuid4().hex) + '-param.txt'    
-            shutil.copyfile(self.tide_search_param_file, os.path.join(project_path, 'tide_param_files', param_filename))
-            param_file_path = os.path.join('tide_param_files', param_filename)
-        else:
-            param_file_path = None
-        spectra_file = os.path.join(project_path, mgf_row.MGFPath)
-        index_filename = os.path.join(project_path, index_row.TideIndexPath)
+    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, tide_search_row_name):    
+        spectra_file = os.path.join(self.project_path, mgf_row.MGFPath)
+        index_filename = os.path.join(self.project_path, index_row.TideIndexPath)
         print('current working directory: ' + os.getcwd())
-        if self.tide_search_param_file:
-            command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', os.path.join(project_path, 'tide_param_files', param_filename), spectra_file, index_filename]
+        if self.param_file_row:
+            param_file_path = os.path.join(self.project_path, self.param_file_row.Ptah)
+            command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', param_file_path, spectra_file, index_filename]
         else:        
             command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, spectra_file, index_filename]
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideSearchFailedError(' '.join(command))
-        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), paramsPath=param_file_path, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), parameterFile = self.param_file_row, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name)
         return search_row
 
 class MaxQuantSearchRunner:
@@ -156,8 +149,10 @@ class MSGFPlusIndexRunner:
 
 
 class TideIndexRunner:
-    def __init__(self, tide_index_options, crux_binary):
+    def __init__(self, tide_index_options, crux_binary, project_path, param_file_row = False):
         #tide_index_options is a dictionary.
+        self.project_path = project_path
+        self.param_file_row = param_file_row 
         self.tide_index_options = tide_index_options
         self.crux_binary = crux_binary
 
@@ -178,6 +173,9 @@ class TideIndexRunner:
             if k and v:
                 command.append('--' + k)
                 command.append(v)
+        if self.param_file_row:
+            command.append('--parameter-file')
+            command.append(os.path.join(self.project_path, self.param_file_row.Path))
         command.append('--output-dir')
         command.append(output_directory_tide)
         command.append(fasta_path)
@@ -194,6 +192,8 @@ class TideIndexRunner:
             if column_name:
                 column_arguments[column_name] = v
         column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
+        if self.param_file_row:
+            column_arguments['parameterFile'] = self.param_file_row
         return DB.TideIndex(**column_arguments)
 
 class AssignConfidenceRunner:

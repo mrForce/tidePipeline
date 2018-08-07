@@ -127,9 +127,11 @@ class TideEngine(AbstractEngine):
                 filtered_name = peptide_identifier_name + '_filtered'
                 if need_search:
                     if search_param_file:
-                        search_runner = Runners.TideSearchRunner(crux_location, search_param_file)
+                        row = project.get_tide_search_parameter_file(args.param_file)
+                        assert(row is not None)
+                        search_runner = Runners.TideSearchRunner(crux_location, self.project_path, row)
                     else:
-                        search_runner = Runners.TideSearchRunner(crux_location)
+                        search_runner = Runners.TideSearchRunner(crux_location, self.project_path)
                     self.run_search(new_mgf_name, index_name, search_runner, search_name)
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
@@ -192,7 +194,7 @@ class TideEngine(AbstractEngine):
             while os.path.isfile(full_directory_path) or os.path.isdir(full_directory_path):
                 directory_name = str(uuid.uuid4().hex)
                 full_directory_path= os.path.join(self.project_path, 'tide_search_results', directory_name)
-            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), self.project_path, tide_search_name)
+            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name)
 
             self.db_session.add(row)
             self.db_session.commit()

@@ -12,6 +12,7 @@ parser.add_argument('project_folder', help='The location of the project folder')
 parser.add_argument('set_type', choices=['FilteredNetMHC', 'PeptideList', 'TargetSet'], help='Are the target peptides comming from a FilteredNetMHC, PeptideList or TargetSet?')
 parser.add_argument('set_name', help='The name of the FilteredNetMHC, PeptideList or TargetSet that will be used as targets (depending on the set_type argument)')
 parser.add_argument('index_name', help='The name of the index')
+parser.add_argument('--param_file', help='The name of a param file to use')
 
 
 
@@ -44,7 +45,12 @@ elif args.set_type == 'TargetSet':
     assert(project.verify_target_set(args.set_name))
             
 project.begin_command_session()
-tide_index_runner = Runners.TideIndexRunner(good_arguments, crux_exec_path)
+if args.param_file:
+    row = project.get_tide_index_parameter_file(args.param_file)
+    assert(row is not None)
+    tide_index_runner = Runners.TideIndexRunner(good_arguments, crux_exec_path, project.project_path, row)
+else:
+    tide_index_runner = Runners.TideIndexRunner(good_arguments, crux_exec_path, project.project_path)
 project.create_index(args.set_type, args.set_name, tide_index_runner, args.index_name)
 project.end_command_session()
 

@@ -30,9 +30,11 @@ print('going to begin command session')
 project.begin_command_session()
 print('starting command session')
 if args.param_file:
-    tide_search_runner = Runners.TideSearchRunner(crux_exec_path, args.param_file)
+    row = project.get_tide_search_parameter_file(args.param_file)
+    assert(row is not None)
+    tide_search_runner = Runners.TideSearchRunner(crux_exec_path, project.project_path, row)
 else:
-    tide_search_runner = Runners.TideSearchRunner(crux_exec_path)
+    tide_search_runner = Runners.TideSearchRunner(crux_exec_path, project.project_path)
 print('got tide search runner')
 project.run_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name)
 project.end_command_session()
