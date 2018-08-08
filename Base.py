@@ -43,6 +43,8 @@ class Base:
         self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
         self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
         self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
+
+
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
