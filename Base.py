@@ -44,6 +44,14 @@ class Base:
         self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
         self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
 
+    def add_param_file(self, program, name, path, comment = None):
+        if '.' in path and (path.rfind('.') > path.rfind('/') if '/' in path else True):
+            path_file_extension = path[(path.rfind('.') + 1)::]
+        else:
+            path_file_extension = False
+        if program == 'percolator':
+            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'percolator_param_files'), path_file_extension)
+            row = DB.PercolatorParameterFile(Name = name, path = new_path, comment = comment)
 
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
