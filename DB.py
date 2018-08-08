@@ -169,7 +169,7 @@ class MaxQuantParameterFile(BaseTable):
     __tablename__ = 'MaxQuantParameterFile'
     idMaxQuantParameterFile = Column('idMaxQuantParameterFile', Integer, primary_key=True)
     Name = Column('Name', String, unique=True, nullable=False)
-    Path = Column('Path', String, unique=True, nullable=False)
+    Path = Column('Path', String, nullable=False)
     Comment = Column('Comment', String)
     def __repr__(self):
         if self.Comment is None:
