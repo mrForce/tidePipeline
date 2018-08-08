@@ -1,6 +1,20 @@
 class Error(Exception):
     pass
 
+class CustomError(Exception):
+    def __init__(self, thing):
+        self.thing = thing
+    def __repr__(self):
+        return self.prefix + self.thing + self.suffix
+    def __str__(self):
+        return self.__repr__()
+    @staticmethod
+    def factory(name, prefix, suffix):
+        return type(name, (Error,), {'prefix': prefix, 'suffix': suffix})
+
+InvalidSearchTypeError = CustomError.factory('InvalidSearchTypeError', '', ' is an invalid search type')
+    
+
 class MSGF2PinFailedError(Error):
     def __init__(self, command):
         self.command = command

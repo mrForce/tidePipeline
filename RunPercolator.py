@@ -27,9 +27,13 @@ crux_exec_path = project.get_crux_executable_path()
 arguments = vars(args)
 project.begin_command_session()
 percolator_runner = None
+
+project.verify_search(args.search_type, args.search_name)
+
+
 if args.param_file:
+    project.verify_row_existence(DB.PercolatorParameterFile.Name, args.param_file)
     row = project.get_percolator_parameter_file(args.param_file)
-    assert(row is not None)
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, row)
 else:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
