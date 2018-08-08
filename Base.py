@@ -1,4 +1,5 @@
 import DB
+from sqlalchemy import exists
 from create_target_set import *
 import sys
 import tempfile
@@ -43,19 +44,71 @@ class Base:
         self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
         self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
         self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
+    def verify_row_existence(self, column_object, name):
+        """
+        Basically, pass the ROW.Name object as column_object, and name as the name argument.
 
+        For example, suppose we wanted to check if there was a TargetSet with the name "jordan", we would do:
+
+        base_object.verify_row_existence(DB.TargetSet.TargetSetName, 'jordan')
+        """
+        return self.db_session.query(exists().where(column_object == name)).scalar()
+
+    #search_type is either 'tide', 'msgfplus', 'msgf', or 'maxquant'
+    def verify_search(self, search_type, search_name):
+        searchbase_row = project.db_session.query(DB.SearchBase).filter_by(SearchName = args.search_name).first()
+        if searchbase_row is None:
+            return False
+        else:
+            if search_type == 'tide':
+                return self.verify_row_existence(DB.TideSearch.idSearch, searchbase_row.idSearch)
+            elif search_type in ['msgfplus', 'msgf']:
+                return self.verify_row_existence(DB.MSGFPlusSearch.idSearch, searchbase_row.idSearch)
+            elif search_type == 'maxquant':
+                return self.verify_row_existence(DB.MaxQuantSearch.idSearch, searchbase_row.idSearch)
+            else:
+                raise Errors.InvalidSearchType(search_type)
+        
     def add_param_file(self, program, name, path, comment = None):
         if '.' in path and (path.rfind('.') > path.rfind('/') if '/' in path else True):
             path_file_extension = path[(path.rfind('.') + 1)::]
         else:
             path_file_extension = False
-        if program == 'Percolator':
+
+        if program == 'percolator':
+            if self.verify_row_existence(DB.PercolatorParameterFile.Name, name):
+                raise Errors.ParameterFileNameMustBeUniqueError(name)
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'percolator_param_files'), path_file_extension)
-            row = DB.PercolatorParameterFile(Name = name, Path = os.path.join('tide_param_files', 'percolator_param_files', new_path), Comment = comment)
+            row = DB.PercolatorParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
-        else:
-            assert(False)
+        elif program == 'assign-confidence':
+            if self.verify_row_existence(DB.AssignConfidenceParameterFile.Name, name):
+                raise Errors.ParameterFileNameMustBeUniqueError(name)
+            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'assign_confidence_param_files'), path_file_extension)
+            row = DB.AssignConfidenceParameterFile(Name = name, path = new_path, comment = comment)
+            self.db_session.add(row)
+        elif program == 'tide-search':
+            if self.verify_row_existence(DB.TideSearchParameterFile.Name, name):
+                raise Errors.ParameterFileNameMustBeUniqueError(name)
+            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_search_param_files'), path_file_extension)
+            row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
+            self.db_session.add(row)
+        elif program == 'tide-index':
+            if self.verify_row_existence(DB.TideIndexParameterFile.Name, name):
+                raise Errors.ParameterFileNameMustBeUniqueError(name)
+            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_index_param_files'), path_file_extension)
+            row = DB.TideIndexParameterFile(Name = name, path = new_path, comment = comment)
+            self.db_session.add(row)
+        elif program == 'maxquant':
+            if self.verify_row_existence(DB.MaxQuantParameterFile.Name, name):
+                raise Errors.ParameterFileNameMustBeUniqueError(name)
+            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'maxquant_param_files'), path_file_extension)
+            row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
+            self.db_session.add(row)
         self.db_session.commit()
+
+
+
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
@@ -66,6 +119,7 @@ class Base:
         return self.executables['maxquant']
     def get_msgf2pin_executable_path(self):
         return self.executables['msgf2pin']
+
 
     def get_percolator_parameter_file(self, name):
         row = self.db_session.query(DB.PercolatorParameterFile).filter_by(Name = name).first()
