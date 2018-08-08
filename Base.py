@@ -49,10 +49,13 @@ class Base:
             path_file_extension = path[(path.rfind('.') + 1)::]
         else:
             path_file_extension = False
-        if program == 'percolator':
+        if program == 'Percolator':
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'percolator_param_files'), path_file_extension)
-            row = DB.PercolatorParameterFile(Name = name, path = new_path, comment = comment)
-
+            row = DB.PercolatorParameterFile(Name = name, Path = os.path.join('tide_param_files', 'percolator_param_files', new_path), Comment = comment)
+            self.db_session.add(row)
+        else:
+            assert(False)
+        self.db_session.commit()
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
