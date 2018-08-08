@@ -13,7 +13,7 @@ class CustomError(Exception):
         return type(name, (Error,), {'prefix': prefix, 'suffix': suffix})
 
 InvalidSearchTypeError = CustomError.factory('InvalidSearchTypeError', '', ' is an invalid search type')
-    
+ParameterFileNameMustBeUniqueError = CustomError.factory('ParameterFileNameMustBeUniqueError', 'There is already a parameter file with the name: ', ' . It must be unique')
 
 class MSGF2PinFailedError(Error):
     def __init__(self, command):

@@ -6,7 +6,7 @@ parser = argparse.ArgumentParser(description='Add a parameter file to the projec
 
 parser.add_argument('project_folder', help='The location of the project folder')
 
-parser.add_argument('Program', help='what the parameter file is for', choices=['MaxQuant', 'Tide-Search', 'Tide-Index', 'Assign-Confidence', 'Percolator'])
+parser.add_argument('Program', help='what the parameter file is for', choices=['maxquant', 'tide-search', 'tide-index', 'assign-confidence', 'percolator'])
 
 parser.add_argument('Path', help='The location of the  Parameter file')
 
