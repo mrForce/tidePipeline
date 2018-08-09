@@ -31,7 +31,8 @@ elif args.set_type == 'PeptideList':
     assert(project.verify_peptide_list(args.set_name))
 elif args.set_type == 'TargetSet':
     assert(project.verify_target_set(args.set_name))
-            
+
+assert(not project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, args.index_name))
 project.begin_command_session()
 msgfplus_index_runner = Runners.MSGFPlusIndexRunner(project.get_msgfplus_executable_path())
 if args.memory:

@@ -44,6 +44,7 @@ class Base:
         self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
         self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
         self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
+        
     def verify_row_existence(self, column_object, name):
         """
         Basically, pass the ROW.Name object as column_object, and name as the name argument.
