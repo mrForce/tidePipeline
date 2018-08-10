@@ -142,6 +142,7 @@ class MGFfile(BaseTable):
     idMGFfile = Column('idMGFfile', Integer, primary_key=True)
     MGFName = Column('MGFName', String, unique=True)
     MGFPath = Column('MGFPath', String)
+    partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     def __repr__(self):
         return 'MGF File found at: ' + self.MGFPath
 
@@ -356,6 +357,7 @@ class SearchBase(BaseTable):
     searchType = Column(String(50))
     QValueBases = relationship('QValueBase', back_populates='searchbase')
     SearchName = Column('SearchName', String, unique=True)
+    partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     __mapper_args__ = {
         'polymorphic_identity': 'searchbase',
         'polymorphic_on': searchType
@@ -446,6 +448,7 @@ class QValueBase(BaseTable):
     filteredSearchResults = relationship('FilteredSearchResult', back_populates='QValue')
     idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch'))
     searchbase = relationship('SearchBase', back_populates='QValueBases')
+    partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     __mapper_args__ = {
         'polymorphic_identity': 'qvaluebase',
         'polymorphic_on': QValueType
@@ -464,7 +467,7 @@ class AssignConfidence(QValueBase):
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
     AssignConfidenceOutputPath = Column('AssignConfidenceOutputPath', String)
     AssignConfidenceName = Column('AssignConfidenceName', String, unique=True)
-    idParameterFile = Column('idParemeterFile', Integer, ForeignKey('AssignConfidenceParameterFile.idAssignConfidenceParameterFile'))
+    idParameterFile = Column('idParameterFile', Integer, ForeignKey('AssignConfidenceParameterFile.idAssignConfidenceParameterFile'))
     parameterFile = relationship('AssignConfidenceParameterFile')
     idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch'))
     estimation_method = Column(String)
@@ -504,7 +507,7 @@ class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     q_value_threshold = Column('q_value_threshold', Float)
     idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue'))
     QValue = relationship('QValueBase', back_populates='filteredSearchResults')
-    
+    partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     def get_peptides(self, project_path):
         peptides = set()
         with open(os.path.join(project_path, self.filteredSearchResultPath), 'r') as f:

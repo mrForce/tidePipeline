@@ -45,7 +45,7 @@ class Base:
         self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
         self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
 
-
+    
     def get_column_values(self, row_class, column_name):
         rows = self.db_session.query(row_class).all()
         values = []
@@ -262,13 +262,13 @@ class Base:
         else:
             return False
 
-    def add_mgf_file(self, path, name):
+    def add_mgf_file(self, path, name, partOfIterativeSearch = False):
         row = self.db_session.query(DB.MGFfile).filter_by(MGFName = name).first()
         if row:
             raise MGFNameMustBeUniqueError(name)
         else:
             newpath = self.copy_file('MGF', path)
-            mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath)
+            mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath, partOfIterativeSearch = partOfIterativeSearch)
             self.db_session.add(mgf_record)
             self.db_session.commit()
             return mgf_record.idMGFfile    
@@ -406,7 +406,7 @@ class Base:
         rows = self.db_session.query(DB.MGFfile).all()        
         mgfs = []
         for row in rows:
-            mgf = {'id': row.idMGFfile, 'name': row.MGFName, 'path': row.MGFPath}
+            mgf = {'id': row.idMGFfile, 'name': row.MGFName, 'path': row.MGFPath, 'partOfIterativeSearch': row.partOfIterativeSearch}
             mgfs.append(mgf)
         return mgfs
 
