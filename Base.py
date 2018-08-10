@@ -262,13 +262,13 @@ class Base:
         else:
             return False
 
-    def add_mgf_file(self, path, name):
+    def add_mgf_file(self, path, name, partOfIterativeSearch = False):
         row = self.db_session.query(DB.MGFfile).filter_by(MGFName = name).first()
         if row:
             raise MGFNameMustBeUniqueError(name)
         else:
             newpath = self.copy_file('MGF', path)
-            mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath)
+            mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath, partOfIterativeSearch = partOfIterativeSearch)
             self.db_session.add(mgf_record)
             self.db_session.commit()
             return mgf_record.idMGFfile    

@@ -38,7 +38,7 @@ class PostProcessing(Base):
         return tabulate(rows, headers=headers)
         
             
-    def create_filtered_search_result(self, name, peptides, qvalue_row, threshold):
+    def create_filtered_search_result(self, name, peptides, qvalue_row, threshold, partOfIterativeSearch = False):
         row = self.get_filtered_search_result_row(name)
         if row:
             raise FilteredSearchResultNameMustBeUniqueError(name)        
@@ -48,25 +48,25 @@ class PostProcessing(Base):
         with open(os.path.join(self.project_path, 'FilteredSearchResult', filtered_filename), 'w') as f:
             for peptide in peptides:
                 f.write(peptide + '\n')
-        filtered_row = DB.FilteredSearchResult(filteredSearchResultName = name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = threshold, QValue = qvalue_row)
+        filtered_row = DB.FilteredSearchResult(filteredSearchResultName = name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = threshold, QValue = qvalue_row, partOfIterativeSearch = partOfIterativeSearch)
         self.db_session.add(filtered_row)
         self.db_session.commit()
 
-    def filter_q_value_assign_confidence(self, assign_confidence_name, q_value_threshold, filtered_search_result_name):
+    def filter_q_value_assign_confidence(self, assign_confidence_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False):
         assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(assign_confidence_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path())
         peptides = assign_confidence_handler.get_peptides()
-        self.create_filtered_search_result(filtered_search_result_name, peptides, assign_confidence_handler.get_row() , q_value_threshold)
+        self.create_filtered_search_result(filtered_search_result_name, peptides, assign_confidence_handler.get_row() , q_value_threshold, partOfIterativeSearch)
 
-    def filter_q_value_msgfplus(self, msgfplus_search_name, q_value_threshold, filtered_search_result_name):
+    def filter_q_value_msgfplus(self, msgfplus_search_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False):
         msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(msgfplus_search_name, q_value_threshold, self.project_path, self.db_session)
         row = msgfplus_handler.get_row()
         peptides = msgfplus_handler.get_peptides()
-        self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold)
+        self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold, partOfIterativeSearch)
 
-    def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name):
+    def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False):
         percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path())
         peptides = percolator_handler.get_peptides()
-        self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold)
+        self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold, partOfIterativeSearch)
 
     def get_filtered_search_result_row(self, name):
         return self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
@@ -142,7 +142,7 @@ class PostProcessing(Base):
         else:
             return self.db_session.query(DB.AssignConfidence).all()
     
-    def assign_confidence(self, tide_search_name, assign_confidence_runner, assign_confidence_name):
+    def assign_confidence(self, tide_search_name, assign_confidence_runner, assign_confidence_name, partOfIterativeSearch = False):
         tide_search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = tide_search_name).first()
         assign_confidence_row = self.db_session.query(DB.AssignConfidence).filter_by(AssignConfidenceName = assign_confidence_name).first()
         if tide_search_row and (assign_confidence_row is None):
@@ -153,7 +153,7 @@ class PostProcessing(Base):
                 output_directory_name = str(uuid.uuid4().hex)
             output_directory_tide = os.path.join(self.project_path, 'assign_confidence_results', output_directory_name)
             output_directory_db = os.path.join('assign_confidence_results', output_directory_name)
-            new_row = assign_confidence_runner.run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row)
+            new_row = assign_confidence_runner.run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row, partOfIterativeSearch)
             self.db_session.add(new_row)
             self.db_session.commit()
         else:
@@ -162,7 +162,7 @@ class PostProcessing(Base):
             if assign_confidence_row:
                 raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
-    def percolator(self, search_name, search_type, percolator_runner, percolator_name):
+    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False):
         search_row = None
         if search_type == 'tide':
             search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = search_name).first()
@@ -188,7 +188,7 @@ class PostProcessing(Base):
                     new_tail = tail[:fasta_index] + '.revCat.fasta'
                     fasta_files = [os.path.join(self.project_path, head, new_tail)]
                     self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
-            new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row)
+            new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch)
             self.db_session.add(new_row)
             self.db_session.commit()
         else:

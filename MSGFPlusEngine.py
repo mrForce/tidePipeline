@@ -63,7 +63,7 @@ class MSGFPlusEngine(AbstractEngine):
                     new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
                 search_name = multistep_search_name + '_' + index_name
                 filtered_name = search_name + '_msgf_filtered'
-                self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory)
+                self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory, True)
                 percolator_name = None
                 if percolator_param_file:
                     print('in percolator param file section')
@@ -78,11 +78,11 @@ class MSGFPlusEngine(AbstractEngine):
                     percolator_name = find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
                     if self.verify_row_existence(DB.Percolator.Name, percolator_name):
                         raise DidNotFindUniquePercolatorNameError(percolator_name)
-                    postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name)
-                    postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
+                    postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name, True)
+                    postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name, True)
                         
                 else:
-                    postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name)
+                    postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name, True)
                 filtered_results.append((i, filtered_name))
                 if i < len(msgfplus_index_names) - 1:
                     if percolator_param_file:
@@ -93,7 +93,7 @@ class MSGFPlusEngine(AbstractEngine):
                     mgf_parser.remove_scans(list(set([x[0] for x in psms])))
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
-                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf')
+                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf', True)
                     temp_file.close()
             rows = []
             iterativerun_row = DB.MSGFPlusIterativeRun(MSGFPlusIterativeRunName = multistep_search_name, fdr = str(fdr), num_steps = len(msgfplus_index_names), mgf = mgf_row)
@@ -131,7 +131,7 @@ class MSGFPlusEngine(AbstractEngine):
             rows = self.db_session.query(DB.MSGFPlusSearch).all()
         return rows
 
-    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None):
+    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False):
         #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         assert(mgf_row)
@@ -144,7 +144,7 @@ class MSGFPlusEngine(AbstractEngine):
         search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName=search_name).first()
         assert(not search_row)
         output_directory = self.create_storage_directory('msgfplus_search_results')
-        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory)
+        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch)
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)

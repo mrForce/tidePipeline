@@ -132,7 +132,7 @@ class TideEngine(AbstractEngine):
                         search_runner = Runners.TideSearchRunner(crux_location, self.project_path, row)
                     else:
                         search_runner = Runners.TideSearchRunner(crux_location, self.project_path)
-                    self.run_search(new_mgf_name, index_name, search_runner, search_name)
+                    self.run_search(new_mgf_name, index_name, search_runner, search_name, None, True)
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
                     if param_file:
@@ -143,8 +143,8 @@ class TideEngine(AbstractEngine):
                         percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path, row)
                     else:
                         percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path)
-                    postprocessing_object.percolator(search_name, percolator_runner, peptide_identifier_name)
-                    postprocessing_object.filter_q_value_percolator(peptide_identifier_name, fdr, filtered_name)
+                    postprocessing_object.percolator(search_name, percolator_runner, peptide_identifier_name, True)
+                    postprocessing_object.filter_q_value_percolator(peptide_identifier_name, fdr, filtered_name, True)
                 elif peptide_identifier == 'assign-confidence':
                     if param_file:
                         row = self.get_assign_confidence_parameter_file(param_file)
@@ -154,8 +154,8 @@ class TideEngine(AbstractEngine):
                         assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, self.project_path, row)
                     else:
                         assign_confidence_runner = Runners.AssignConfidenceRunner(crux_location, self.project_path)
-                    postprocessing_object.assign_confidence(search_name, assign_confidence_runner, peptide_identifier_name)
-                    postprocessing_object.filter_q_value_assign_confidence(peptide_identifier_name, fdr, filtered_name)
+                    postprocessing_object.assign_confidence(search_name, assign_confidence_runner, peptide_identifier_name, True)
+                    postprocessing_object.filter_q_value_assign_confidence(peptide_identifier_name, fdr, filtered_name, True)
                 filtered_results.append((i, filtered_name))
                 if i < len(tide_index_names) - 1:
                     if peptide_identifier == 'percolator':
@@ -168,7 +168,7 @@ class TideEngine(AbstractEngine):
                     mgf_parser.remove_scans(list(set([x[0] for x in psms])))
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
-                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + tide_index_names[i + 1] + '_mgf')
+                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + tide_index_names[i + 1] + '_mgf', True)
                     temp_file.close()
             rows = []
             iterativerun_row = DB.TideIterativeRun(TideIterativeRunName = multistep_search_name, fdr = str(fdr), PeptideIdentifierName = peptide_identifier, num_steps = len(tide_index_names), mgf = mgf_row)
@@ -182,7 +182,7 @@ class TideEngine(AbstractEngine):
             self.db_session.add_all(rows)
             self.db_session.commit()
             
-    def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options=None):
+    def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options=None, partOfIterativeSearch = False):
         #options doesn't do anything
         print('in tide search function')
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
@@ -194,7 +194,7 @@ class TideEngine(AbstractEngine):
             while os.path.isfile(full_directory_path) or os.path.isdir(full_directory_path):
                 directory_name = str(uuid.uuid4().hex)
                 full_directory_path= os.path.join(self.project_path, 'tide_search_results', directory_name)
-            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name)
+            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name, partOfIterativeSearch)
 
             self.db_session.add(row)
             self.db_session.commit()
