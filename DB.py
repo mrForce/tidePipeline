@@ -105,8 +105,6 @@ class TideIterativeRun(BaseTable, AbstractPeptideCollection):
         return set([item for subset in peptide_set_list for item in subset])
 
             
-        
-    
     
 class TargetSet(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'TargetSet'

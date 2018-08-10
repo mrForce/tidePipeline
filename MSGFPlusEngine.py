@@ -66,17 +66,21 @@ class MSGFPlusEngine(AbstractEngine):
                 self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory)
                 percolator_name = None
                 if percolator_param_file:
-                        self.verify_row_existence(DB.PercolatorParameterFile.Name, percolator_param_file)
-                        row = self.get_percolator_parameter_file(percolator_param_file)
-                        percolator_runner = Runners.PercolatorRunner(self.executables['crux'], self.project_path, row)
-                        re.escape(file_basename) + '-?(?P<version>\d*)'
-                        proposed_percolator_name = search_name + '_percolator'
-                        percolator_names = self.get_column_values(DB.Percolator, Name)
-                        percolator_name = find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
-                        if self.verify_row_existence(DB.Percolator.Name, percolator_name):
-                            raise DidNotFindUniquePercolatorNameError(percolator_name)
-                        postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name)
-                        postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
+                    print('in percolator param file section')
+                    
+                    if not self.verify_row_existence(DB.PercolatorParameterFile.Name, percolator_param_file):
+                        raise NoSuchPercolatorParameterFileError(percolator_param_file)
+                    filtered_name = search_name + '_percolator_msgf_filtered'
+                    row = self.get_percolator_parameter_file(percolator_param_file)
+                    percolator_runner = Runners.PercolatorRunner(self.executables['crux'], self.project_path, row)
+                    proposed_percolator_name = search_name + '_percolator'
+                    percolator_names = self.get_column_values(DB.Percolator, Name)
+                    percolator_name = find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
+                    if self.verify_row_existence(DB.Percolator.Name, percolator_name):
+                        raise DidNotFindUniquePercolatorNameError(percolator_name)
+                    postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name)
+                    postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
+                        
                 else:
                     postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name)
                 filtered_results.append((i, filtered_name))
