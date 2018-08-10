@@ -50,7 +50,7 @@ class Base:
         rows = self.db_session.query(row_class).all()
         values = []
         for x in rows:
-            values.append(x.getattr(column_name))
+            values.append(getattr(x, column_name))
         return values
     def verify_row_existence(self, column_object, name):
         """

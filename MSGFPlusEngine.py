@@ -74,9 +74,9 @@ class MSGFPlusEngine(AbstractEngine):
                     row = self.get_percolator_parameter_file(percolator_param_file)
                     percolator_runner = Runners.PercolatorRunner(self.executables['crux'], self.project_path, row)
                     proposed_percolator_name = search_name + '_percolator'
-                    percolator_names = self.get_column_values(DB.Percolator, Name)
-                    percolator_name = find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
-                    if self.verify_row_existence(DB.Percolator.Name, percolator_name):
+                    percolator_names = self.get_column_values(DB.Percolator, 'PercolatorName')
+                    percolator_name = fileFunctions.find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
+                    if self.verify_row_existence(DB.Percolator.PercolatorName, percolator_name):
                         raise DidNotFindUniquePercolatorNameError(percolator_name)
                     postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name)
                     postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
