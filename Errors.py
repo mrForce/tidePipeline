@@ -14,6 +14,8 @@ class CustomError(Exception):
 
 InvalidSearchTypeError = CustomError.factory('InvalidSearchTypeError', '', ' is an invalid search type')
 ParameterFileNameMustBeUniqueError = CustomError.factory('ParameterFileNameMustBeUniqueError', 'There is already a parameter file with the name: ', ' . It must be unique')
+NoSuchPercolatorParameterFileError = CustomError.factory('NoSuchPercolatorParameterFileError', 'There is no percolator parameter file with the name: ', '')
+DidNotFindUniquePercolatorNameError = CustomError.factory('DidNotFindUniquePercolatorNameError', 'Program came up with name for new percolator row: ', ' but it was not actually unique. This is a bug, please report it')
 
 class MSGF2PinFailedError(Error):
     def __init__(self, command):
@@ -107,6 +109,7 @@ class AssignConfidenceNameMustBeUniqueError(Error):
         self.assign_confidence_name = assign_confidence_name
     def __repr__(self):
         return 'There is already an AssignConfidence row with the name: ' + str(self.assign_confidence_name)
+    
 class PercolatorNameMustBeUniqueError(Error):
     def __init__(self, percolator_name):
         self.percolator_name = percolator_name

@@ -1,8 +1,10 @@
 from AbstractEngine import AbstractEngine
 import DB
 import Parsers
+import re
 import os
 import ReportGeneration
+import fileFunctions
 import Runners
 import tempfile
 from Errors import *
@@ -13,7 +15,10 @@ class MSGFPlusEngine(AbstractEngine):
         return rows
     
 
-    def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, modifications_name = None, memory = None):
+    def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, percolator_param_file=False, modifications_name = None, memory = None):
+        """
+        percolator_param_file is False if we want to use the Q-values calculated by MSGF+. percolator_param_file should be a string with the name of a Percolator parameter file if we want to use Percolator for calculating Q-values
+        """
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.MSGFPlusIterativeRun).filter_by(MSGFPlusIterativeRunName = multistep_search_name).first()
         msgf_location = self.executables['msgfplus']
@@ -59,11 +64,28 @@ class MSGFPlusEngine(AbstractEngine):
                 search_name = multistep_search_name + '_' + index_name
                 filtered_name = search_name + '_msgf_filtered'
                 self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory)
-                postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name)
+                percolator_name = None
+                if percolator_param_file:
+                        self.verify_row_existence(DB.PercolatorParameterFile.Name, percolator_param_file)
+                        row = self.get_percolator_parameter_file(percolator_param_file)
+                        percolator_runner = Runners.PercolatorRunner(self.executables['crux'], self.project_path, row)
+                        re.escape(file_basename) + '-?(?P<version>\d*)'
+                        proposed_percolator_name = search_name + '_percolator'
+                        percolator_names = self.get_column_values(DB.Percolator, Name)
+                        percolator_name = find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
+                        if self.verify_row_existence(DB.Percolator.Name, percolator_name):
+                            raise DidNotFindUniquePercolatorNameError(percolator_name)
+                        postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name)
+                        postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name)
+                else:
+                    postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name)
                 filtered_results.append((i, filtered_name))
                 if i < len(msgfplus_index_names) - 1:
-                    msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(search_name, fdr, self.project_path, self.db_session)
-                    psms = msgfplus_handler.get_psms()
+                    if percolator_param_file:
+                        handler = ReportGeneration.PercolatorHandler(percolator_name, fdr, self.project_path, self.db_session, self.executables['crux'])
+                    else:                            
+                        handler = ReportGeneration.MSGFPlusQValueHandler(search_name, fdr, self.project_path, self.db_session)
+                    psms = handler.get_psms()
                     mgf_parser.remove_scans(list(set([x[0] for x in psms])))
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
