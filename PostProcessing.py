@@ -17,7 +17,7 @@ class PostProcessing(Base):
         msgf_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = msgf_search_name).first()
         assert(msgf_row is not None)
         msgf2pin_runner.runConversion(msgf_row.resultFilePath, percolator_location, fasta_files, decoy_pattern)
-    def list_filtered_search_results(self):
+    def list_filtered_search_results(self, showIterative):
         headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
         rows = []
         for result in self.db_session.query(DB.FilteredSearchResult).all():
@@ -25,8 +25,9 @@ class PostProcessing(Base):
             path = result.filteredSearchResultPath
             threshold = str(result.q_value_threshold)
             if result.QValue.searchbase is not None:
-                search_name = result.QValue.searchbase.SearchName
-                rows.append([name, path, threshold, search_name])
+                if (showIterative and result.partOfIterativeSearch) or (not result.partOfIterativeSearch):
+                    search_name = result.QValue.searchbase.SearchName
+                    rows.append([name, path, threshold, search_name])
             else:
                 print('Filtered search result searchbase is None: ' + name)
         for result in self.db_session.query(DB.MaxQuantSearch).all():
