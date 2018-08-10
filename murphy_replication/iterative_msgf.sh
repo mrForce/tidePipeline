@@ -2,18 +2,18 @@
 cd ..
 
 #python3 CreateMSGFPlusIndex.py MurphyReplication TargetSet CombinedUnfiltered CombinedUnfilteredMSGFIndexTwo --memory 30000
-#python3 RunIterativeMSGFPlusSearch.py MurphyReplication Y3MGF 0.01  Y3IterMSGFPlusLargeToSmall CombinedUnfilteredMSGFIndexTwo CombinedTwoPercentIndex CombinedOnePercentIndex --minLength 8 --maxLength 11 --thread 5 --memory 30000 
-#python3 RunIterativeMSGFPlusSearch.py MurphyReplication B22MGF 0.01 B22IterMSGFPlusLargeToSmall CombinedUnfilteredMSGFIndexTwo CombinedTwoPercentIndex CombinedOnePercentIndex --minLength 8 --maxLength 11 --thread 5 --memory 30000 
-#python3 RunIterativeMSGFPlusSearch.py MurphyReplication Y3MGF 0.01  Y3IterMSGFPlusSmallToLarge CombinedOnePercentIndex CombinedTwoPercentIndex CombinedUnfilteredMSGFIndexTwo --minLength 8 --maxLength 11 --thread 5 --memory 30000 
-#python3 RunIterativeMSGFPlusSearch.py MurphyReplication B22MGF 0.01 B22IterMSGFPlusSmallToLarge  CombinedOnePercentIndex CombinedTwoPercentIndex CombinedUnfilteredMSGFIndexTwo --minLength 8 --maxLength 11 --thread 5 --memory 30000 
+python3 RunIterativeMSGFPlusSearch.py MurphyReplication Y3MGF 0.01  Y3IterMSGFPlusPercolatorLargeToSmall CombinedUnfilteredMSGFIndexTwo CombinedTwoPercentIndex CombinedOnePercentIndex --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
+python3 RunIterativeMSGFPlusSearch.py MurphyReplication B22MGF 0.01 B22IterMSGFPlusPercolatorLargeToSmall CombinedUnfilteredMSGFIndexTwo CombinedTwoPercentIndex CombinedOnePercentIndex --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
+python3 RunIterativeMSGFPlusSearch.py MurphyReplication Y3MGF 0.01  Y3IterMSGFPlusPercolatorSmallToLarge CombinedOnePercentIndex CombinedTwoPercentIndex CombinedUnfilteredMSGFIndexTwo --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
+python3 RunIterativeMSGFPlusSearch.py MurphyReplication B22MGF 0.01 B22IterMSGFPlusPercolatorSmallToLarge  CombinedOnePercentIndex CombinedTwoPercentIndex CombinedUnfilteredMSGFIndexTwo --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
 
-python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch Y3IterMSGFPlusLargeToSmall murphy_replication/y3_iter_msgf_large_to_small.txt
+python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch Y3IterMSGFPlusPercolatorLargeToSmall murphy_replication/y3_iter_msgf_percolator_large_to_small.txt
 
-python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch B22IterMSGFPlusLargeToSmall murphy_replication/b22_iter_msgf_large_to_small.txt
+python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch B22IterMSGFPlusPercolatorLargeToSmall murphy_replication/b22_iter_msgf_percolator_large_to_small.txt
 
-python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch Y3IterMSGFPlusSmallToLarge murphy_replication/y3_iter_msgf_small_to_large.txt
+python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch Y3IterMSGFPlusPercolatorSmallToLarge murphy_replication/y3_iter_msgf_percolator_small_to_large.txt
 
-python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch B22IterMSGFPlusSmallToLarge murphy_replication/b22_iter_msgf_small_to_large.txt
+python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch B22IterMSGFPlusPercolatorSmallToLarge murphy_replication/b22_iter_msgf_percolator_small_to_large.txt
 #python3 RunIterativeTideSearch.py MurphyReplication Y3MGF 0.01 percolator Y3IterTideLargeToSmallPercolator CombinedUnfilteredIndex CombinedTwoPercentTideIndex CombinedOnePercentTideIndex --peptide_identifier_param_file murphy_replication/percolator.params --tidesearch_param_file murphy_replication/tide_search.params
 #python3 ExportPeptides.py MurphyReplication TideIterativeSearch Y3IterTideLargeToSmallPercolator murphy_replication/y3_iter_tide_large_to_small_percolator.txt
 #python3 RunIterativeTideSearch.py MurphyReplication B22MGF 0.01 percolator B22IterTideLargeToSmallPercolator CombinedUnfilteredIndex CombinedTwoPercentTideIndex CombinedOnePercentTideIndex --peptide_identifier_param_file murphy_replication/percolator.params --tidesearch_param_file murphy_replication/tide_search.params 

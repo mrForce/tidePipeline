@@ -28,7 +28,7 @@ print('project folder: ' + project_folder)
 
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
 if args.use_percolator:
-    if not project.verify_row_existence(DB.PercolatorParameterFile.Name, args.use_percolator)):
+    if not project.verify_row_existence(DB.PercolatorParameterFile.Name, args.use_percolator):
         raise NoSuchPercolatorParameterFileError(args.use_percolator)
 msgfplus_jar = project.executables['msgfplus']
 good_arguments = {}
