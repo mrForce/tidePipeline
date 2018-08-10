@@ -107,8 +107,12 @@ class MSGFPlusSearchRunner:
                 command.append('-' + key)
                 command.append(str(value))
                 column_name = MSGFPlusSearchRunner.convert_cmdline_option_to_column_name(key)
-                assert(column_name)
-                column_args[column_name] = str(value)
+                if column_name:
+                    column_args[column_name] = str(value)
+                else:
+                    print('key: ' + key)
+                    assert(column_name)
+
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
