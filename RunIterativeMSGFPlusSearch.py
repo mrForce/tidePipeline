@@ -37,7 +37,7 @@ arguments = vars(args)
 
 
 for k, v in arguments.items():
-    if k and v and k != 'project_folder' and k != 'mgf_name' and k != 'msgfplusindices' and k != 'iterativesearch_name' and k != 'modifications_file' and k != 'memory' and k != 'fdr':
+    if k and v and k != 'project_folder' and k != 'mgf_name' and k != 'msgfplusindices' and k != 'iterativesearch_name' and k != 'modifications_file' and k != 'memory' and k != 'fdr' and k != 'use_percolator':
         k = k.replace('_', '-')
         good_arguments[k] = v
 postprocessing_object = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
