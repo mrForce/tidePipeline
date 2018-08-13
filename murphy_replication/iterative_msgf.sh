@@ -2,12 +2,12 @@
 cd ..
 
 #python3 CreateMSGFPlusIndex.py MurphyReplication TargetSet CombinedUnfiltered CombinedUnfilteredMSGFIndexTwo --memory 30000
-python3 RunIterativeMSGFPlusSearch.py MurphyReplication Y3MGF 0.01  Y3IterMSGFPlusPercolatorLargeToSmallNine CombinedUnfilteredMSGFIndexTwo CombinedTwoPercentIndex CombinedOnePercentIndex --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
+python3 RunIterativeMSGFPlusSearch.py MurphyReplication Y3MGF 0.01  Y3IterMSGFPlusPercolatorLargeToSmallTwelve CombinedUnfilteredMSGFIndexTwo CombinedTwoPercentIndex CombinedOnePercentIndex --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
 #python3 RunIterativeMSGFPlusSearch.py MurphyReplication B22MGF 0.01 B22IterMSGFPlusPercolatorLargeToSmall CombinedUnfilteredMSGFIndexTwo CombinedTwoPercentIndex CombinedOnePercentIndex --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
 #python3 RunIterativeMSGFPlusSearch.py MurphyReplication Y3MGF 0.01  Y3IterMSGFPlusPercolatorSmallToLarge CombinedOnePercentIndex CombinedTwoPercentIndex CombinedUnfilteredMSGFIndexTwo --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
 #python3 RunIterativeMSGFPlusSearch.py MurphyReplication B22MGF 0.01 B22IterMSGFPlusPercolatorSmallToLarge  CombinedOnePercentIndex CombinedTwoPercentIndex CombinedUnfilteredMSGFIndexTwo --minLength 8 --maxLength 11 --thread 5 --memory 30000 --use_percolator Main
 
-python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch Y3IterMSGFPlusPercolatorLargeToSmallNine murphy_replication/y3_iter_msgf_percolator_large_to_small.txt --overwrite True
+python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch Y3IterMSGFPlusPercolatorLargeToSmallTwelve murphy_replication/y3_iter_msgf_percolator_large_to_small.txt --overwrite True
 
 #python3 ExportPeptides.py MurphyReplication MSGFPlusIterativeSearch B22IterMSGFPlusPercolatorLargeToSmall murphy_replication/b22_iter_msgf_percolator_large_to_small.txt
 

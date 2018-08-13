@@ -27,23 +27,30 @@ from Runners import *
 
 
 class Base:
-    def __init__(self, project_path, command):
-        if os.path.isfile('reminder.txt'):
-            subprocess.call(['cat', 'reminder.txt'])
-        self.project_path = project_path
-        print('project path: ' + project_path)
-        self.db_session = DB.init_session(os.path.join(project_path, 'database.db'))
-        self.command = DB.Command(commandString = command)
-        self.db_session.add(self.command)
-        self.db_session.commit()
-        config = configparser.ConfigParser()
-        config.read(os.path.join(project_path, 'config.ini'))
-        self.executables = {}
-        self.executables['netmhc'] = config['EXECUTABLES']['netmhc']
-        self.executables['crux'] = config['EXECUTABLES']['crux']
-        self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
-        self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
-        self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
+    def __init__(self, project_path, command, parent_base = False):        
+        if parent_base:
+            self.project_path = parent_base.project_path
+            self.db_session = parent_base.db_session
+            self.command = parent_base.command
+            self.executables = parent_base.executables
+        else:
+            if os.path.isfile('reminder.txt'):
+                subprocess.call(['cat', 'reminder.txt'])
+                self.project_path = project_path
+                print('project path: ' + project_path)
+            
+            self.db_session = DB.init_session(os.path.join(project_path, 'database.db'))
+            self.command = DB.Command(commandString = command)
+            self.db_session.add(self.command)
+            self.db_session.commit()
+            config = configparser.ConfigParser()
+            config.read(os.path.join(project_path, 'config.ini'))
+            self.executables = {}
+            self.executables['netmhc'] = config['EXECUTABLES']['netmhc']
+            self.executables['crux'] = config['EXECUTABLES']['crux']
+            self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
+            self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
+            self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
 
     
     def get_column_values(self, row_class, column_name):
@@ -113,7 +120,7 @@ class Base:
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'maxquant_param_files'), path_file_extension)
             row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
-        #self.db_session.commit()
+        self.db_session.commit()
 
 
 
@@ -157,7 +164,7 @@ class Base:
         else:
             maxquant_param_row = DB.MaxQuantParameterFile(Name = name, Path = os.path.join('maxquant_param_files', internal_filename))
         self.db_session.add(maxquant_param_row)
-        #self.db_session.commit()
+        self.db_session.commit()
     def list_maxquant_parameter_files(self):
         headers = ['id', 'Name', 'Path', 'Comment']
         rows = []
@@ -250,7 +257,7 @@ class Base:
         source_id_map = create_target_set(netmhc_filter_locations, peptide_list_locations, output_fasta_location, output_json_location)
         target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name)
         self.db_session.add(target_set_row)
-        #self.db_session.commit()
+        self.db_session.commit()
     def verify_filtered_netMHC(self, name):
         if self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first():
             return True
@@ -270,7 +277,7 @@ class Base:
             newpath = self.copy_file('MGF', path)
             mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath, partOfIterativeSearch = partOfIterativeSearch)
             self.db_session.add(mgf_record)
-            #self.db_session.commit()
+            self.db_session.commit()
             return mgf_record
     def add_raw_file(self, path, name):
         row = self.db_session.query(DB.RAWfile).filter_by(RAWName = name).first()
@@ -280,7 +287,7 @@ class Base:
             newpath = self.copy_file('RAW', path)
             raw_record = DB.RAWfile(RAWName = name, RAWPath = newpath)
             self.db_session.add(raw_record)
-            #self.db_session.commit()
+            self.db_session.commit()
             return raw_record
     def verify_peptide_list(self, peptide_list_name):
         row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
@@ -347,7 +354,7 @@ class Base:
                 write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
             peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
-            #self.db_session.commit()
+            self.db_session.commit()
 
     
                     
@@ -377,7 +384,7 @@ class Base:
             parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
             netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
             self.db_session.add(netmhc_row)
-            #self.db_session.commit()
+            self.db_session.commit()
             return (netmhc_row, netmhc_row.PeptideScorePath, True)
 
 

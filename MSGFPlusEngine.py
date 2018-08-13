@@ -64,6 +64,7 @@ class MSGFPlusEngine(AbstractEngine):
                 search_name = multistep_search_name + '_' + index_name
                 filtered_name = search_name + '_msgf_filtered'
                 self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory, True)
+                self.db_session.commit()
                 percolator_name = None
                 if percolator_param_file:
                     print('in percolator param file section')
@@ -79,10 +80,11 @@ class MSGFPlusEngine(AbstractEngine):
                     if self.verify_row_existence(DB.Percolator.PercolatorName, percolator_name):
                         raise DidNotFindUniquePercolatorNameError(percolator_name)
                     postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_name, True)
+                    self.db_session.commit()
                     postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name, True)
-                        
                 else:
                     postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name, True)
+                self.db_session.commit()
                 filtered_results.append((i, filtered_name))
                 if i < len(msgfplus_index_names) - 1:
                     if percolator_param_file:
@@ -94,6 +96,7 @@ class MSGFPlusEngine(AbstractEngine):
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
                     self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf', True)
+                    self.db_session.commit()
                     temp_file.close()
             rows = []
             iterativerun_row = DB.MSGFPlusIterativeRun(MSGFPlusIterativeRunName = multistep_search_name, fdr = str(fdr), num_steps = len(msgfplus_index_names), mgf = mgf_row)
