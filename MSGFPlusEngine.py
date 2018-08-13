@@ -78,7 +78,7 @@ class MSGFPlusEngine(AbstractEngine):
                     percolator_name = fileFunctions.find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
                     if self.verify_row_existence(DB.Percolator.PercolatorName, percolator_name):
                         raise DidNotFindUniquePercolatorNameError(percolator_name)
-                    postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name, True)
+                    postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_name, True)
                     postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name, True)
                         
                 else:
@@ -105,7 +105,7 @@ class MSGFPlusEngine(AbstractEngine):
                 iterativerun_row.MSGFPlusIterativeFilteredSearchAssociations.append(association_row)
                 rows.append(association_row)
             self.db_session.add_all(rows)
-            self.db_session.commit()
+            #self.db_session.commit()
 
     def list_search(self, mgf_name = None, index_name=None):
         """
@@ -119,7 +119,7 @@ class MSGFPlusEngine(AbstractEngine):
             else:
                 raise MGFRowDoesNotExistError(mgf_name)
         if index_name:
-            msgf_index_row = self.db_sesion.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = index_name).first()
+            msgf_index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = index_name).first()
             if msgf_index_row:
                 filter_args['idMSGFPlusIndex'] = msgf_index_row.idMSGFPlusIndex
             else:
@@ -148,7 +148,7 @@ class MSGFPlusEngine(AbstractEngine):
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)
-        self.db_session.commit()
+        #self.db_session.commit()
         
             
     def list_indices(self):
@@ -189,5 +189,5 @@ class MSGFPlusEngine(AbstractEngine):
         row.MSGFPlusIndexName = index_name
         row.MSGFPlusIndexPath = os.path.join(storage_dir, fasta_name)
         self.db_session.add(row)
-        self.db_session.commit()
+        #self.db_session.commit()
     

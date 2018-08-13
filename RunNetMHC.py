@@ -25,7 +25,7 @@ if not project.verify_peptide_list(args.peptideList):
     print('peptide list: ' + args.peptideList + ' does not exist')
     sys.exit()
 if not project.verify_hla(args.HLA):
-    print('HLA: ' + hla + ' does not exist')
+    print('HLA: ' + args.HLA + ' does not exist')
     sys.exit()
 if project.verify_filtered_netMHC(args.FilteredNetMHCName):
     print('There is already a FilteredNetMHC entry with that name')

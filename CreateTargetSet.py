@@ -1,6 +1,7 @@
 import Base
 
 import argparse
+import DB
 import sys
 import os
 parser = argparse.ArgumentParser(description='Create a TargetSet from FilteredNetMHCs and PeptideLists')

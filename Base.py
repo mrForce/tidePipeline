@@ -113,7 +113,7 @@ class Base:
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'maxquant_param_files'), path_file_extension)
             row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
-        self.db_session.commit()
+        #self.db_session.commit()
 
 
 
@@ -157,7 +157,7 @@ class Base:
         else:
             maxquant_param_row = DB.MaxQuantParameterFile(Name = name, Path = os.path.join('maxquant_param_files', internal_filename))
         self.db_session.add(maxquant_param_row)
-        self.db_session.commit()
+        #self.db_session.commit()
     def list_maxquant_parameter_files(self):
         headers = ['id', 'Name', 'Path', 'Comment']
         rows = []
@@ -250,7 +250,7 @@ class Base:
         source_id_map = create_target_set(netmhc_filter_locations, peptide_list_locations, output_fasta_location, output_json_location)
         target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name)
         self.db_session.add(target_set_row)
-        self.db_session.commit()
+        #self.db_session.commit()
     def verify_filtered_netMHC(self, name):
         if self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first():
             return True
@@ -270,8 +270,8 @@ class Base:
             newpath = self.copy_file('MGF', path)
             mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath, partOfIterativeSearch = partOfIterativeSearch)
             self.db_session.add(mgf_record)
-            self.db_session.commit()
-            return mgf_record.idMGFfile    
+            #self.db_session.commit()
+            return mgf_record
     def add_raw_file(self, path, name):
         row = self.db_session.query(DB.RAWfile).filter_by(RAWName = name).first()
         if row:
@@ -280,8 +280,8 @@ class Base:
             newpath = self.copy_file('RAW', path)
             raw_record = DB.RAWfile(RAWName = name, RAWPath = newpath)
             self.db_session.add(raw_record)
-            self.db_session.commit()
-            return raw_record.idRAWfile
+            #self.db_session.commit()
+            return raw_record
     def verify_peptide_list(self, peptide_list_name):
         row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
         if row is None:
@@ -297,12 +297,14 @@ class Base:
             return True
 
     def run_netmhc(self, peptide_list_name, hla, rank_cutoff, filtered_name, netmhcpan = False):
-        idNetMHC, pep_score_path = self._run_netmhc(peptide_list_name, hla, netmhcpan)
-        print('idNetMHC: ' + str(idNetMHC))
-        
-        row = self.db_session.query(DB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
-        #to be clear, this means that 
-        if row is None:
+        netmhc_row, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhcpan)
+       
+        if is_netmhc_row_new:
+            filtered_netmhc_row = None
+        else:
+            filtered_netmhc_row = self.db_session.query(DB.FilteredNetMHC).filter_by(idNetMHC = netmhc_row.idNetMHC, RankCutoff = rank_cutoff).first()
+
+        if filtered_netmhc_row is None:
             file_name = str(uuid.uuid4())
             while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
                 file_name = str(uuid.uuid4())
@@ -320,9 +322,9 @@ class Base:
                                 g.write(peptide + '\n')
             
             
-            filtered_row = DB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+            filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
-            self.db_session.commit()
+            #self.db_session.commit()
             
                 
         
@@ -345,7 +347,7 @@ class Base:
                 write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
             peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
-            self.db_session.commit()
+            #self.db_session.commit()
 
     
                     
@@ -354,9 +356,9 @@ class Base:
             
     def _run_netmhc(self, peptide_list_name, hla_name, netmhcpan = False):
         """
-        This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (idNetMHC, PeptideScorePath)
+        This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (netmhc_row, PeptideScorePath)
         
-        If there isn't, then it runs NetMHC, inserts a row into the table, and returns (idNetMHC, PeptideScorePath)               
+        If there isn't, then it runs NetMHC, inserts a row into the table, and returns (netmhc_row, PeptideScorePath)               
         """
         peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
         if peptide_list_row is None:
@@ -366,7 +368,7 @@ class Base:
             raise NoSuchHLAError(hla_name)
         netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
         if netmhc_row:
-            return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
+            return (netmhc_row, netmhc_row.PeptideScorePath, False)
         else:
             netmhc_output_filename = str(uuid.uuid4().hex)
             while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename, '-parsed')):
@@ -375,8 +377,8 @@ class Base:
             parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
             netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
             self.db_session.add(netmhc_row)
-            self.db_session.commit()
-            return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
+            #self.db_session.commit()
+            return (netmhc_row, netmhc_row.PeptideScorePath, True)
 
 
     def list_peptide_lists(self):
@@ -546,8 +548,8 @@ class Base:
         #did step 4
         fasta_record = DB.FASTA(Name = name, FASTAPath = newpath, Comment = comment)
         self.db_session.add(fasta_record)
-        self.db_session.commit()
-        return fasta_record.idFASTA
+        #self.db_session.commit()
+        return fasta_record
     def get_commands(self):
         commands = []
         for row in self.db_session.query(DB.Command):
@@ -577,8 +579,8 @@ class Base:
             raise HLAWithNameExistsError(hla_name)
         hla = DB.HLA(HLAName = hla_name)
         self.db_session.add(hla)
-        self.db_session.commit()
-        return hla.idHLA
+        #self.db_session.commit()
+        return hla
 
         
         

@@ -50,7 +50,7 @@ class PostProcessing(Base):
                 f.write(peptide + '\n')
         filtered_row = DB.FilteredSearchResult(filteredSearchResultName = name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = threshold, QValue = qvalue_row, partOfIterativeSearch = partOfIterativeSearch)
         self.db_session.add(filtered_row)
-        self.db_session.commit()
+        #self.db_session.commit()
 
     def filter_q_value_assign_confidence(self, assign_confidence_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False):
         assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(assign_confidence_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path())
@@ -105,7 +105,7 @@ class PostProcessing(Base):
             if row.estimation_method and len(row.estimation_method) > 0:
                 q_val_column = row.estimation_method + ' q-value'
             handler = ReportGeneration.AssignConfidenceHandler(row, q_val_column, q_val_threshold, self.project_path, self.get_crux_executable_path())
-            peptides = handler.getPeptides()
+            peptides = handler.get_peptides()
             
             return TargetSetSourceCount.count_sources(self.project_path, target_set_row, peptides)
     def get_assign_confidence(self, assign_confidence_name):
@@ -155,7 +155,7 @@ class PostProcessing(Base):
             output_directory_db = os.path.join('assign_confidence_results', output_directory_name)
             new_row = assign_confidence_runner.run_assign_confidence_create_row(target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row, partOfIterativeSearch)
             self.db_session.add(new_row)
-            self.db_session.commit()
+            #self.db_session.commit()
         else:
             if tide_search_row is None:
                 raise TideSearchRowDoesNotExistError(tide_search_name)
@@ -190,7 +190,7 @@ class PostProcessing(Base):
                     self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
             new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch)
             self.db_session.add(new_row)
-            self.db_session.commit()
+            #self.db_session.commit()
         else:
             if search_row is None:
                 if search_type == 'tide':
@@ -222,7 +222,7 @@ class PostProcessing(Base):
                 row = self.get_maxquant_search_row(peptide_set_name)
             elif peptide_set_type == 'TideIterativeSearch':
                 row = self.get_tideiterativerun_row(peptide_set_name)
-            elif args.CollectionType == 'MSGFPlusIterativeSearch':
+            elif peptide_set_type == 'MSGFPlusIterativeSearch':
                 row = self.get_msgfplusiterativesearch_row(peptide_set_name)
             assert(row)
             peptides = row.get_peptides(self.project_path)
