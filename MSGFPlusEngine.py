@@ -148,7 +148,7 @@ class MSGFPlusEngine(AbstractEngine):
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)
-        self.db_session.commit()
+        #self.db_session.commit()
         
             
     def list_indices(self):
