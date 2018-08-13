@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 import datetime
 from Parsers import MaxQuantPeptidesParser
+import shutil
 from abc import ABCMeta, abstractmethod, ABC
 import os
 #BaseTable = declarative_base(metaclass=ABCMeta)
@@ -56,14 +57,15 @@ class TideIterativeFilteredSearchAssociation(BaseTable):
     tideiterative_id = Column(Integer, ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True)
     filteredsearch_id = Column(Integer, ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True)
     step = Column('step', Integer)
-    filteredsearch_result = relationship('FilteredSearchResult')
+    filteredsearch_result = relationship('FilteredSearchResult', cascade='all,delete')
+
 
 class MSGFPlusIterativeFilteredSearchAssociation(BaseTable):
     __tablename__ = 'MSGFPlusIterativeFilteredSearchAssociation'
     msgfplusiterative_id = Column(Integer, ForeignKey('MSGFPlusIterativeRun.idMSGFPlusIterativeRun'), primary_key=True)
     filteredsearch_id = Column(Integer, ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True)
     step = Column('step', Integer)
-    filteredsearch_result = relationship('FilteredSearchResult')
+    filteredsearch_result = relationship('FilteredSearchResult', cascade='all,delete')
 
 
 class MSGFPlusIterativeRun(BaseTable, AbstractPeptideCollection):
@@ -72,10 +74,11 @@ class MSGFPlusIterativeRun(BaseTable, AbstractPeptideCollection):
     MSGFPlusIterativeRunName = Column('MSGFPlusIterativeRunName', String, unique=True)
     fdr = Column('fdr', String)
     num_steps = Column('num_steps', Integer)
-    MSGFPlusIterativeFilteredSearchAssociations = relationship('MSGFPlusIterativeFilteredSearchAssociation')
+    MSGFPlusIterativeFilteredSearchAssociations = relationship('MSGFPlusIterativeFilteredSearchAssociation', cascade='all,delete')
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGFfile')
-
+    def identifier(self):
+        return self.MSGFPlusIterativeRunName
     def get_peptides(self, project_path):
         associations = self.MSGFPlusIterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
@@ -90,12 +93,14 @@ class TideIterativeRun(BaseTable, AbstractPeptideCollection):
     fdr = Column('fdr', String)
     PeptideIdentifierName = Column('PeptideIdentifierName', String)
     num_steps = Column('num_steps', Integer)
-    TideIterativeFilteredSearchAssociations = relationship('TideIterativeFilteredSearchAssociation')
+    TideIterativeFilteredSearchAssociations = relationship('TideIterativeFilteredSearchAssociation', cascade='all,delete')
     """
     mgf is the mgf we started with
     """
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGFfile')
+    def identifier(self):
+        return self.TideIterativeRunName
     def get_peptides(self, project_path):
         associations = self.TideIterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
@@ -118,6 +123,22 @@ class TargetSet(BaseTable, AbstractPeptideCollection):
     tideindices = relationship('TideIndex', secondary=tideindex_targetset, back_populates='targetsets')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_targetset, back_populates='targetsets')
     maxquantsearches = relationship('MaxQuantSearch', secondary=maxquant_search_targetset, back_populates='targetsets')
+    def remove_files(self, project_root):
+        fasta_location = os.path.join(project_root, self.TargetSetFASTAPath)
+        source_map_location = os.path.join(project_root, self.PeptideSourceMapPath)
+        print('Going to remove FASTA file at: ' + fasta_location)
+        if os.path.isfile(fasta_location):
+            os.remove(fasta_location)
+        else:
+            print('ERROR! FASTA file at: ' + fasta_location + ' does not exist!')
+        print('Going to remove source map at: ' + source_map_location)
+        if os.path.isfile(source_map_location):
+            os.remove(source_map_location)
+        else:
+            print('ERROR! Source map at: ' + source_map_location + ' does not exist!')
+            
+    def identifier(self):
+        return self.TargetSetName
     def get_peptides(self, project_path):
         fasta_location = os.path.join(project_path, self.TargetSetFASTAPath)
         with open(fasta_location, 'r') as f:
@@ -132,9 +153,8 @@ class HLA(BaseTable):
     idHLA = Column('idHLA', Integer, primary_key = True)
     HLAName = Column('HLAName', String, unique=True)
     netmhcs = relationship('NetMHC', back_populates='hla')
-    def __repr__(self):
-        return 'MHC ' + self.HLAName
-
+    def identifier(self):
+        return self.HLAName
 
 
 class MGFfile(BaseTable):
@@ -144,8 +164,16 @@ class MGFfile(BaseTable):
     MGFPath = Column('MGFPath', String)
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     def __repr__(self):
-        return 'MGF File found at: ' + self.MGFPath
-
+        return self.MGFName
+    def identifier(self):
+        return self.MGFName
+    def remove_files(self, project_root):
+        mgf_location = os.path.join(project_path, self.MGFPath)
+        print('Removing MGF file at: ' + mgf_location)
+        if os.path.isfile(mgf_location):
+            os.remove(mgf_location)
+        else:
+            print('Error! MGF file at ' + mgf_location + ' does not exist!')
 class RAWfile(BaseTable):
     __tablename__ = 'RAWfile'
     idRAWfile = Column('idRAWfile', Integer, primary_key=True)
@@ -153,7 +181,15 @@ class RAWfile(BaseTable):
     RAWPath = Column('RAWPath', String)
     def __repr__(self):
         return 'RAW File found at: ' + self.RAWPath
-    
+    def identifier(self):
+        return self.RAWName
+    def remove_files(self, project_root):
+        raw_location = os.path.join(project_root, self.RAWPath)
+        print('removing raw file at: ' + raw_location)
+        if os.path.isfile(raw_location):
+            os.remove(raw_location)
+        else:
+            print('ERROR! RAW file at: ' + raw_location + ' does not exist!')
 class FASTA(BaseTable):
     __tablename__ = 'FASTA'
     idFASTA = Column('idFASTA', Integer, primary_key=True)
@@ -163,7 +199,16 @@ class FASTA(BaseTable):
     peptide_lists = relationship('PeptideList', back_populates='fasta')
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
+    def identifier(self):
+        return self.Name
 
+    def remove_files(self, project_root):
+        fasta_location = os.path.join(project_root, self.FASTAPath)
+        print('removing FASTA at: ' + fasta_location)
+        if os.path.isfile(fasta_location):
+            os.remove(fasta_location)
+        else:
+            print('ERROR! FASTA file at: '  + fasta_location + ' does not exist!')
 class MaxQuantParameterFile(BaseTable):
     __tablename__ = 'MaxQuantParameterFile'
     idMaxQuantParameterFile = Column('idMaxQuantParameterFile', Integer, primary_key=True)
@@ -175,6 +220,16 @@ class MaxQuantParameterFile(BaseTable):
             return 'MaxQuant parameter file found at: ' + self.Path
         else:
             return 'MaxQuant parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
+    def identifier(self):
+        return self.Name
+
+    def remove_files(self, project_root):
+        param_location = os.path.join(project_root, self.Path)
+        print('removing MaxQuant parameter file at: ' + param_location)
+        if os.path.isfile(param_location):
+            os.remove(param_location)
+        else:
+            print('ERROR! Param file at: '  + param_location + ' does not exist!')
 class TideSearchParameterFile(BaseTable):
     __tablename__ = 'TideSearchParameterFile'
     idTideSearchParameterFile = Column('idTideSearchParameterFile', Integer, primary_key=True)
@@ -186,7 +241,15 @@ class TideSearchParameterFile(BaseTable):
             return 'Tide Search parameter file found at: ' + self.Path
         else:
             return 'Tide Search parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
-
+    def identifier(self):
+        return self.Name
+    def remove_files(self, project_root):
+        param_location = os.path.join(project_root, self.Path)
+        print('removing TideSearch Param at: ' + param_location)
+        if os.path.isfile(param_location):
+            os.remove(param_location)
+        else:
+            print('ERROR! TideSearch param file at: '  + param_location + ' does not exist!')
 class TideIndexParameterFile(BaseTable):
     __tablename__ = 'TideIndexParameterFile'
     idTideIndexParameterFile = Column('idTideIndexParameterFile', Integer, primary_key=True)
@@ -199,6 +262,15 @@ class TideIndexParameterFile(BaseTable):
         else:
             return 'Tide Index parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
 
+    def identifier(self):
+        return self.Name
+    def remove_files(self, project_root):
+        param_location = os.path.join(project_root, self.Path)
+        print('removing Tide Index Param at: ' + param_location)
+        if os.path.isfile(param_location):
+            os.remove(param_location)
+        else:
+            print('ERROR! Tide Index param file at: '  + param_location + ' does not exist!')
 class AssignConfidenceParameterFile(BaseTable):
     __tablename__ = 'AssignConfidenceParameterFile'
     idAssignConfidenceParameterFile = Column('idAssignConfidenceParameterFile', Integer, primary_key=True)
@@ -210,8 +282,16 @@ class AssignConfidenceParameterFile(BaseTable):
             return 'Assign Confidence parameter file found at: ' + self.Path
         else:
             return 'Assign Confidence parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
+    def identifier(self):
+        return self.Name
 
-
+    def remove_files(self, project_root):
+        param_location = os.path.join(project_root, self.Path)
+        print('removing Assign Confidence Param at: ' + param_location)
+        if os.path.isfile(param_location):
+            os.remove(param_location)
+        else:
+            print('ERROR! Assign Confidence param file at: '  + param_location + ' does not exist!')
 class PercolatorParameterFile(BaseTable):
     __tablename__ = 'PercolatorParameterFile'
     idPercolatorParameterFile = Column('idPercolatorParameterFile', Integer, primary_key=True)
@@ -223,7 +303,15 @@ class PercolatorParameterFile(BaseTable):
             return 'Percolator parameter file found at: ' + self.Path
         else:
             return 'Percolator parameter file found at: ' + self.Path + ' with comment: ' + self.Comment
-
+    def identifier(self):
+        return self.Name
+    def remove_files(self, project_root):
+        param_location = os.path.join(project_root, self.Path)
+        print('removing Percolator param file at: ' + param_location)
+        if os.path.isfile(param_location):
+            os.remove(param_location)
+        else:
+            print('ERROR! Percolator param file at: '  + param_location + ' does not exist!')
         
 class PeptideList(BaseTable, AbstractPeptideCollection):
     __tablename__ = 'PeptideList'
@@ -238,9 +326,17 @@ class PeptideList(BaseTable, AbstractPeptideCollection):
     targetsets = relationship('TargetSet', secondary=targetset_peptidelists, back_populates='peptidelists')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_peptidelists, back_populates='peptidelists')
     maxquantsearches = relationship('MaxQuantSearch', secondary=maxquant_search_peptidelists, back_populates='peptidelists')
+    def remove_files(self, project_root):
+        peptide_list_location = os.path.join(project_root, self.PeptideListPath)
+        print('removing Peptide List at: ' + peptide_list_location)
+        if os.path.isfile(peptide_list_location):
+            os.remove(peptide_list_location)
+        else:
+            print('ERROR! Peptide List  at: '  + peptide_list_location + ' does not exist!')
     def __repr__(self):
         return 'Peptide List can be found at: ' + self.PeptideListPath
-
+    def identifier(self):
+        return self.peptideListName
     def get_peptides(self, project_path):
         peptides = set()
         with open(os.path.join(project_path, self.PeptideListPath), 'r') as f:
@@ -285,6 +381,8 @@ class FilteredNetMHC(BaseTable, AbstractPeptideCollection):
         return peptides
 
 
+    def identifier(self):
+        return self.FilteredNetMHCName
         
 class IndexBase(BaseTable):
     __tablename__ = 'IndexBase'
@@ -330,6 +428,8 @@ class TideIndex(IndexBase):
     __mapper_args__ = {
         'polymorphic_identity': 'tideindex',
     }
+    def identifier(self):
+        return self.TideIndexName
 """
 See the BuildSA section of this webpage for more information: https://omics.pnl.gov/software/ms-gf
 
@@ -350,7 +450,8 @@ class MSGFPlusIndex(IndexBase):
         'polymorphic_identity': 'msgfplusindex',
     }
 
-
+    def identifier(self):
+        return self.MSGFPlusIndexName
 class SearchBase(BaseTable):
     __tablename__ = 'SearchBase'
     idSearch = Column('idSearch', Integer, primary_key=True)
@@ -362,6 +463,8 @@ class SearchBase(BaseTable):
         'polymorphic_identity': 'searchbase',
         'polymorphic_on': searchType
     }
+    def identifier(self):
+        return self.SearchName
 
 
 class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
@@ -376,7 +479,8 @@ class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = maxquant_search_filteredNetMHC, back_populates = 'maxquantsearches')
     peptidelists = relationship('PeptideList', secondary= maxquant_search_peptidelists, back_populates = 'maxquantsearches')
     targetsets = relationship('TargetSet', secondary=maxquant_search_targetset, back_populates='maxquantsearches')
-    
+
+
     def get_peptides(self, project_path):
         peptides_location = os.path.join(project_path, self.Path, 'combined', 'txt', 'peptides.txt')
         parser_object = MaxQuantPeptidesParser(peptides_location)
@@ -407,6 +511,8 @@ class MSGFPlusModificationFile(BaseTable):
     idMSGFPlusModificationFile = Column('idMSGFPlusModificationFile', Integer, primary_key=True)
     MSGFPlusModificationFileName = Column('MSGFPlusModificationFileName', String, unique=True)
     MSGFPlusModificationFilePath = Column('MSGFPlusModificationFilePath', String, unique=True)
+    def identifier(self):
+        return self.MSGFPlusModificationFileName
 """
 See "MSGF+ Parameters" section of this: https://omics.pnl.gov/software/ms-gf. 
 
@@ -440,6 +546,13 @@ class MSGFPlusSearch(SearchBase):
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplussearch',
     }
+    def remove_files(self, project_root):
+        result_folder_location = os.dirname(os.path.join(project_root, self.resultFilePath))
+        print('removing MSGF+ Search results at: ' + result_folder_location)
+        if os.path.isdir(result_folder_location):
+            shutil.rmtree(result_folder_location)
+        else:
+            print('ERROR! MSGF+ result folder: '  + result_folder_location + ' does not exist!')
 
 class QValueBase(BaseTable):
     __tablename__ = 'QValueBase'
@@ -453,6 +566,8 @@ class QValueBase(BaseTable):
         'polymorphic_identity': 'qvaluebase',
         'polymorphic_on': QValueType
     }
+
+
 
 
 class MSGFPlusQValue(QValueBase):
@@ -477,10 +592,11 @@ class AssignConfidence(QValueBase):
     combine_charge_states = Column(String)
     combined_modified_peptides = Column(String)
 
-
     __mapper_args__ = {
         'polymorphic_identity': 'assignconfidence',
     }
+    def identifier(self):
+        return self.AssignConfidenceName
 
 
     
@@ -496,6 +612,8 @@ class Percolator(QValueBase):
     __mapper_args__ = {
         'polymorphic_identity': 'percolator',
     }
+    def identifier(self):
+        return self.PercolatorName
 
     
 
@@ -508,6 +626,10 @@ class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue'))
     QValue = relationship('QValueBase', back_populates='filteredSearchResults')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
+
+    def identifier(self):
+        return self.filteredSearchResultName
+    
     def get_peptides(self, project_path):
         peptides = set()
         with open(os.path.join(project_path, self.filteredSearchResultPath), 'r') as f:

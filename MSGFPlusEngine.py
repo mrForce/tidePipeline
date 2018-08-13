@@ -133,7 +133,8 @@ class MSGFPlusEngine(AbstractEngine):
         else:
             rows = self.db_session.query(DB.MSGFPlusSearch).all()
         return rows
-
+        
+    
     def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False):
         #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()

@@ -52,7 +52,8 @@ class Base:
             self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
             self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
 
-    
+
+            
     def get_column_values(self, row_class, column_name):
         rows = self.db_session.query(row_class).all()
         values = []
