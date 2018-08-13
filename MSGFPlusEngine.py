@@ -64,6 +64,7 @@ class MSGFPlusEngine(AbstractEngine):
                 search_name = multistep_search_name + '_' + index_name
                 filtered_name = search_name + '_msgf_filtered'
                 self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory, True)
+                self.db_session.commit()
                 percolator_name = None
                 if percolator_param_file:
                     print('in percolator param file section')
@@ -74,15 +75,16 @@ class MSGFPlusEngine(AbstractEngine):
                     row = self.get_percolator_parameter_file(percolator_param_file)
                     percolator_runner = Runners.PercolatorRunner(self.executables['crux'], self.project_path, row)
                     proposed_percolator_name = search_name + '_percolator'
-                    percolator_names = self.get_column_values(DB.Percolator, Name)
-                    percolator_name = find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
-                    if self.verify_row_existence(DB.Percolator.Name, percolator_name):
+                    percolator_names = self.get_column_values(DB.Percolator, 'PercolatorName')
+                    percolator_name = fileFunctions.find_unique_name(percolator_names, proposed_percolator_name, re.compile(re.escape(proposed_percolator_name) + '-?(?P<version>\d*)'))
+                    if self.verify_row_existence(DB.Percolator.PercolatorName, percolator_name):
                         raise DidNotFindUniquePercolatorNameError(percolator_name)
-                    postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_param_file, percolator_name, True)
+                    postprocessing_object.percolator(search_name, 'msgfplus', percolator_runner, percolator_name, True)
+                    self.db_session.commit()
                     postprocessing_object.filter_q_value_percolator(percolator_name, fdr, filtered_name, True)
-                        
                 else:
                     postprocessing_object.filter_q_value_msgfplus(search_name, fdr, filtered_name, True)
+                self.db_session.commit()
                 filtered_results.append((i, filtered_name))
                 if i < len(msgfplus_index_names) - 1:
                     if percolator_param_file:
@@ -94,6 +96,7 @@ class MSGFPlusEngine(AbstractEngine):
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
                     self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf', True)
+                    self.db_session.commit()
                     temp_file.close()
             rows = []
             iterativerun_row = DB.MSGFPlusIterativeRun(MSGFPlusIterativeRunName = multistep_search_name, fdr = str(fdr), num_steps = len(msgfplus_index_names), mgf = mgf_row)
@@ -105,7 +108,7 @@ class MSGFPlusEngine(AbstractEngine):
                 iterativerun_row.MSGFPlusIterativeFilteredSearchAssociations.append(association_row)
                 rows.append(association_row)
             self.db_session.add_all(rows)
-            self.db_session.commit()
+            #self.db_session.commit()
 
     def list_search(self, mgf_name = None, index_name=None):
         """
@@ -119,7 +122,7 @@ class MSGFPlusEngine(AbstractEngine):
             else:
                 raise MGFRowDoesNotExistError(mgf_name)
         if index_name:
-            msgf_index_row = self.db_sesion.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = index_name).first()
+            msgf_index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = index_name).first()
             if msgf_index_row:
                 filter_args['idMSGFPlusIndex'] = msgf_index_row.idMSGFPlusIndex
             else:
@@ -189,5 +192,5 @@ class MSGFPlusEngine(AbstractEngine):
         row.MSGFPlusIndexName = index_name
         row.MSGFPlusIndexPath = os.path.join(storage_dir, fasta_name)
         self.db_session.add(row)
-        self.db_session.commit()
+        #self.db_session.commit()
     

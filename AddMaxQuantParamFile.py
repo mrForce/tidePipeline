@@ -28,6 +28,6 @@ else:
 
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-project.add_maxquant_param_file(path, name, comment)
+project.add_maxquant_parameter_file(path, name, comment)
 project.end_command_session()
 

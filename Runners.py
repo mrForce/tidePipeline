@@ -97,7 +97,7 @@ class MSGFPlusSearchRunner:
         command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', '1', '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(project_path, output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
-            modification_file_location = os.path.join(project_path, modification_file_row.MSGFPlusModificationFilePath)
+            modification_file_location = os.path.join(project_path, modifications_file_row.MSGFPlusModificationFilePath)
             command.append('-mod')
             command.append(modification_file_location)
             column_args['modificationFile'] = modifications_file_row
@@ -214,7 +214,7 @@ class AssignConfidenceRunner:
         
     @staticmethod
     def convert_cmdline_option_to_column_name(option):
-        converter = {'estimation-method': 'estimation_method', 'score': 'score', 'sidak': sidak, 'top-match-in': 'top_match_in', 'combine-charge-states': 'combine_charge_states', 'combine-modified-peptides': 'combine_modified_peptides'}
+        converter = {'estimation-method': 'estimation_method', 'score': 'score', 'sidak': 'sidak', 'top-match-in': 'top_match_in', 'combine-charge-states': 'combine_charge_states', 'combine-modified-peptides': 'combine_modified_peptides'}
         if option in converter:
             return converter[option]
         else:
@@ -223,7 +223,7 @@ class AssignConfidenceRunner:
     def run_assign_confidence_create_row(self, target_path, output_directory_tide, output_directory_db, assign_confidence_name, tide_search_row, partOfIterativeSearch = False):
         #first, need to create the tide-index command
         command = [self.crux_binary, 'assign-confidence']
-        if self.param_file:
+        if self.param_file_row:
             command.append('--parameter-file')
             command.append(os.path.join(self.project_path, self.param_file_row.Path))
         command.append('--output-dir')
@@ -237,10 +237,12 @@ class AssignConfidenceRunner:
         except subprocess.CalledProcessError:
             raise AssignConfidenceFailedError(' '.join(command))
         column_arguments = {}
+        """
         for k, v in self.assign_confidence_options.items():
             column_name = AssignConfidenceRunner.convert_cmdline_option_to_column_name(k)
             if column_name:
                 column_arguments[column_name] = v
+        """
         if self.param_file_row:
             column_arguments['parameterFile'] = self.param_file_row
         column_arguments['AssignConfidenceOutputPath'] = output_directory_db

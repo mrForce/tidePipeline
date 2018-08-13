@@ -5,6 +5,7 @@ import DB
 import os
 import locale
 import Parsers
+import itertools
 class Error(Exception):
     pass
 
@@ -182,6 +183,7 @@ class PercolatorHandler(AbstractQValueHandler):
         return self.psms
     def get_row(self):
         return self.percolator_row
+
 class Report:
     """
     For a report, we're only working with AssignConfidence for now.

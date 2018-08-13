@@ -40,12 +40,13 @@ for k, v in arguments.items():
     if k and v and k != 'project_folder' and k != 'mgf_name' and k != 'msgfplusindices' and k != 'iterativesearch_name' and k != 'modifications_file' and k != 'memory' and k != 'fdr' and k != 'use_percolator':
         k = k.replace('_', '-')
         good_arguments[k] = v
-postprocessing_object = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
+
 
 
 
 print('going to begin command session')        
 project.begin_command_session()
+postprocessing_object = PostProcessing.PostProcessing(None, None, project)
 if args.use_percolator:
     project.multistep_search(args.mgf_name, args.msgfplusindices, good_arguments, args.iterativesearch_name, args.fdr, postprocessing_object, args.use_percolator, args.modifications_name, args.memory)
 else:

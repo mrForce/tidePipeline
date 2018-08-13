@@ -45,7 +45,7 @@ class MaxQuantEngine(AbstractEngine):
         else:
             assert(False)
         self.db_session.add(new_search_row)
-        self.db_session.commit()
+        #self.db_session.commit()
         
             
     def list_indices(self):

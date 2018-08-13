@@ -180,7 +180,7 @@ class TideEngine(AbstractEngine):
                 iterativerun_row.TideIterativeFilteredSearchAssociations.append(association_row)
                 rows.append(association_row)
             self.db_session.add_all(rows)
-            self.db_session.commit()
+            #self.db_session.commit()
             
     def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options=None, partOfIterativeSearch = False):
         #options doesn't do anything
@@ -197,7 +197,7 @@ class TideEngine(AbstractEngine):
             row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name, partOfIterativeSearch)
 
             self.db_session.add(row)
-            self.db_session.commit()
+            #self.db_session.commit()
         else:
             if mgf_row is None:
                 raise MGFRowDoesNotExistError(mgf_name)
@@ -252,4 +252,4 @@ class TideEngine(AbstractEngine):
         else:
             assert(False)
         self.db_session.add(row)
-        self.db_session.commit()
+        #self.db_session.commit()
