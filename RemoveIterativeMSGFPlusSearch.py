@@ -22,14 +22,7 @@ project.begin_command_session()
 
 row = project.get_msgfplusiterativesearch_row(args.name)
 remover = RowRemoval.RowRemoval(project.db_session, row, project_folder)
-message = remover.get_deletion_message()
-print(message)
-while True:
-    response = input('Do you want to make the changes show above? (y/n)')
-    if response == 'y':
-        break
-    elif response == 'n':
-        sys.exit(0)
-remover.delete()
+remover.prompt_user()
+
 project.end_command_session()
 
