@@ -74,6 +74,7 @@ class PostProcessing(Base):
         return self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = name).first()
     def get_msgfplusiterativesearch_row(self, name):
         return self.db_session.query(DB.MSGFPlusIterativeRun).filter_by(MSGFPlusIterativeRunName = name).first()
+
     def verify_filtered_search_result(self, name):
         row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
         if row:

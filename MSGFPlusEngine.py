@@ -13,7 +13,11 @@ class MSGFPlusEngine(AbstractEngine):
     def list_multistep_search(self):
         rows = self.db_session.query(DB.MSGFPlusIterativeRun).all()
         return rows
-    
+    def get_msgfplus_search(self, name):
+        row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
+        if row is None:
+            raise MSGFPlusSearchRowDoesNotExistError(name)
+        return row
 
     def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, percolator_param_file=False, modifications_name = None, memory = None):
         """

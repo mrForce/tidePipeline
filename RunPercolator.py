@@ -3,6 +3,7 @@ import Runners
 import argparse
 import sys
 import os
+import DB
 parser = argparse.ArgumentParser(description='Run percolator')
 
 parser.add_argument('project_folder', help='The location of the project folder')
