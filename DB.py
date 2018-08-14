@@ -585,7 +585,7 @@ class AssignConfidence(QValueBase):
 class Percolator(QValueBase):
     __tablename__ = 'Percolator'
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
-    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch'))
+    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch', ondelete='CASCADE'))
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
@@ -606,7 +606,7 @@ class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
     filteredSearchResultPath = Column('filteredSearchResultPath', String)
     q_value_threshold = Column('q_value_threshold', Float)
-    idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue'))
+    idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue', ondelete='CASCADE'))
     QValue = relationship('QValueBase', back_populates='filteredSearchResults')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
 
