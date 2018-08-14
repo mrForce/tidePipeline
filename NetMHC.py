@@ -104,7 +104,7 @@ def call_netmhc(netmhc_location, hla, peptide_file_path, output_path):
     num_threads = 2
     threads = []
     list_lock = threading.Lock()
-    def progress(num_runs_total, start_time, num_runs_left):
+    def _progress(num_runs_total, start_time, num_runs_left):
         progress = 100.0*(num_runs_total - num_runs_left)/num_runs_total
         time_taken = time.time() - start_time
         if num_runs_left > 0 and num_runs_left < num_runs_total:
@@ -116,7 +116,7 @@ def call_netmhc(netmhc_location, hla, peptide_file_path, output_path):
             return 'Starting'
     start_time = time.time()
     for t in range(0, num_threads):
-        thread = NetMHCRunner(netmhc_list, list_lock, functools.partial(progress, num_runs, start_time))
+        thread = NetMHCRunner(netmhc_list, list_lock, functools.partial(_progress, num_runs, start_time))
         threads.append(thread)
     for t in threads:
         t.start()

@@ -22,7 +22,7 @@ class TideEngine(AbstractEngine):
             else:
                 raise MGFRowDoesNotExistError(mgf_name)
         if tide_index_name:
-            tide_index_row = self.db_sesion.query(DB.TideIndex).filter_by(TideIndexName = tide_index_name).first()
+            tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = tide_index_name).first()
             if tide_index_row:
                 filter_args['idTideIndex'] = tide_index_row.idTideIndex
             else:
@@ -127,7 +127,7 @@ class TideEngine(AbstractEngine):
                 filtered_name = peptide_identifier_name + '_filtered'
                 if need_search:
                     if search_param_file:
-                        row = project.get_tide_search_parameter_file(args.param_file)
+                        row = self.get_tide_search_parameter_file(search_param_file)
                         assert(row is not None)
                         search_runner = Runners.TideSearchRunner(crux_location, self.project_path, row)
                     else:

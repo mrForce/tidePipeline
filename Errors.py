@@ -17,6 +17,9 @@ ParameterFileNameMustBeUniqueError = CustomError.factory('ParameterFileNameMustB
 NoSuchPercolatorParameterFileError = CustomError.factory('NoSuchPercolatorParameterFileError', 'There is no percolator parameter file with the name: ', '')
 DidNotFindUniquePercolatorNameError = CustomError.factory('DidNotFindUniquePercolatorNameError', 'Program came up with name for new percolator row: ', ' but it was not actually unique. This is a bug, please report it')
 
+FileMarkedForDeletionDoesNotExistError = CustomError.factory('FileMarkedForDeletionDoesNotExistError', 'File marked for deletion: ', ' does not exist, so it cannot be deleted!')
+DirectoryMarkedForDeletionDoesNotExistError = CustomError.factory('DirectoryMarkedForDeletionDoesNotExistError', 'Directory marked for deletion: ', ' does not exist, so it cannot be deleted!')
+
 class MSGF2PinFailedError(Error):
     def __init__(self, command):
         self.command = command

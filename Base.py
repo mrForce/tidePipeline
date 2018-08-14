@@ -72,7 +72,7 @@ class Base:
 
     #search_type is either 'tide', 'msgfplus', 'msgf', or 'maxquant'
     def verify_search(self, search_type, search_name):
-        searchbase_row = project.db_session.query(DB.SearchBase).filter_by(SearchName = args.search_name).first()
+        searchbase_row = self.db_session.query(DB.SearchBase).filter_by(SearchName = search_name).first()
         if searchbase_row is None:
             return False
         else:
@@ -83,7 +83,7 @@ class Base:
             elif search_type == 'maxquant':
                 return self.verify_row_existence(DB.MaxQuantSearch.idSearch, searchbase_row.idSearch)
             else:
-                raise Errors.InvalidSearchType(search_type)
+                raise InvalidSearchTypeError(search_type)
         
     def add_param_file(self, program, name, path, comment = None):
         if '.' in path and (path.rfind('.') > path.rfind('/') if '/' in path else True):
@@ -93,31 +93,31 @@ class Base:
 
         if program == 'percolator':
             if self.verify_row_existence(DB.PercolatorParameterFile.Name, name):
-                raise Errors.ParameterFileNameMustBeUniqueError(name)
+                raise ParameterFileNameMustBeUniqueError(name)
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'percolator_param_files'), path_file_extension)
             row = DB.PercolatorParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
         elif program == 'assign-confidence':
             if self.verify_row_existence(DB.AssignConfidenceParameterFile.Name, name):
-                raise Errors.ParameterFileNameMustBeUniqueError(name)
+                raise ParameterFileNameMustBeUniqueError(name)
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'assign_confidence_param_files'), path_file_extension)
             row = DB.AssignConfidenceParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
         elif program == 'tide-search':
             if self.verify_row_existence(DB.TideSearchParameterFile.Name, name):
-                raise Errors.ParameterFileNameMustBeUniqueError(name)
+                raise ParameterFileNameMustBeUniqueError(name)
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_search_param_files'), path_file_extension)
             row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
         elif program == 'tide-index':
             if self.verify_row_existence(DB.TideIndexParameterFile.Name, name):
-                raise Errors.ParameterFileNameMustBeUniqueError(name)
+                raise ParameterFileNameMustBeUniqueError(name)
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_index_param_files'), path_file_extension)
             row = DB.TideIndexParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
         elif program == 'maxquant':
             if self.verify_row_existence(DB.MaxQuantParameterFile.Name, name):
-                raise Errors.ParameterFileNameMustBeUniqueError(name)
+                raise ParameterFileNameMustBeUniqueError(name)
             new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'maxquant_param_files'), path_file_extension)
             row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
             self.db_session.add(row)
@@ -420,9 +420,7 @@ class Base:
             mgfs.append(mgf)
         return mgfs
 
-    def add_species(self, species_name):
-        species = DB.Species(SpeciesName = species_name)
-        self.db_session.add(species)
+
     def validate_project_integrity(self, ignore_operation_lock = False):
         """
         Returns true if the project is valid. Otherwise it raises an error. That is:
@@ -563,15 +561,7 @@ class Base:
         for row in self.db_session.query(DB.Command):
             commands.append(row)
         return commands
-    def get_species(self):
-        species = []
-        for row in self.db_session.query(DB.Species):
-            hla = []
-            for hla_row in row.hlas:
-                hla.append(hla_row.HLAName)
-            
-            species.append({'id': row.idSpecies, 'name': row.SpeciesName, 'hla':hla  })
-        return species
+
 
     def list_hla(self):
         query = self.db_session.query(DB.HLA)

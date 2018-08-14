@@ -20,7 +20,7 @@ project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 
 project.begin_command_session()
 row = project.get_msgfplusiterativesearch_row(args.name)
-remover = RowRemoval.RowRemoval(project.session, row, project_folder)
+remover = RowRemoval.RowRemoval(project.db_session, row, project_folder)
 message = remover.get_deletion_message()
 print(message)
 while True:
