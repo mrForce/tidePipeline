@@ -540,7 +540,7 @@ class QValueBase(BaseTable):
     idQValue = Column('idQValue', Integer, primary_key=True)
     QValueType = Column(String(50))
     filteredSearchResults = relationship('FilteredSearchResult', back_populates='QValue', cascade='all,delete')
-    idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch'))
+    idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch', ondelete='CASCADE'))
     searchbase = relationship('SearchBase', back_populates='QValueBases')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     __mapper_args__ = {
@@ -584,13 +584,14 @@ class AssignConfidence(QValueBase):
     
 class Percolator(QValueBase):
     __tablename__ = 'Percolator'
-    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
-    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch'))
+    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue', ondelete='CASCADE'), primary_key=True)
+    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch', ondelete='CASCADE'))
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
     idParameterFile = Column('idParameterFile', Integer, ForeignKey('PercolatorParameterFile.idPercolatorParameterFile'))
     parameterFile = relationship('PercolatorParameterFile')
+
     __mapper_args__ = {
         'polymorphic_identity': 'percolator',
     }

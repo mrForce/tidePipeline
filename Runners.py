@@ -279,6 +279,7 @@ class PercolatorRunner:
         column_arguments['PercolatorOutputPath'] = output_directory_db
         column_arguments['PercolatorName'] = percolator_name
         column_arguments['searchbase'] = tide_search_row
+
         column_arguments['partOfIterativeSearch'] = partOfIterativeSearch
         return DB.Percolator(**column_arguments)
 
