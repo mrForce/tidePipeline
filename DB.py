@@ -430,7 +430,7 @@ class SearchBase(BaseTable):
     __tablename__ = 'SearchBase'
     idSearch = Column('idSearch', Integer, primary_key=True)
     searchType = Column(String(50))
-    QValueBases = relationship('QValueBase', back_populates='searchbase')
+    QValueBases = relationship('QValueBase', back_populates='searchbase', cascade='all,delete')
     SearchName = Column('SearchName', String, unique=True)
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     __mapper_args__ = {
@@ -540,7 +540,7 @@ class QValueBase(BaseTable):
     idQValue = Column('idQValue', Integer, primary_key=True)
     QValueType = Column(String(50))
     filteredSearchResults = relationship('FilteredSearchResult', back_populates='QValue', cascade='all,delete')
-    idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch', ondelete='CASCADE'))
+    idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch'))
     searchbase = relationship('SearchBase', back_populates='QValueBases')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
     __mapper_args__ = {
@@ -584,8 +584,8 @@ class AssignConfidence(QValueBase):
     
 class Percolator(QValueBase):
     __tablename__ = 'Percolator'
-    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue', ondelete='CASCADE'), primary_key=True)
-    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch', ondelete='CASCADE'))
+    idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
+    idSearch = Column('idSearch', Integer, ForeignKey('SearchBase.idSearch'))
     PercolatorName = Column('PercolatorName', String, unique=True)
     PercolatorOutputPath = Column('PercolatorOutputPath', String, unique=True)
     inputParamFilePath = Column('inputParamFilePath', String)
@@ -607,7 +607,7 @@ class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     filteredSearchResultName = Column('filteredSearchResultName', String, unique=True)
     filteredSearchResultPath = Column('filteredSearchResultPath', String)
     q_value_threshold = Column('q_value_threshold', Float)
-    idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue', ondelete='CASCADE'))
+    idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue'))
     QValue = relationship('QValueBase', back_populates='filteredSearchResults')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
 
