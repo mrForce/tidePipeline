@@ -35,13 +35,13 @@ def delete_objects(root, files, directories = []):
         else:
             raise Errors.DirectoryMarkedForDeletionDoesNotExistError(dir_path)
 
-class MSGFPlusIterativeRunMGFAssociation(Base):
+class MSGFPlusIterativeRunMGFAssociation(BaseTable):
     __tablename__ = 'MSGFPlusIterativeRunMGFAssociation'
     msgfiterativerun_id = Column('msgfiterativerun_id', ForeignKey('MSGFPlusIterativeRun.idMSGFPlusIterativeRun'), primary_key=True)
     mgf_id = Column('mgf_id', ForeignKey('MGFfile.idMGFfile'), primary_key=True)
     mgf = relationship('MGFfile', cascade='all,delete')
 
-class TideIterativeRunMGFAssociation(Base):
+class TideIterativeRunMGFAssociation(BaseTable):
     __tablename__ = 'TideIterativeRunMGFAssociation'
     tideiterativerun_id = Column('tideiterativerun_id', ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True)
     mgf_id = Column('mgf_id', ForeignKey('MGFfile.idMGFfile'), primary_key=True)
@@ -75,7 +75,6 @@ maxquant_search_targetset = Table('maxquant_search_targetset', BaseTable.metadat
 msgfplus_index_targetset = Table('msgfplus_index_targetset', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key = True), Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key=True))
 
 targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
-
 targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
