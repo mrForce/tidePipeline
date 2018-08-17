@@ -35,17 +35,25 @@ def delete_objects(root, files, directories = []):
         else:
             raise Errors.DirectoryMarkedForDeletionDoesNotExistError(dir_path)
 
-class MSGFPlusIterativeRunMGFAssociation(BaseTable):
-    __tablename__ = 'MSGFPlusIterativeRunMGFAssociation'
-    msgfiterativerun_id = Column('msgfiterativerun_id', ForeignKey('MSGFPlusIterativeRun.idMSGFPlusIterativeRun'), primary_key=True)
+
+"""
+This links an iterative search with the MGF files it created
+"""        
+
+
+class IterativeRunMGFAssociation(BaseTable):
+    __tablename__ = 'IterativeRunMGFAssociation'
+    iterativerun_id = Column('iterativerun_id', ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True)
     mgf_id = Column('mgf_id', ForeignKey('MGFfile.idMGFfile'), primary_key=True)
     mgf = relationship('MGFfile', cascade='all,delete')
 
-class TideIterativeRunMGFAssociation(BaseTable):
-    __tablename__ = 'TideIterativeRunMGFAssociation'
-    tideiterativerun_id = Column('tideiterativerun_id', ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True)
-    mgf_id = Column('mgf_id', ForeignKey('MGFfile.idMGFfile'), primary_key=True)
-    mgf = relationship('MGFfile', cascade='all,delete')
+class IterativeRunSearchAssociation(BaseTable):
+    __tablename__ = 'IterativeRunSearchAssociation'
+    iterativerun_id = Column('iterativerun_id', ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True)
+    search_id = Column('search_id', ForeignKey('SearchBase.idSearch'), primary_key=True)
+    search = relationship('SearchBase', cascade='all,delete')
+
+
 
 
 
@@ -78,39 +86,51 @@ targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata,
 targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
 
 
+ 
 
 
-class TideIterativeFilteredSearchAssociation(BaseTable):
-    __tablename__ = 'TideIterativeFilteredSearchAssociation'
-    tideiterative_id = Column(Integer, ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True)
+class IterativeFilteredSearchAssociation(BaseTable):
+    __tablename__ = 'IterativeFilteredSearchAssociation'
+    iterative_id = Column(Integer, ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True)
     filteredsearch_id = Column(Integer, ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True)
     step = Column('step', Integer)
     filteredsearch_result = relationship('FilteredSearchResult', cascade='all,delete')
 
     
 
-class MSGFPlusIterativeFilteredSearchAssociation(BaseTable):
-    __tablename__ = 'MSGFPlusIterativeFilteredSearchAssociation'
-    msgfplusiterative_id = Column(Integer, ForeignKey('MSGFPlusIterativeRun.idMSGFPlusIterativeRun'), primary_key=True)
-    filteredsearch_id = Column(Integer, ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True)
-    step = Column('step', Integer)
-    filteredsearch_result = relationship('FilteredSearchResult', cascade='all,delete')
     
+class IterativeSearchRun(BaseTable):
+    __tablename__ = 'IterativeSearchRun'
+    idIterativeSearchRun = Column('idIterativeSearchRun', Integer, primary_key=True)
+    IterativeSearchRunName = Column('IterativeSearchRunName', String, unique=True)
+    searchType = Column(String(50))
+    IterativeFilteredSearchAssociations = relationship('IterativeFilteredSearchAssociation', cascade='all,delete')
+    IterativeRunMGFAssociations = relationship('IterativeRunMGFAssociations', cascade='all,delete')
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'iterativesearch',
+        'polymorphic_on': searchType
+    }
+    def identifier(self):
+        return self.IterativeSearchRunName
 
 
 
-class MSGFPlusIterativeRun(BaseTable, AbstractPeptideCollection):
+class MSGFPlusIterativeRun(IterativeSearchRun, AbstractPeptideCollection):
     __tablename__ = 'MSGFPlusIterativeRun'
-    idMSGFPlusIterativeRun = Column('idMSGFPlusIterativeRun', Integer, primary_key=True)
-    MSGFPlusIterativeRunName = Column('MSGFPlusIterativeRunName', String, unique=True)
+    idIterativeSearchRun = Column(Integer, ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True, autoincrement=True)
+#    MSGFPlusIterativeRunName = Column('MSGFPlusIterativeRunName', String, unique=True)
     fdr = Column('fdr', String)
     num_steps = Column('num_steps', Integer)
     MSGFPlusIterativeFilteredSearchAssociations = relationship('MSGFPlusIterativeFilteredSearchAssociation', cascade='all,delete')
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGFfile')
     MGFAssociations = relationship('MSGFPlusIterativeRunMGFAssociation', cascade='all, delete')
-    def identifier(self):
-        return self.MSGFPlusIterativeRunName
+
+    __mapper_args = {
+        'polymorphic_identity': 'msgf'
+    }
+
     def get_peptides(self, project_path):
         associations = self.MSGFPlusIterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
@@ -118,22 +138,27 @@ class MSGFPlusIterativeRun(BaseTable, AbstractPeptideCollection):
         for row in associations:
             peptide_set_list.append(row.filteredsearch_result.get_peptides(project_path))
         return set([item for subset in peptide_set_list for item in subset])
-class TideIterativeRun(BaseTable, AbstractPeptideCollection):
+
+
+
+        
+class TideIterativeRun(IterativeSearchRun, AbstractPeptideCollection):
     __tablename__ = 'TideIterativeRun'
-    idTideIterativeRun = Column('idTideIterativeRun', Integer, primary_key=True)
-    TideIterativeRunName = Column('TideRunName', String, unique=True)
+    idIterativeSearchRun = Column(Integer, ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True, autoincrement=True)
     fdr = Column('fdr', String)
     PeptideIdentifierName = Column('PeptideIdentifierName', String)
     num_steps = Column('num_steps', Integer)
-    TideIterativeFilteredSearchAssociations = relationship('TideIterativeFilteredSearchAssociation', cascade='all,delete')
+    
     """
     mgf is the mgf we started with
     """
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGFfile')
-    MGFAssociations = relationship('MSGFPlusIterativeRunMGFAssociation', cascade='all, delete')
-    def identifier(self):
-        return self.TideIterativeRunName
+    __mapper_args__ = {
+        'polymorphic_identity': 'tide'
+    }
+
+
     def get_peptides(self, project_path):
         associations = self.TideIterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
@@ -486,6 +511,8 @@ class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
     __mapper_args__ = {
         'polymorphic_identity': 'maxquantsearch',
     }
+
+
     
 class TideSearch(SearchBase):
     __tablename__ = 'TideSearch'
@@ -506,7 +533,10 @@ class TideSearch(SearchBase):
     }
     def remove_files(self, project_root):
         delete_objects(project_root, [], [os.path.dirname(self.targetPath)])
-
+    def is_valid(self):
+        """
+        A Tide search is valid if the tide index exists and is valid, the parameter file exists and is valid, the MGF exists and is valid. Additionally, if it was part of an iterative search (that is, partOfIterativeSearch is true), it must be linked to 
+        """
     
 class MSGFPlusModificationFile(BaseTable):
     __tablename__ = 'MSGFPlusModificationFile'

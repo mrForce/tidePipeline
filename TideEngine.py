@@ -44,7 +44,7 @@ class TideEngine(AbstractEngine):
     def multistep_search(self, mgf_name, tide_index_names, search_param_file, multistep_search_name, fdr, peptide_identifier, param_file, postprocessing_object):
         assert(peptide_identifier in ['percolator', 'assign-confidence'])
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
-        multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(TideIterativeRunName = multistep_search_name).first()
+        multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(IterativeSearchRunName = multistep_search_name).first()
         crux_location = self.executables['crux']
 
         if mgf_row and (multistep_search_row is None):
@@ -171,7 +171,7 @@ class TideEngine(AbstractEngine):
                     self.add_mgf_file(temp_file.name, multistep_search_name + '_' + tide_index_names[i + 1] + '_mgf', True)
                     temp_file.close()
             rows = []
-            iterativerun_row = DB.TideIterativeRun(TideIterativeRunName = multistep_search_name, fdr = str(fdr), PeptideIdentifierName = peptide_identifier, num_steps = len(tide_index_names), mgf = mgf_row)
+            iterativerun_row = DB.TideIterativeRun(IterativeSearchRunName = multistep_search_name, fdr = str(fdr), PeptideIdentifierName = peptide_identifier, num_steps = len(tide_index_names), mgf = mgf_row)
             rows.append(iterativerun_row)
             for step, filtered_name in filtered_results:
                 filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_name).first()

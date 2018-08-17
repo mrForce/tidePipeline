@@ -24,7 +24,7 @@ class MSGFPlusEngine(AbstractEngine):
         percolator_param_file is False if we want to use the Q-values calculated by MSGF+. percolator_param_file should be a string with the name of a Percolator parameter file if we want to use Percolator for calculating Q-values
         """
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
-        multistep_search_row = self.db_session.query(DB.MSGFPlusIterativeRun).filter_by(MSGFPlusIterativeRunName = multistep_search_name).first()
+        multistep_search_row = self.db_session.query(DB.MSGFPlusIterativeRun).filter_by(IterativeSearchRunName = multistep_search_name).first()
         msgf_location = self.executables['msgfplus']
         search_runner = Runners.MSGFPlusSearchRunner(msgfplus_search_options, msgf_location)
         if mgf_row and (multistep_search_row is None):
@@ -103,7 +103,7 @@ class MSGFPlusEngine(AbstractEngine):
                     self.db_session.commit()
                     temp_file.close()
             rows = []
-            iterativerun_row = DB.MSGFPlusIterativeRun(MSGFPlusIterativeRunName = multistep_search_name, fdr = str(fdr), num_steps = len(msgfplus_index_names), mgf = mgf_row)
+            iterativerun_row = DB.MSGFPlusIterativeRun(IterativeSearchRunName = multistep_search_name, fdr = str(fdr), num_steps = len(msgfplus_index_names), mgf = mgf_row)
             rows.append(iterativerun_row)
             for step, filtered_name in filtered_results:
                 filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_name).first()
