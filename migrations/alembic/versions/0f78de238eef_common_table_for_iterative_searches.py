@@ -7,13 +7,39 @@ Create Date: 2018-08-17 14:45:12.540349
 """
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy import sessionmaker, relationship
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_engine, Float, BLOB, DateTime, Boolean
 
 # revision identifiers, used by Alembic.
 revision = '0f78de238eef'
 down_revision = 'e3c40c09577d'
 branch_labels = None
 depends_on = None
+
+
+
+BaseTable = declarative_base()
+
+class SearchBase(BaseTable):
+    __tablename__ = 'SearchBase'
+    idSearch = Column('idSearch', Integer, primary_key=True)
+    searchType = Column(String(50))
+    QValueBases = relationship('QValueBase', back_populates='searchbase', cascade='all,delete')
+    SearchName = Column('SearchName', String, unique=True)
+
+class QValueBase(BaseTable):
+    __tablename__ = 'QValueBase'
+    idQValue = Column('idQValue', Integer, primary_key=True)
+    idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch'))
+    searchbase = relationship('SearchBase', back_populates='QValueBases')
+
+class FilteredSearchResult(BaseTable):
+    __tablename__ = 'FilteredSearchResult'
+    idFilteredSearchResult = Column('idFilteredSearchResult', Integer, primary_key=True)
+    idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue'))
+    QValue = relationship('QValueBase', back_populates='filteredSearchResults')
+
 
 
 def upgrade():
@@ -47,7 +73,9 @@ def upgrade():
     sa.ForeignKeyConstraint(['iterative_id'], ['IterativeSearchRun.idIterativeSearchRun'], ),
     sa.PrimaryKeyConstraint('iterative_id', 'filteredsearch_id')
     )
-
+    bind = op.get_bind()
+    Session = sessionmaker(bind=bind)
+    session = Session()
     iterative_run_mgf_association_inserts = []
     iterative_run_search_association_inserts = []
     iterative_filtered_search_association_inserts = []
@@ -55,21 +83,86 @@ def upgrade():
 
     tide_iterative_run = sa.Table('TideIterativeRun', metadata, sa.Column('idTideIterativeRun', sa.Integer, primary_key=True), sa.Column('TideIterativeRunName', sa.String))
     msgf_iterative_run = sa.Table('MSGFPlusIterativeRun', metadata, sa.Column('idMSGFPlusIterativeRun', sa.Integer, primary_key=True), sa.Column('MSGFPlusIterativeRunName', sa.String))
+    msgf_iterative_run_mgf_association = sa.Table('MSGFPlusIterativeRunMGFAssociation', metadata, sa.Column('msgfiterativerun_id', sa.Integer, sa.ForeignKey('MSGFPlusIterativeRun.idMSGFPlusIterativeRun'), primary_key=True), sa.Column('mgf_id', sa.Integer, sa.ForeignKey('MGFfile.idMGFfile', primary_key=True)))
+    tide_iterative_run_mgf_association = sa.Table('TideIterativeRunMGFAssociation', metadata, sa.Column('tideiterativerun_id', sa.Integer, sa.ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True), sa.Column('mgf_id', sa.Integer, sa.ForeignKey('MGFfile.idMGFfile', primary_key=True)))
+    msgf_iterative_run_filteredsearch_association = sa.Table('MSGFPlusIterativeFilteredSearchAssociation', metadata, sa.Column('msgfplusiterative_id', sa.Integer, sa.ForeignKey('MSGFPlusIterativeRun.idMSGFPlusIterativeRun'), primary_key=True), sa.Column('filteredsearch_id', sa.Integer, sa.ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True), sa.Column('step', sa.Integer))
+
+    tide_iterative_filteredsearch_association = sa.Table('TideIterativeFilteredSearchAssociation', metadata, sa.Column('tideiterative_id', sa.Integer, sa.ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True), sa.Column('filteredsearch_id', sa.Integer, sa.ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True), sa.Column('step', sa.Integer))
+    
     max_id = 0
     for row in connection.execute(sa.select([tide_iterative_run])):
         if row.idTideIterativeRun > max_id:
             max_id = row.idTideIterativeRun
-
-    new_id = max_id + 1 
+            
     """
-    Assign new id's to the rows in MSGFPlusIterativeRun.
-
-    Then, merge MSGFPlusIterativeRunMGFAssociation and TideIterativeRunMGFAssociation into IterativeRunMGFAssociation keeping the new IDs in mind
-
-    Then, merge TideIterativeFilteredSearchAssociation and MSGFPlusIterativeFilteredSearchAssociation into IterativeFilteredSearchAssociation
-
-    Then, create IterativeRunSearchAssociation. This links IterativeSearchRun with the searches in it.
+    Assign new IDs to the rows in MSGFPlusIterativeRun. Change the IDs in MSGFPlusIterativeRunMGFAssociation and MSGFPlusIterativeFilteredSearchAssociation
     """
+    new_id = max_id + 1
+    for row in connection.execute(sa.select([msgf_iterative_run])):
+        old_id = row.idMSGFPlusIterativeRun
+        op.execute(msgf_iterative_run.update().where(msgf_iterative_run.c.idMSGFPlusIterativeRun == old_id).values({'idMSGFPlusIterativeRun': new_id}))
+        op.execute(msgf_iterative_run_mgf_association.update().where(msgf_iterative_run_mgf_association.c.msgfiterativerun_id == old_id).values({'msgfiterativerun_id': new_id}))
+        op.execute(msgf_iterative_run_filteredsearch_association.update().where(msgf_iterative_run_filteredsearch_association.c.msgfiterative_id == old_id).values({'msgfiterative_id': new_id}))
+        new_id += 1
+
+    ids = []
+    for row in connection.execute(sa.select([msgf_iterative_run])):
+        ids.append(row.idMSGFPlusIterativeRun)
+        new_row = {'iterativerun_id': row.idMSGFPlusIterativeRun, 'mgf_id': row.mgf_id}
+        iterative_run_mgf_association_inserts.append(new_row)
+    for row in connection.execute(sa.select([tide_iterative_run])):
+        ids.append(row.idTideIterativeRun)
+        new_row = {'iterativerun_id': row.idTideIterativeRun, 'mgf_id': row.mgf_id}
+        iterative_run_mgf_association_inserts.append(new_row)
+    #assert no repeats in ids between the two tables
+    assert(len(ids) == len(set(ids)))
+    """
+    Merge MSGFPlusIterativeRunMGFAssociation and TideIterativeRunMGFAssociation into IterativeRunMGFAssociation
+    """
+    iterative_run_mgf_association = sa.Table('IterativeRunMGFAssociation', metadata, sa.Column('iterativerun_id', sa.Integer, sa.ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True), sa.Column('mgf_id', sa.Integer, sa.ForeignKey('MGFfile.idMGFfile'), primary_key=True))
+    op.bulk_insert(iterative_run_mgf_association, iterative_run_mgf_association_inserts)
+
+    
+    iterative_filtered_search_association = sa.Table('IterativeFilteredSearchAssociation', metadata, sa.Column('iterative_id', sa.Integer, sa.ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True), sa.Column('filteredsearch_id', sa.Integer, sa.ForeignKey('FilteredSearchResult.idFilteredSearchResult'), primary_key=True), sa.Column('step', sa.Integer))
+    
+    ids = []
+    for row in connection.execute(sa.select([msgf_iterative_run_filteredsearch_association])):
+        ids.append(row.msgfplusiterative_id)
+        new_row = {'iterative_id': row.msgfplusiterative_id, 'filteredsearch_id': row.filteredsearch_id}
+        iterative_filtered_search_association_inserts.append(new_row)
+    for row in connection.execute(sa.select([tide_iterative_filteredsearch_association])):
+        ids.append(row.tideiterative_id)
+        new_row = {'iterative_id': row.tideiterative_id, 'filteredsearch_id': row.filteredsearch_id}
+        iterative_filtered_search_association_inserts.append(new_row)
+    assert(len(ids) == len(set(ids)))
+    op.bulk_insert(iterative_filtered_search_association, iterative_filtered_search_association_inserts)
+    
+    
+    """
+    Create IterativeRunSearchAssociation. This links IterativeSearchRun with the searches in it.
+    """
+    iterative_run_search_association = sa.Table('IterativeRunSearchAssociation', metadata, sa.Column('iterativerun_id', sa.Integer, sa.ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True), sa.Column('search_id', sa.Integer, sa.ForeignKey('SearchBase.idSearch'), primary_key=True))
+
+    
+    for row in connection.execute(sa.select([msgf_iterative_run_filteredsearch_association])):
+        iterative_id = row.msgfplusiterative_id
+        filtered_id = row.filteredsearch_id
+        filtered_row = session.query(FilteredSearchResult).filter_by(idFilteredSearchResult = filtered_id).first()
+        assert(filtered_row)
+        qvalue_row = filtered_row.QValue
+        search_row = qvalue_row.searchbase
+        iterative_search_run_inserts.append({'iterativerun_id': iterative_id, 'search_id': search_row.idSearchBase})
+    for row in connection.execute(sa.select([tide_iterative_filteredsearch_association])):
+        iterative_id = row.tideiterative_id
+        filtered_id = row.filteredsearch_id
+        filtered_row = session.query(FilteredSearchResult).filter_by(idFilteredSearchResult = filtered_id).first()
+        assert(filtered_row)
+        qvalue_row = filtered_row.QValue
+        search_row = qvalue_row.searchbase
+        iterative_search_run_inserts.append({'iterativerun_id': iterative_id, 'search_id': search_row.idSearchBase})
+    
+    op.bulk_insert(iterative_run_search_association, iterative_search_run_inserts)
+    
     op.drop_table('MSGFPlusIterativeRunMGFAssociation')
     op.drop_table('TideIterativeRunMGFAssociation')
     op.drop_table('TideIterativeFilteredSearchAssociation')
