@@ -61,6 +61,10 @@ class MSGFPlusEngine(AbstractEngine):
             new_mgf_name = mgf_name
             mgf_parser = Parsers.MGFParser(mgf_location)
             filtered_results = []
+            #search_names is a list of strings, each of which is the name of a search row used in the iterative search
+            search_names = []
+            #created_mgf_names is a list of strings, each of which is the name of an MGF row created by the iterative search
+            created_mgf_names = []
             for i in range(0, len(msgfplus_index_names)):
                 index_name = msgfplus_index_names[i]
                 if i > 0:
@@ -69,6 +73,8 @@ class MSGFPlusEngine(AbstractEngine):
                 filtered_name = search_name + '_msgf_filtered'
                 self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory, True)
                 self.db_session.commit()
+                search_names.append(search_name)
+                
                 percolator_name = None
                 if percolator_param_file:
                     print('in percolator param file section')
@@ -100,6 +106,7 @@ class MSGFPlusEngine(AbstractEngine):
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
                     self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf', True)
+                    created_mgf_names.append(multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf')
                     self.db_session.commit()
                     temp_file.close()
             rows = []
@@ -107,9 +114,21 @@ class MSGFPlusEngine(AbstractEngine):
             rows.append(iterativerun_row)
             for step, filtered_name in filtered_results:
                 filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_name).first()
-                association_row = DB.MSGFPlusIterativeFilteredSearchAssociation(step = step)
+                association_row = DB.IterativeFilteredSearchAssociation(step = step)
                 association_row.filteredsearch_result = filtered_row
-                iterativerun_row.MSGFPlusIterativeFilteredSearchAssociations.append(association_row)
+                iterativerun_row.IterativeFilteredSearchAssociations.append(association_row)
+                rows.append(association_row)
+            for search_name in search_names:
+                search_row = self.db_session.query(DB.SearchBase).filter_by(SearchName = search_name).first()
+                association_row = DB.IterativeRunSearchAssociation()
+                association_row.search = search_row
+                association_row.iterativerun = iterativerun_row
+                rows.append(association_row)
+            for mgf_name in created_mgf_names:
+                mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+                association_row = DB.IterativeRunMGFAssociation()
+                association_row.mgf = mgf_row
+                association_row.iterativerun = iterativerun_row
                 rows.append(association_row)
             self.db_session.add_all(rows)
             #self.db_session.commit()

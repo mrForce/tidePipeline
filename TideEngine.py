@@ -98,6 +98,8 @@ class TideEngine(AbstractEngine):
             new_mgf_name = mgf_name
             mgf_parser = Parsers.MGFParser(mgf_location)
             filtered_results = []
+            search_names = []
+            created_mgf_names = []
             for i in range(0, len(tide_index_names)):
                 index_name = tide_index_names[i]
                 index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = index_name).first()
@@ -125,6 +127,7 @@ class TideEngine(AbstractEngine):
                     search_name = multistep_search_name + '_' + index_name
                 peptide_identifier_name = multistep_search_name + '_' + index_name + '_' + peptide_identifier
                 filtered_name = peptide_identifier_name + '_filtered'
+                
                 if need_search:
                     if search_param_file:
                         row = self.get_tide_search_parameter_file(search_param_file)
@@ -133,6 +136,7 @@ class TideEngine(AbstractEngine):
                     else:
                         search_runner = Runners.TideSearchRunner(crux_location, self.project_path)
                     self.run_search(new_mgf_name, index_name, search_runner, search_name, None, True)
+                    search_names.append(search_name)
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
                     if param_file:
@@ -169,15 +173,28 @@ class TideEngine(AbstractEngine):
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
                     self.add_mgf_file(temp_file.name, multistep_search_name + '_' + tide_index_names[i + 1] + '_mgf', True)
+                    created_mgf_names.append(multistep_search_name + '_' + tide_index_names[i + 1] + '_mgf')
                     temp_file.close()
             rows = []
             iterativerun_row = DB.TideIterativeRun(IterativeSearchRunName = multistep_search_name, fdr = str(fdr), PeptideIdentifierName = peptide_identifier, num_steps = len(tide_index_names), mgf = mgf_row)
             rows.append(iterativerun_row)
             for step, filtered_name in filtered_results:
                 filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_name).first()
-                association_row = DB.TideIterativeFilteredSearchAssociation(step = step)
+                association_row = DB.IterativeFilteredSearchAssociation(step = step)
                 association_row.filteredsearch_result = filtered_row
-                iterativerun_row.TideIterativeFilteredSearchAssociations.append(association_row)
+                iterativerun_row.FilteredSearchAssociations.append(association_row)
+                rows.append(association_row)
+            for search_name in search_names:
+                search_row = self.db_session.query(DB.SearchBase).filter_by(SearchName = search_name).first()
+                association_row = DB.IterativeRunSearchAssociation()
+                association_row.search = search_row
+                association_row.iterativerun = iterativerun_row
+                rows.append(association_row)
+            for mgf_name in created_mgf_names:
+                mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+                association_row = DB.IterativeRunMGFAssociation()
+                association_row.mgf = mgf_row
+                association_row.iterativerun = iterativerun_row
                 rows.append(association_row)
             self.db_session.add_all(rows)
             #self.db_session.commit()

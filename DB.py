@@ -46,12 +46,13 @@ class IterativeRunMGFAssociation(BaseTable):
     iterativerun_id = Column('iterativerun_id', ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True)
     mgf_id = Column('mgf_id', ForeignKey('MGFfile.idMGFfile'), primary_key=True)
     mgf = relationship('MGFfile', cascade='all,delete')
-
+    iterativerun = relationship('IterativeSearchRun')
 class IterativeRunSearchAssociation(BaseTable):
     __tablename__ = 'IterativeRunSearchAssociation'
     iterativerun_id = Column('iterativerun_id', ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True)
     search_id = Column('search_id', ForeignKey('SearchBase.idSearch'), primary_key=True)
     search = relationship('SearchBase', cascade='all,delete')
+    iterativerun = relationship('IterativeSearchRun')
 
 
 
