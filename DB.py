@@ -105,7 +105,7 @@ class IterativeSearchRun(BaseTable):
     IterativeSearchRunName = Column('IterativeSearchRunName', String, unique=True)
     searchType = Column(String(50))
     IterativeFilteredSearchAssociations = relationship('IterativeFilteredSearchAssociation', cascade='all,delete')
-    IterativeRunMGFAssociations = relationship('IterativeRunMGFAssociations', cascade='all,delete')
+    IterativeRunMGFAssociations = relationship('IterativeRunMGFAssociation', cascade='all,delete')
     
     __mapper_args__ = {
         'polymorphic_identity': 'iterativesearch',
@@ -122,11 +122,8 @@ class MSGFPlusIterativeRun(IterativeSearchRun, AbstractPeptideCollection):
 #    MSGFPlusIterativeRunName = Column('MSGFPlusIterativeRunName', String, unique=True)
     fdr = Column('fdr', String)
     num_steps = Column('num_steps', Integer)
-    MSGFPlusIterativeFilteredSearchAssociations = relationship('MSGFPlusIterativeFilteredSearchAssociation', cascade='all,delete')
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     mgf = relationship('MGFfile')
-    MGFAssociations = relationship('MSGFPlusIterativeRunMGFAssociation', cascade='all, delete')
-
     __mapper_args = {
         'polymorphic_identity': 'msgf'
     }
