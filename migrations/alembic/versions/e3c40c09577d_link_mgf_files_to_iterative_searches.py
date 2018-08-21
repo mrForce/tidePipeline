@@ -54,7 +54,7 @@ def upgrade():
     tide_iterative_mgf_association = sa.Table('TideIterativeRunMGFAssociation', metadata, sa.Column('tideiterativerun_id', sa.Integer, sa.ForeignKey('TideIterativeRun.idTideIterativeRun'), primary_key=True), sa.Column('mgf_id', sa.Integer, sa.ForeignKey('MGFfile.idMGFfile'), primary_key=True))
 
 
-    for row in connection.execute(sa.select([filteredsearch_result])):
+    for row in list(connection.execute(sa.select([filteredsearch_result]))):
         if row.partOfIterativeSearch:
             print('filtered search result name: ' + row.filteredSearchResultName)
             print('row id: ' + str(row.idFilteredSearchResult))
