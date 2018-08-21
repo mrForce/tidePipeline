@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table, Text, create_engine, Float, BLOB, DateTime, Boolean
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
+from sqlalchemy.orm.session import object_session
 import datetime
 from Parsers import MaxQuantPeptidesParser
 import shutil
@@ -24,16 +25,23 @@ class AbstractPeptideCollection(ABC):
 def delete_objects(root, files, directories = []):
     for file_name in files:
         file_path = os.path.join(root, file_name)
+        print('removing file: ' + file_path)
+        """
         if os.path.isfile(file_path):
             os.remove(file_path)
         else:
             raise Errors.FileMarkedForDeletionDoesNotExistError(file_path)
+        """
+
     for dir_name in directories:
         dir_path = os.path.join(root, dir_name)
+        print('removing directory: ' + dir_path)
+        """
         if os.path.isdir(dir_path):
             shutil.rmtree(dir_path)
         else:
             raise Errors.DirectoryMarkedForDeletionDoesNotExistError(dir_path)
+        """
 
 
 """
@@ -156,7 +164,6 @@ class TideIterativeRun(IterativeSearchRun, AbstractPeptideCollection):
         'polymorphic_identity': 'tide'
     }
 
-
     def get_peptides(self, project_path):
         associations = self.TideIterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
@@ -214,7 +221,21 @@ class MGFfile(BaseTable):
         return self.MGFName
     def remove_files(self, project_root):
         delete_objects(project_root, [self.MGFPath])
+    def __prepare_deletion__(self, project_root):
+        self.remove_files(project_root)
 
+    """
+    If partOfIterativeSearch is true, then this was created by an iterative search. Check that it is linked to at least one iterative search
+    """
+    def is_valid(self):
+        if self.partOfIterativeSearch:
+            session = object_session(self)
+            rows = session.query(IterativeRunMGFAssociation).filter_by(mgf_id = self.idMGFfile).all()
+            if rows:
+                return True
+            else:
+                return False
+        return True
 class RAWfile(BaseTable):
     __tablename__ = 'RAWfile'
     idRAWfile = Column('idRAWfile', Integer, primary_key=True)
@@ -438,6 +459,7 @@ class TideIndex(IndexBase):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = tideindex_filteredNetMHC, back_populates = 'tideindices')
     peptidelists = relationship('PeptideList', secondary= tideindex_peptidelists, back_populates = 'tideindices')
     targetsets = relationship('TargetSet', secondary=tideindex_targetset, back_populates='tideindices')
+    searches = relationship('TideSearch', back_populates = 'tideindex', cascade='all,delete')
     __mapper_args__ = {
         'polymorphic_identity': 'tideindex',
     }
@@ -445,6 +467,15 @@ class TideIndex(IndexBase):
         delete_objects(project_root,[],  [os.path.dirname(self.TideIndexPath)])
     def identifier(self):
         return self.TideIndexName
+    def is_valid(self):
+        """
+        If this is used in any searches, at least one must be valid
+        """
+        if self.searches:
+            for search in self.searches:
+                if search.is_valid():
+                    return True
+            return False
 """
 See the BuildSA section of this webpage for more information: https://omics.pnl.gov/software/ms-gf
 
@@ -464,7 +495,12 @@ class MSGFPlusIndex(IndexBase):
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplusindex',
     }
-
+    def is_valid(self):
+        if self.searches:
+            for search in self.searches:
+                if search.is_valid():
+                    return True
+            return False
     def remove_files(self, project_root):
         delete_objects(project_root, [], [os.path.dirname(self.MSGFPlusIndexPath)])
     def identifier(self):
@@ -482,6 +518,14 @@ class SearchBase(BaseTable):
     }
     def identifier(self):
         return self.SearchName
+    def __prepare_deletion__(self, project_root):
+        if len(self.QValueBases):
+            for x in list(self.QValueBases):
+
+                x.__prepare_deletion__(project_root)
+        self.remove_files(project_root)
+
+        
 
 
 
@@ -533,8 +577,18 @@ class TideSearch(SearchBase):
         delete_objects(project_root, [], [os.path.dirname(self.targetPath)])
     def is_valid(self):
         """
-        A Tide search is valid if the tide index exists and is valid, the parameter file exists and is valid, the MGF exists and is valid. Additionally, if it was part of an iterative search (that is, partOfIterativeSearch is true), it must be linked to 
+        A Tide search is valid if the tide index exists, the parameter file exists, the MGF exists. Additionally, if it was part of an iterative search (that is, partOfIterativeSearch is true), it must be linked to at least one iterative search
         """
+        if self.tideindex and  self.parameterFile and self.mgf:
+            if self.partOfIterativeSearch:
+                session = object_session(self)
+                rows = session.query(IterativeRunSearchAssociation).filter_by(search_id = self.idSearch).all()
+                if rows:
+                    return True
+            else:
+                return True
+        return False
+
     
 class MSGFPlusModificationFile(BaseTable):
     __tablename__ = 'MSGFPlusModificationFile'
@@ -581,6 +635,22 @@ class MSGFPlusSearch(SearchBase):
     }
     def remove_files(self, project_root):
         delete_objects(project_root, [], [os.path.dirname(self.resultFilePath)])
+    def is_valid(self):
+        """
+        An MSGF+ search is valid if the MSGF+ index exists, and the MGF exists. Additionally, if it was part of an iterative search (that is, partOfIterativeSearch is true), it must be linked to at least one iterative search
+        """
+        if self.index and self.mgf:
+            print('index and mgf are set')
+            if self.partOfIterativeSearch:
+                session = object_session(self)
+                rows = session.query(IterativeRunSearchAssociation).filter_by(search_id = self.idSearch).all()
+                print('rows: ')
+                print(rows)
+                if rows:
+                    return True
+            else:
+                return True
+        return False
 
 
 class QValueBase(BaseTable):
@@ -595,8 +665,20 @@ class QValueBase(BaseTable):
         'polymorphic_identity': 'qvaluebase',
         'polymorphic_on': QValueType
     }
+    def remove_files(self, project_root):
+        pass
+    def __prepare_deletion__(self, project_root):
+        if self.filteredSearchResults:
+            for x in self.filteredSearchResults:
+                x.__prepare_deletion__(project_root)
 
+        self.remove_files(project_root)
 
+    def is_valid(self):
+        if self.searchbase and self.searchbase.is_valid():
+            return True
+        else:
+            return False
 
 
 class MSGFPlusQValue(QValueBase):
@@ -629,7 +711,8 @@ class AssignConfidence(QValueBase):
     def remove_files(self, project_root):
         delete_objects(project_root, [], [self.AssignConfidenceOutputPath])
 
-    
+
+        
 class Percolator(QValueBase):
     __tablename__ = 'Percolator'
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
@@ -659,6 +742,13 @@ class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     QValue = relationship('QValueBase', back_populates='filteredSearchResults')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
 
+    def is_valid(self):
+        if self.QValue and self.QValue.is_valid():
+            return True
+        else:
+            return False
+    def __prepare_deletion__(self, project_root):
+        self.remove_files(project_root)
     def remove_files(self, project_root):
         delete_objects(project_root, [self.filteredSearchResultPath])
     def identifier(self):

@@ -20,6 +20,12 @@ DidNotFindUniquePercolatorNameError = CustomError.factory('DidNotFindUniquePerco
 FileMarkedForDeletionDoesNotExistError = CustomError.factory('FileMarkedForDeletionDoesNotExistError', 'File marked for deletion: ', ' does not exist, so it cannot be deleted!')
 DirectoryMarkedForDeletionDoesNotExistError = CustomError.factory('DirectoryMarkedForDeletionDoesNotExistError', 'Directory marked for deletion: ', ' does not exist, so it cannot be deleted!')
 
+TideSearchLinkedToMSGFPlusIterativeError = CustomError.factory('TideSearchLinkedToMSGFPlusIterativeError', 'The TideSearch: ', ' is linked to an MSGF+ iterative search')
+
+MSGFPlusSearchLinkedToTideIterativeError = CustomError.factory('MSGFPlusSearchLinkedToTideIterativeError', 'The MSGF+ Search: ', ' is linked to a Tide Iterative Search')
+
+
+
 class MSGF2PinFailedError(Error):
     def __init__(self, command):
         self.command = command
