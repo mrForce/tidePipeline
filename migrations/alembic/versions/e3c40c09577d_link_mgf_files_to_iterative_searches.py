@@ -57,7 +57,7 @@ def upgrade():
     for row in connection.execute(sa.select([filteredsearch_result])):
         if row.partOfIterativeSearch:
             print('filtered search result name: ' + row.filteredSearchResultName)
-
+            print('row id: ' + str(row.idFilteredSearchResult))
             #find the MGFfile that it is linked to by path FilteredSearchResult->QValueBase->SearchBase->MGF
             qvalue_list = list(connection.execute(sa.select([qvaluebase]).where(qvaluebase.c.idQValue == row.idQValueBase)))
             if len(qvalue_list) == 0:
