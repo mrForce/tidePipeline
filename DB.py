@@ -8,6 +8,7 @@ import shutil
 from abc import ABCMeta, abstractmethod, ABC
 import os
 import Errors
+import fileFunctions
 #BaseTable = declarative_base(metaclass=ABCMeta)
 
 class CustomMetaClass(DeclarativeMeta, ABCMeta):
@@ -43,11 +44,62 @@ def delete_objects(root, files, directories = []):
             raise Errors.DirectoryMarkedForDeletionDoesNotExistError(dir_path)
         """
 
+indexbase_contaminantSet = Table('indexbase_contaminantSet', BaseTable.metadata, Column('indexbase_id', ForeignKey('IndexBase.idIndex'), primary_key=True), Column('contaminantset_id', ForeignKey('ContaminantSet.idContaminantSet'), primary_key=True))
 
+maxquantsearch_contaminantSet = Table('maxquantsearch_contaminantSet', BaseTable.metadata, Column('maxquantsearch_id', ForeignKey('MaxQuantSearch.idSearch'), primary_key=True), Column('contaminantset_id', ForeignKey('ContaminantSet.idContaminantSet'), primary_key=True))
+
+
+class ContaminantSet(BaseTable, AbstractPeptideCollection):
+    __tablename__ = "ContaminantSet"
+    idContaminantSet = Column('idContaminantSet', Integer, primary_key=True)
+    contaminantSetName = Column('contaminantSetName', String, unique=True)
+    fasta_file = Column('fasta_file', String, nullable=False)
+    peptide_file = Column('peptide_file', String, nullable=False)
+    _lengths = Column(String, default='')
+    indices = relationship('IndexBase', secondary = indexbase_contaminantSet, back_populates='contaminants')
+    maxquantsearches = relationship('MaxQuantSearch', secondary = maxquantsearch_contaminantSet, back_populates='contaminants')
+    """
+    This assumes we already imported the FASTA file into the project, and peptides_path is where within the project we are supposed to put the peptides
+    """
+    def __init__(self, project_path, fasta_path, peptides_path, lengths):
+        full_path = os.path.join(project_path, fasta_path)
+        self.fasta_file = fasta_path
+        self.peptides_file = peptides_path
+        peptides = []
+        self.lengths = lengths
+        for length in lengths:
+            peptides_of_length = fileFunctions.extract_peptides(full_path, length)
+            peptides.extend(peptides_of_length)
+        uniq_peptides = list(set(peptides))
+        with open(peptides_path, 'w') as f:
+            for peptide in uniq_peptides:
+                f.write(peptide)
+        
+            
+    @property
+    def lengths(self):
+        return [int(x) for x in self._ratings]
+    @lengths.setter
+    def lengths(self, value):
+        if isinstance(value, list):
+            self._ratings = ','.join([int(x) for x in value])
+        elif isinstance(value, int):
+            self._ratings += (',%i' % value)
+        
+
+    def get_peptides(self, project_path):
+        peptides = []
+        lengths = self.lengths()
+        with open(self.peptide_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if len(line) in lengths:
+                    peptides.append(line)
+        return peptides
+                    
 """
 This links an iterative search with the MGF files it created
 """        
-
 
 class IterativeRunMGFAssociation(BaseTable):
     __tablename__ = 'IterativeRunMGFAssociation'
@@ -61,6 +113,7 @@ class IterativeRunSearchAssociation(BaseTable):
     search_id = Column('search_id', ForeignKey('SearchBase.idSearch'), primary_key=True)
     search = relationship('SearchBase', cascade='all,delete')
     iterativerun = relationship('IterativeSearchRun')
+
 
 
 
@@ -422,6 +475,7 @@ class IndexBase(BaseTable):
     __tablename__ = 'IndexBase'
     idIndex = Column('idIndex', Integer, primary_key=True)
     indexType = Column(String(50))
+    contaminants = relationship('ContaminantSet', secondary = indexbase_contaminantSet, back_populates='indices')
     __mapper_args__ = {
         'polymorphic_identity': 'indexbase',
         'polymorphic_on': indexType
@@ -541,7 +595,7 @@ class MaxQuantSearch(SearchBase, AbstractPeptideCollection):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = maxquant_search_filteredNetMHC, back_populates = 'maxquantsearches')
     peptidelists = relationship('PeptideList', secondary= maxquant_search_peptidelists, back_populates = 'maxquantsearches')
     targetsets = relationship('TargetSet', secondary=maxquant_search_targetset, back_populates='maxquantsearches')
-
+    contaminants = relationship('ContaminantSet', secondary = maxquantsearch_contaminantSet, back_populates='maxquantsearches')
 
 
     def remove_files(self, project_root):

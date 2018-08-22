@@ -50,5 +50,5 @@ class MaxQuantEngine(AbstractEngine):
             
     def list_indices(self):
         assert(False)
-    def create_index(self, set_type, set_name, index_runner, index_name, memory=None):
+    def create_index(self, set_type, set_name, index_runner, index_name, contaminants = [], memory=None):
         assert(False)

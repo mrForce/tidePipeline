@@ -16,45 +16,59 @@ class AbstractEngine(Base, metaclass=ABCMeta):
     def list_indices(self):
         pass
     @abstractmethod
-    def create_index(self, set_type, set_name, index_runner, index_name):
+    def create_index(self, set_type, set_name, index_runner, index_name, contaminant_names=[]):
         pass
 
-    def create_fasta_for_indexing(self, set_type, set_name):
+    def create_fasta_for_indexing(self, set_type, set_name, contaminants=False):
         """
         Returns a tuple of the form (fasta_file_location, link_row, temp_files)
         """
         fasta_file_location = ''
         temp_files = []
         link_row = None
+        peptide_files = []
+        if contaminants:
+            for x in contaminants:
+                peptide_files.append(os.path.join(self.project_path, x.peptide_file))
+                
+            
         if set_type == 'TargetSet':
             target_set_name = set_name
             row = self.db_session.query(DB.TargetSet).filter_by(TargetSetName = target_set_name).first()
             if row:
                 link_row = row
                 fasta_file_location = os.path.join(self.project_path, row.TargetSetFASTAPath)
+                return (fasta_file_location, link_row, [])
             else:
                 raise NoSuchTargetSetError(set_name)
         elif set_type == 'FilteredNetMHC':
             row = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = set_name).first()
             if row:
                 link_row = row
-                temp_fasta = tempfile.NamedTemporaryFile(mode='w', suffix='.fasta')
-                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.filtered_path), temp_fasta.name])
-                temp_files.append(temp_fasta)
-                fasta_file_location = temp_fasta.name
+                peptide_files.append(row.filtered_path)
             else:
                 raise NoSuchFilteredNetMHCError(set_name)
         elif set_type == 'PeptideList':
             row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = set_name).first()
             if row:
                 link_row = row
-                temp_fasta = tempfile.NamedTemporaryFile(mode='w', suffix='.fasta')
-                subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', os.path.join(self.project_path, row.PeptideListPath), temp_fasta.name])
-                temp_files.append(temp_fasta)
-                fasta_file_location = temp_fasta.name
+                peptide_files.append(row.PeptideListPath)
             else:
                 raise NoSuchPeptideListError(set_name)
         else:
             assert(False)
+        assert(peptide_files)
+        combined_peptide_file = None
+        if len(peptide_files) > 1:
+            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.txt')
+            subprocess.call(['bash_scripts/combine_and_uniq_files.sh'] + peptide_files + [temp_file.name])
+            temp_files.append(temp_file)
+            combined_peptide_file = temp_file.name
+        else:
+            combined_peptide_file = peptide_files[0]
+        temp_fasta = temp_fasta.NamedTemporaryFile(mode='w', suffix='.fasta')
+        temp_files.append(temp_fasta)
+        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', combined_peptide_file, temp_fasta.name])
+
         return (fasta_file_location, link_row, temp_files)
 

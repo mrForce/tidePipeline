@@ -88,6 +88,13 @@ class Base:
                 return self.verify_row_existence(DB.MaxQuantSearch.idSearch, searchbase_row.idSearch)
             else:
                 raise InvalidSearchTypeError(search_type)
+
+    def add_contaminant_file(self, fasta_path, contaminant_row_name, lengths):
+        directory = self.create_storage_directory('contaminants')
+        shutil.copyfile(fasta_path, os.path.join(directory, 'contaminants.fasta'))
+        #the constructor for ContaminantSet extracts the peptides from the FASTA file and puts them in os.path.join(directory, 'contaminant_peptides.txt')
+        row = DB.ContaminantSet(self.project_path, os.path.join(directory, 'contaminants.fasta'), os.path.join(directory, 'contaminant_peptides.txt'), lengths)
+        self.db_session.add(row)
         
     def add_param_file(self, program, name, path, comment = None):
         if '.' in path and (path.rfind('.') > path.rfind('/') if '/' in path else True):
@@ -601,7 +608,7 @@ class Base:
                 value = config['EXECUTABLES'][key]
                 assert(len(value) > 0)
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search', 'tide_param_files/assign_confidence_param_files', 'tide_param_files/percolator_param_files', 'tide_param_files/tide_search_param_files', 'tide_param_files/tide_index_param_files']
+            subfolders = ['FASTA', 'contaminants', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search', 'tide_param_files/assign_confidence_param_files', 'tide_param_files/percolator_param_files', 'tide_param_files/tide_search_param_files', 'tide_param_files/tide_index_param_files']
             for subfolder in subfolders:
                 os.makedirs(os.path.join(project_path, subfolder))
             shutil.copy(config_location, os.path.join(project_path, 'config.ini'))

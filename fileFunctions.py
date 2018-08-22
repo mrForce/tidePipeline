@@ -40,7 +40,7 @@ def find_unique_name(existing_names, proposed_name, regex, extension_index = Non
     else:
         return proposed_name
                     
-                        
+    
 def copy_file_unique_basename(filepath, destination_folder, file_extension = False):
     #returns the new basename
     if file_extension:

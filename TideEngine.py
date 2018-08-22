@@ -241,13 +241,17 @@ class TideEngine(AbstractEngine):
             indices.append(index)
         return indices
     
-
-
-    def create_index(self, set_type, set_name, tide_index_runner, tide_index_name):
+    def create_index(self, set_type, set_name, tide_index_runner, tide_index_name, contaminant_names=[]):
         """
         tide_index_runner is an instance of the TideIndexRunner class
         """
-        fasta_file_location, link_row, temp_files  = self.create_fasta_for_indexing(set_type, set_name)
+        contaminants = []
+        if contaminant_names:
+            for name in contaminant_names:
+                contaminantSet = self.db_session.query(DB.ContaminantSet).filter_by(contaminantSetName = name).first()
+                assert(contaminantSet)
+                contaminants.append(contaminantSet)
+        fasta_file_location, link_row, temp_files  = self.create_fasta_for_indexing(set_type, set_name, contaminants)
         output_directory_name = str(uuid.uuid4().hex)
         output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         while os.path.isfile(output_directory_path) or os.path.isdir(output_directory_path):
@@ -260,6 +264,8 @@ class TideEngine(AbstractEngine):
         row.TideIndexName = tide_index_name
         print('link row')
         print(link_row)
+        if contaminants:
+            row.contaminants = contaminants
         if set_type == 'TargetSet':
             row.targetsets = [link_row]
         elif set_type == 'FilteredNetMHC':

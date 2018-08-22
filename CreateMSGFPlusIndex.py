@@ -13,7 +13,7 @@ parser.add_argument('set_type', choices=['FilteredNetMHC', 'PeptideList', 'Targe
 parser.add_argument('set_name', help='The name of the FilteredNetMHC, PeptideList or TargetSet that will be used as targets (depending on the set_type argument)')
 parser.add_argument('index_name', help='The name of the index')
 parser.add_argument('--memory', type=int, help='The number of megabytes of memory to give the jar file. Default is 3500 megabytes')
-
+parser.add_argument('--contaminantSet', 'The name of a contaminant set to include in the index', nargs='*')
 
 
 
@@ -35,9 +35,12 @@ elif args.set_type == 'TargetSet':
 assert(not project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, args.index_name))
 project.begin_command_session()
 msgfplus_index_runner = Runners.MSGFPlusIndexRunner(project.get_msgfplus_executable_path())
+contaminants = []
+if args.contaminantSet:
+    contaminants = args.contaminantSet
 if args.memory:
-    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, args.memory)
+    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, contaminants, args.memory)
 else:
-    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name)
+    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, contaminants)
 project.end_command_session()
 

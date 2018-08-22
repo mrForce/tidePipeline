@@ -197,14 +197,23 @@ class MSGFPlusEngine(AbstractEngine):
             indices.append(index)
         return indices
 
-    def create_index(self, set_type, set_name, index_runner, index_name, memory=None):
+    def create_index(self, set_type, set_name, index_runner, index_name, contaminant_names = [], memory=None):
+        contaminants = []
+        if contaminant_names:
+            for name in contaminant_names:
+                contaminantSet = self.db_session.query(DB.ContaminantSet).filter_by(contaminantSetName = name).first()
+                assert(contaminantSet)
+                contaminants.append(contaminantSet)
+
         #make sure there isn't an MSGFPlusIndex with the name index_name
         index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName=index_name).first()
         assert(not index_row)
         storage_dir = self.create_storage_directory('msgfplus_indices')
         print('storage dir: ' + storage_dir)
-        fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name)
+        fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name, contaminants)
         row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir), memory)
+        if contaminants:
+            row.contaminants = contaminants
         if set_type == 'TargetSet':
             row.targetsets = [link_row]
         elif set_type == 'FilteredNetMHC':
