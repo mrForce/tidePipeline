@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import re
 import csv
 from xml.sax.saxutils import unescape
+
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):
         self.peptide = peptide
