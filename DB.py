@@ -61,30 +61,32 @@ class ContaminantSet(BaseTable, AbstractPeptideCollection):
     """
     This assumes we already imported the FASTA file into the project, and peptides_path is where within the project we are supposed to put the peptides
     """
-    def __init__(self, project_path, fasta_path, peptides_path, lengths):
+    def __init__(self, project_path, fasta_path, peptides_path, lengths, name):
         full_path = os.path.join(project_path, fasta_path)
         self.fasta_file = fasta_path
-        self.peptides_file = peptides_path
+        self.peptide_file = peptides_path
+        self.contaminantSetName = name
         peptides = []
         self.lengths = lengths
         for length in lengths:
             peptides_of_length = fileFunctions.extract_peptides(full_path, length)
             peptides.extend(peptides_of_length)
         uniq_peptides = list(set(peptides))
-        with open(peptides_path, 'w') as f:
+        with open(os.path.join(project_path, peptides_path), 'w') as f:
             for peptide in uniq_peptides:
-                f.write(peptide)
+                f.write(peptide + '\n')
         
             
     @property
     def lengths(self):
-        return [int(x) for x in self._ratings]
+        return [int(x) for x in self._lengths]
     @lengths.setter
     def lengths(self, value):
+
         if isinstance(value, list):
-            self._ratings = ','.join([int(x) for x in value])
+            self._lengths = ','.join([str(x) for x in value])
         elif isinstance(value, int):
-            self._ratings += (',%i' % value)
+            self._lengths += (',%i' % value)
         
 
     def get_peptides(self, project_path):

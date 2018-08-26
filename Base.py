@@ -91,9 +91,9 @@ class Base:
 
     def add_contaminant_file(self, fasta_path, contaminant_row_name, lengths):
         directory = self.create_storage_directory('contaminants')
-        shutil.copyfile(fasta_path, os.path.join(directory, 'contaminants.fasta'))
+        shutil.copyfile(fasta_path, os.path.join(self.project_path, directory, 'contaminants.fasta'))
         #the constructor for ContaminantSet extracts the peptides from the FASTA file and puts them in os.path.join(directory, 'contaminant_peptides.txt')
-        row = DB.ContaminantSet(self.project_path, os.path.join(directory, 'contaminants.fasta'), os.path.join(directory, 'contaminant_peptides.txt'), lengths)
+        row = DB.ContaminantSet(self.project_path, os.path.join(directory, 'contaminants.fasta'), os.path.join(directory, 'contaminant_set.txt'), lengths, contaminant_row_name)
         self.db_session.add(row)
         
     def add_param_file(self, program, name, path, comment = None):
@@ -105,32 +105,32 @@ class Base:
         if program == 'percolator':
             if self.verify_row_existence(DB.PercolatorParameterFile.Name, name):
                 raise ParameterFileNameMustBeUniqueError(name)
-            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'percolator_param_files'), path_file_extension)
-            row = DB.PercolatorParameterFile(Name = name, path = new_path, comment = comment)
+            new_path = os.path.join('tide_param_files', 'percolator_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'percolator_param_files'), path_file_extension))
+            row = DB.PercolatorParameterFile(Name = name, Path = new_path, Comment = comment)
             self.db_session.add(row)
         elif program == 'assign-confidence':
             if self.verify_row_existence(DB.AssignConfidenceParameterFile.Name, name):
                 raise ParameterFileNameMustBeUniqueError(name)
-            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'assign_confidence_param_files'), path_file_extension)
-            row = DB.AssignConfidenceParameterFile(Name = name, path = new_path, comment = comment)
+            new_path = os.path.join('tide_param_files', 'assign_confidence_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'assign_confidence_param_files'), path_file_extension))
+            row = DB.AssignConfidenceParameterFile(Name = name, Path = new_path, Comment = comment)
             self.db_session.add(row)
         elif program == 'tide-search':
             if self.verify_row_existence(DB.TideSearchParameterFile.Name, name):
                 raise ParameterFileNameMustBeUniqueError(name)
-            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_search_param_files'), path_file_extension)
-            row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
+            new_path = os.path.join('tide_param_files', 'tide_search_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_search_param_files'), path_file_extension))
+            row = DB.TideSearchParameterFile(Name = name, Path = new_path, Comment = comment)
             self.db_session.add(row)
         elif program == 'tide-index':
             if self.verify_row_existence(DB.TideIndexParameterFile.Name, name):
                 raise ParameterFileNameMustBeUniqueError(name)
-            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_index_param_files'), path_file_extension)
-            row = DB.TideIndexParameterFile(Name = name, path = new_path, comment = comment)
+            new_path = os.path.join('tide_param_files', 'tide_index_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_index_param_files'), path_file_extension))
+            row = DB.TideIndexParameterFile(Name = name, Path = new_path, Comment = comment)
             self.db_session.add(row)
         elif program == 'maxquant':
             if self.verify_row_existence(DB.MaxQuantParameterFile.Name, name):
                 raise ParameterFileNameMustBeUniqueError(name)
-            new_path = copy_file_unique_basename(path, os.path.join(self.project_path, 'maxquant_param_files'), path_file_extension)
-            row = DB.TideSearchParameterFile(Name = name, path = new_path, comment = comment)
+            new_path = os.path.join('maxquant_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'maxquant_param_files'), path_file_extension))
+            row = DB.TideSearchParameterFile(Name = name, Path = new_path, Comment = comment)
             self.db_session.add(row)
         self.db_session.commit()
 

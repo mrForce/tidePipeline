@@ -24,7 +24,7 @@ print('project folder: ' + project_folder)
 name = args.Name
 fasta_path = args.Path
 lengths = args.lengths
-
+print('name: ' + name)
 
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()

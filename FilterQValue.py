@@ -25,12 +25,14 @@ project_folder = args.project_folder
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 assert(not project.verify_row_existence(DB.FilteredSearchResult.filteredSearchResultName, args.FilteredSearchResultName))
-assert(project.verify_search(args.type, args.name))
 if args.type  == 'msgf':
+    assert(project.verify_row_existence(DB.MSGFPlusSearch.SearchName, args.name))
     project.filter_q_value_msgfplus(args.name, args.threshold, args.FilteredSearchResultName)
 else:
     if args.type == 'assign-confidence':
+        assert(project.verify_row_existence(DB.AssignConfidence.AssignConfidenceName, args.name))
         project.filter_q_value_assign_confidence(args.name, args.threshold, args.FilteredSearchResultName)
     elif args.type == 'percolator':
+        assert(project.verify_row_existence(DB.Percolator.PercolatorName, args.name))
         project.filter_q_value_percolator(args.name, args.threshold, args.FilteredSearchResultName)
 project.end_command_session()

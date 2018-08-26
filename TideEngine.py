@@ -246,6 +246,8 @@ class TideEngine(AbstractEngine):
         tide_index_runner is an instance of the TideIndexRunner class
         """
         contaminants = []
+        print('contaminant names')
+        print(contaminant_names)
         if contaminant_names:
             for name in contaminant_names:
                 contaminantSet = self.db_session.query(DB.ContaminantSet).filter_by(contaminantSetName = name).first()
@@ -264,6 +266,8 @@ class TideEngine(AbstractEngine):
         row.TideIndexName = tide_index_name
         print('link row')
         print(link_row)
+        print('contamints')
+        print(contaminants)
         if contaminants:
             row.contaminants = contaminants
         if set_type == 'TargetSet':

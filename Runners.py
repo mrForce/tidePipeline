@@ -38,7 +38,7 @@ class TideSearchRunner:
         index_filename = os.path.join(self.project_path, index_row.TideIndexPath)
         print('current working directory: ' + os.getcwd())
         if self.param_file_row:
-            param_file_path = os.path.join(self.project_path, self.param_file_row.Ptah)
+            param_file_path = os.path.join(self.project_path, self.param_file_row.Path)
             command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', param_file_path, spectra_file, index_filename]
         else:        
             command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, spectra_file, index_filename]
@@ -185,6 +185,8 @@ class TideIndexRunner:
         command.append(output_directory_tide)
         command.append(fasta_path)
         command.append(os.path.join(output_directory_tide, index_filename))
+        print('command')
+        print(command)
         print('command')
         print(' '.join(command))
         try:

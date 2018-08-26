@@ -30,6 +30,6 @@ else:
 
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-project.add_param_file(args.Program, path, name, comment)
+project.add_param_file(args.Program, name, path, comment)
 project.end_command_session()
 

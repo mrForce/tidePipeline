@@ -50,12 +50,15 @@ project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 row = None
 if args.CollectionType == 'FilteredSearchResult':
+    print('in')
     row = project.get_filtered_search_result_row(args.Name)
     contaminant_sets = row.get_contaminant_sets()
+    print('contaminant sets')
+    print(contaminant_sets)
     contaminant_peptides = set()
     if contaminant_sets:
         for contaminant_set in contaminant_sets:
-            peptide_file = contaminant_set.peptide_file
+            peptide_file = os.path.join(project.project_path, contaminant_set.peptide_file)
             with open(peptide_file, 'r') as f:
                 for line in f:
                     line = line.strip()
@@ -64,7 +67,7 @@ if args.CollectionType == 'FilteredSearchResult':
     peptides = row.get_peptides(project_folder)
     contaminant_file = None
     if args.contaminants:
-        contaminant_file = open(args.contaminants, 'r')
+        contaminant_file = open(args.contaminants, 'w')
     with open(args.export_location, 'w') as f:
         for peptide in list(peptides):
             if peptide not in contaminant_peptides:
@@ -73,6 +76,8 @@ if args.CollectionType == 'FilteredSearchResult':
                 contaminant_file.write(peptide + '\n')
     if contaminant_file:
         contaminant_file.close()
+    print('contaminant peptides')
+    print(contaminant_peptides)
 else:
     if args.CollectionType == 'TargetSet':
         row = project.get_target_set_row(args.Name)

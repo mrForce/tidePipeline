@@ -14,7 +14,7 @@ parser.add_argument('set_name', help='The name of the FilteredNetMHC, PeptideLis
 parser.add_argument('index_name', help='The name of the index')
 parser.add_argument('--param_file', help='The name of a param file to use')
 
-parser.add_argument('--contaminantSet', 'The name of a contaminant set to include in the index', nargs='*')
+parser.add_argument('--contaminant_set', help='The name of a contaminant set to include in the index', nargs='+')
 
 
 
@@ -36,7 +36,7 @@ arguments = vars(args)
 
 
 for k, v in arguments.items():
-    if k and v and k != 'set_type' and k != 'set_name' and k != 'project_folder' and k != 'index_name' and k != 'contaminantSet':
+    if k and v and k != 'set_type' and k != 'set_name' and k != 'project_folder' and k != 'index_name' and k != 'contaminant_set':
         k = k.replace('_', '-')
         good_arguments[k] = v
 
@@ -57,8 +57,8 @@ if args.param_file:
     tide_index_runner = Runners.TideIndexRunner(good_arguments, crux_exec_path, project.project_path, row)
 else:
     tide_index_runner = Runners.TideIndexRunner(good_arguments, crux_exec_path, project.project_path)
-if args.contaminantSet:
-    project.create_index(args.set_type, args.set_name, tide_index_runner, args.index_name, args.contaminantSet)
+if 'contaminant_set' in args and args.contaminant_set:
+    project.create_index(args.set_type, args.set_name, tide_index_runner, args.index_name, args.contaminant_set)
 else:
     project.create_index(args.set_type, args.set_name, tide_index_runner, args.index_name)
 project.end_command_session()
