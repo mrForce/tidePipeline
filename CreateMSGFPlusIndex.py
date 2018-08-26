@@ -13,7 +13,7 @@ parser.add_argument('set_type', choices=['FilteredNetMHC', 'PeptideList', 'Targe
 parser.add_argument('set_name', help='The name of the FilteredNetMHC, PeptideList or TargetSet that will be used as targets (depending on the set_type argument)')
 parser.add_argument('index_name', help='The name of the index')
 parser.add_argument('--memory', type=int, help='The number of megabytes of memory to give the jar file. Default is 3500 megabytes')
-parser.add_argument('--contaminantSet', 'The name of a contaminant set to include in the index', nargs='*')
+parser.add_argument('--contaminantSet', help='The name of a contaminant set to include in the index', nargs='*')
 
 
 

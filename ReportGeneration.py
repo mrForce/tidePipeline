@@ -97,7 +97,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
                 break
         assert(self.q_value_row)
         result_file_path = self.msgfplus_search_row.resultFilePath
-        parser = Parsers.MSGFPlusSearchParser(result_file_path)
+        parser = Parsers.MSGFPlusSearchParser(os.path.join(project_path, result_file_path))
         spectrum_matches_list = parser.get_spectrum_matches()
         self.peptides = set()
         self.psms = set()
