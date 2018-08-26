@@ -570,6 +570,8 @@ class SearchBase(BaseTable):
         'polymorphic_identity': 'searchbase',
         'polymorphic_on': searchType
     }
+    def get_contaminant_sets(self):
+        return []
     def identifier(self):
         return self.SearchName
     def __prepare_deletion__(self, project_root):
@@ -627,6 +629,9 @@ class TideSearch(SearchBase):
     __mapper_args__ = {
         'polymorphic_identity': 'tidesearch',
     }
+
+    def get_contaminant_sets(self):
+        return self.tideindex.contaminants
     def remove_files(self, project_root):
         delete_objects(project_root, [], [os.path.dirname(self.targetPath)])
     def is_valid(self):
@@ -687,6 +692,8 @@ class MSGFPlusSearch(SearchBase):
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplussearch',
     }
+    def get_contaminant_sets(self):
+        return self.index.contaminants
     def remove_files(self, project_root):
         delete_objects(project_root, [], [os.path.dirname(self.resultFilePath)])
     def is_valid(self):
@@ -715,10 +722,18 @@ class QValueBase(BaseTable):
     idSearchBase = Column(Integer, ForeignKey('SearchBase.idSearch'))
     searchbase = relationship('SearchBase', back_populates='QValueBases')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
+    
     __mapper_args__ = {
         'polymorphic_identity': 'qvaluebase',
         'polymorphic_on': QValueType
     }
+    """
+    QValueBase -> SearchBase -> IndexBase -> contaminants
+
+    This returns a list of rows from the  ContaminantSet table
+    """
+    def get_contaminant_sets(self):
+        return self.searchbase.get_contaminant_sets()
     def remove_files(self, project_root):
         pass
     def __prepare_deletion__(self, project_root):
@@ -742,6 +757,7 @@ class MSGFPlusQValue(QValueBase):
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplus',
     }
+    
 class AssignConfidence(QValueBase):
     __tablename__ = 'AssignConfidence'
     idQValue = Column(Integer, ForeignKey('QValueBase.idQValue'), primary_key=True)
@@ -795,6 +811,9 @@ class FilteredSearchResult(BaseTable, AbstractPeptideCollection):
     idQValueBase = Column(Integer, ForeignKey('QValueBase.idQValue'))
     QValue = relationship('QValueBase', back_populates='filteredSearchResults')
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
+
+    def get_contaminant_sets(self):
+        return self.QValue.get_contaminant_sets()
 
     def is_valid(self):
         if self.QValue and self.QValue.is_valid():
