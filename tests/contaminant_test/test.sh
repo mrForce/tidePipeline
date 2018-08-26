@@ -32,4 +32,4 @@ cd ../..
 #python CreateMSGFPlusIndex.py ContaminantTest TargetSet MiniTargetSet MiniTargetSetIndexMSGF
 #python RunMSGFPlusSearch.py ContaminantTest Y3MGF MiniTargetSetIndexMSGF MiniTargetSetMSGFSearch --thread 2
 #python FilterQValue.py ContaminantTest msgf MiniTargetSetMSGFSearch 0.6 MiniTargetSetMSGFSearchFiltered
-python ExportPeptides.py ContaminantTest FilteredSearchResult MiniTargetSetMSGFSearchFiltered tests/contaminant_test/msgf_peptides.txt
+#python ExportPeptides.py ContaminantTest FilteredSearchResult MiniTargetSetMSGFSearchFiltered tests/contaminant_test/msgf_peptides.txt
