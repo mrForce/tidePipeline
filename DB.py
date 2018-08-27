@@ -193,7 +193,13 @@ class IterativeSearchRun(BaseTable):
     }
     def identifier(self):
         return self.IterativeSearchRunName
-
+    def get_contaminant_sets(self):
+        session = object_session(self)
+        rows = session.query(IterativeRunSearchAssociation).filter_by(iterativerun_id = self.idIterativeSearchRun).all()
+        contaminant_sets = list()
+        for row in rows:
+            contaminant_sets.extend(row.get_contaminant_sets())
+        return list(set(contaminant_sets))
 
 
 class MSGFPlusIterativeRun(IterativeSearchRun, AbstractPeptideCollection):
@@ -234,6 +240,7 @@ class TideIterativeRun(IterativeSearchRun, AbstractPeptideCollection):
     __mapper_args__ = {
         'polymorphic_identity': 'tide'
     }
+
 
     def get_peptides(self, project_path):
         associations = self.TideIterativeFilteredSearchAssociations

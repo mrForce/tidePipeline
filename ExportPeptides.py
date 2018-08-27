@@ -49,9 +49,14 @@ except:
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 row = None
-if args.CollectionType == 'FilteredSearchResult':
+if args.CollectionType == 'FilteredSearchResult' or args.CollectionType == 'TideIterativeSearch' or args.collectionType == 'MSGFPlusIterativeSearch':
     print('in')
-    row = project.get_filtered_search_result_row(args.Name)
+    if args.CollectionType == 'FilteredSearchResult':
+        row = project.get_filtered_search_result_row(args.Name)
+    elif args.CollectionType == 'TideIterativeSearch':
+        row = project.get_tideiterativerun_row(args.Name)
+    else:
+        row = project.get_msgfplusiterativesearch_row(args.Name)
     contaminant_sets = row.get_contaminant_sets()
     print('contaminant sets')
     print(contaminant_sets)
@@ -87,10 +92,6 @@ else:
         row = project.get_filtered_netmhc_row(args.Name)
     elif args.CollectionType == 'MaxQuantSearch':
         row = project.get_maxquant_search_row(args.Name)
-    elif args.CollectionType == 'TideIterativeSearch':
-        row = project.get_tideiterativerun_row(args.Name)
-    elif args.CollectionType == 'MSGFPlusIterativeSearch':
-        row = project.get_msgfplusiterativesearch_row(args.Name)
     assert(row)
     peptides = row.get_peptides(project_folder)
     with open(args.export_location, 'w') as f:

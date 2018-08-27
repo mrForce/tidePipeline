@@ -40,13 +40,16 @@ class TideEngine(AbstractEngine):
     
     """
     peptide_identifier is either 'assign-confidence' or 'percolator'. 
+
+    disable_contaminants_check is False by default. If it is set to True, then we don't check that every tide index is attached to the same ContaminantSets
     """
-    def multistep_search(self, mgf_name, tide_index_names, search_param_file, multistep_search_name, fdr, peptide_identifier, param_file, postprocessing_object):
+    def multistep_search(self, mgf_name, tide_index_names, search_param_file, multistep_search_name, fdr, peptide_identifier, param_file, postprocessing_object, *, disable_contaminants_check = False):
+        
         assert(peptide_identifier in ['percolator', 'assign-confidence'])
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(IterativeSearchRunName = multistep_search_name).first()
         crux_location = self.executables['crux']
-
+        contaminant_sets = {contaminant_set.idContaminantSet for contaminant_set in self.db_session.query(DB.TideIndex).filter_by(TideIndexName = tide_index_names[0]).first().get_contaminant_sets()}
         if mgf_row and (multistep_search_row is None):
             mgf_location = os.path.abspath(os.path.join(self.project_path, mgf_row.MGFPath))
             #make sure the tide indices exist
@@ -54,6 +57,12 @@ class TideEngine(AbstractEngine):
                 tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = name).first()
                 if tide_index_row is None:
                     raise NoSuchTideIndexError(name)
+                elif not disable_contaminants_check:
+                    #I'm using the row ID, since I'm not sure how rows are compare to one another by sqlalchemy
+                    temp_contaminant_sets = {contaminant_set.idContaminantSet for contaminant_set in tide_index_row.get_contaminant_sets()}
+                    assert(len(temp_contaminant_sets) == len(contaminant_sets))
+                    assert(len(temp_contaminant_sets & contaminant_sets) == len(contaminant_sets))
+
             """
             The name of each TideSearch row should be multistep_search_name + '_' + tide_index_name. 
             

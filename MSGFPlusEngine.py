@@ -19,13 +19,14 @@ class MSGFPlusEngine(AbstractEngine):
             raise MSGFPlusSearchRowDoesNotExistError(name)
         return row
 
-    def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, percolator_param_file=False, modifications_name = None, memory = None):
+    def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, percolator_param_file=False, modifications_name = None, memory = None, *, disable_contaminants_check = False):
         """
         percolator_param_file is False if we want to use the Q-values calculated by MSGF+. percolator_param_file should be a string with the name of a Percolator parameter file if we want to use Percolator for calculating Q-values
         """
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.MSGFPlusIterativeRun).filter_by(IterativeSearchRunName = multistep_search_name).first()
         msgf_location = self.executables['msgfplus']
+        contaminant_sets = {contaminant_set.idContaminantSet for contaminant_set in self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = msgfplus_index_names[0]).first().get_contaminant_sets()}
         search_runner = Runners.MSGFPlusSearchRunner(msgfplus_search_options, msgf_location)
         if mgf_row and (multistep_search_row is None):
             mgf_location = os.path.abspath(os.path.join(self.project_path, mgf_row.MGFPath))
@@ -34,6 +35,10 @@ class MSGFPlusEngine(AbstractEngine):
                 index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = name).first()
                 if index_row is None:
                     raise NoSuchMSGFPlusIndexError(name)
+                elif disable_contaminants_check:
+                    temp_contaminant_sets = {contaminant_set.idContaminantSet for contaminant_set in index_row.get_contaminant_sets()}
+                    assert(len(temp_contaminant_sets) == len(contaminant_sets))
+                    assert(len(temp_contaminant_sets & contaminant_sets) == len(contaminant_sets))
             """
             The name of each MSGFPlusSearch row should be multistep_search_name + '_' + msgfplus_index_name. 
             
