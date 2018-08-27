@@ -20,9 +20,17 @@ cd ../..
 #python FilterQValue.py ContaminantTest percolator MiniTargetSearchPercolator 0.5 MiniTargetSearchPercolatorFiftyPercent
 #python ExportPeptides.py ContaminantTest FilteredSearchResult MiniTargetSearchPercolatorFiftyPercent tests/contaminant_test/percolator_peptides.txt
 
-#python AddContaminantFile.py ContaminantTest tests/contaminant_test/contaminants.fasta TestContaminantSetFive 8 9 10 11
+#python AddContaminantFile.py ContaminantTest FASTA tests/contaminant_test/contaminants.fasta TestContaminantSetFASTA 8 9 10 11
+#python AddContaminantFile.py ContaminantTest FASTA tests/contaminant_test/contaminants.fasta TestContaminantSetFASTANoLengths
+#python AddContaminantFile.py ContaminantTest peptides tests/contaminant_test/contaminants.txt TestContaminantSetPeptides 8 9 10 11
+#python AddContaminantFile.py ContaminantTest peptides tests/contaminant_test/contaminants.txt TestContaminantSetPeptidesNoLengths
 
-#python CreateTideIndex.py ContaminantTest TargetSet MiniTargetSet MiniTargetSetWithContaminantsIndexThree --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFive
+
+
+python CreateTideIndex.py ContaminantTest TargetSet MiniTargetSet MiniTargetSetWithContaminantsIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTA
+python CreateTideIndex.py ContaminantTest TargetSet MiniTargetSet MiniTargetSetWithContaminantsIndexTwo --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
+python CreateTideIndex.py ContaminantTest TargetSet MiniTargetSet MiniTargetSetWithContaminantsIndexThree --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetPeptides
+python CreateTideIndex.py ContaminantTest TargetSet MiniTargetSet MiniTargetSetWithContaminantsIndexFour --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetPeptidesNoLengths
 #python RunTideSearch.py ContaminantTest Y3MGF MiniTargetSetWithContaminantsIndexThree MiniTargetSearchWithContaminantsThree --param_file tide_search --param_file default_search_params
 #python RunPercolator.py ContaminantTest tide MiniTargetSearchWithContaminantsThree MiniTargetSearchWithContaminantsPercolatorThree --param_file default_percolator_params
 #python FilterQValue.py ContaminantTest percolator MiniTargetSearchWithContaminantsPercolatorThree 0.5 MiniTargetSearchPercolatorWithContaminantsFiftyPercentThree

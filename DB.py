@@ -44,6 +44,14 @@ def delete_objects(root, files, directories = []):
             raise Errors.DirectoryMarkedForDeletionDoesNotExistError(dir_path)
         """
 
+def extract_peptides_from_peptides_format(path):
+    peptides = []
+    with open(path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if len(line) > 1:
+                peptides.append(line)
+    return peptides
 indexbase_contaminantSet = Table('indexbase_contaminantSet', BaseTable.metadata, Column('indexbase_id', ForeignKey('IndexBase.idIndex'), primary_key=True), Column('contaminantset_id', ForeignKey('ContaminantSet.idContaminantSet'), primary_key=True))
 
 maxquantsearch_contaminantSet = Table('maxquantsearch_contaminantSet', BaseTable.metadata, Column('maxquantsearch_id', ForeignKey('MaxQuantSearch.idSearch'), primary_key=True), Column('contaminantset_id', ForeignKey('ContaminantSet.idContaminantSet'), primary_key=True))
@@ -53,7 +61,7 @@ class ContaminantSet(BaseTable, AbstractPeptideCollection):
     __tablename__ = "ContaminantSet"
     idContaminantSet = Column('idContaminantSet', Integer, primary_key=True)
     contaminantSetName = Column('contaminantSetName', String, unique=True)
-    fasta_file = Column('fasta_file', String, nullable=False)
+    fasta_file = Column('fasta_file', String)
     peptide_file = Column('peptide_file', String, nullable=False)
     _lengths = Column(String, default='')
     indices = relationship('IndexBase', secondary = indexbase_contaminantSet, back_populates='contaminants')
@@ -61,16 +69,24 @@ class ContaminantSet(BaseTable, AbstractPeptideCollection):
     """
     This assumes we already imported the FASTA file into the project, and peptides_path is where within the project we are supposed to put the peptides
     """
-    def __init__(self, project_path, fasta_path, peptides_path, lengths, name):
-        full_path = os.path.join(project_path, fasta_path)
-        self.fasta_file = fasta_path
-        self.peptide_file = peptides_path
+    def __init__(self, project_path, path, peptides_path, lengths, name, protein_format):
+        full_path = os.path.join(project_path, path)
+        if protein_format == 'FASTA':
+            self.fasta_file = path
+            self.peptide_file = peptides_path
+        elif protein_format == 'peptides':
+            self.peptide_file = path
+            peptides_path = path
         self.contaminantSetName = name
         peptides = []
-        self.lengths = lengths
-        for length in lengths:
-            peptides_of_length = fileFunctions.extract_peptides(full_path, length)
-            peptides.extend(peptides_of_length)
+        if lengths:
+            
+            self.lengths = lengths
+            for length in lengths:
+                peptides_of_length = fileFunctions.extract_peptides(full_path, length, file_format = protein_format)
+                peptides.extend(peptides_of_length)
+        else:
+            peptides = fileFunctions.extract_peptides(full_path, None, file_format = protein_format)
         uniq_peptides = list(set(peptides))
         with open(os.path.join(project_path, peptides_path), 'w') as f:
             for peptide in uniq_peptides:

@@ -5,15 +5,44 @@ import os
 import glob
 import re
 import shutil
-def extract_peptides(fasta_path, length):
+
+
+"""
+A keyword argument is peptides_format = True
+"""
+def extract_peptides(path, length = None, *, file_format = 'FASTA'):
     peptides = set()
-    with open(fasta_path, 'rU') as handle:
-        for record in SeqIO.parse(handle, 'fasta'):
-            sequence = record.seq
-            if len(sequence) >= length:
-                for i in range(0, len(sequence) - length + 1):
-                    peptide = sequence[i:(i + length)]
-                    peptides.add(str(peptide))
+    """Making a class to facilite code re-use"""
+    class PeptideHandler:
+        def __init__(self, length = None):
+            self.peptides = set()
+            self.length = length
+        def add(self, sequence):
+            if self.length:
+                if len(sequence) >= self.length:
+                    for i in range(0, len(sequence) - self.length + 1):
+                        peptide = sequence[i:(i + self.length)]
+                        self.peptides.add(str(peptide))
+            else:
+                self.peptides.add(str(sequence))
+
+        def get_peptides(self):
+            return self.peptides
+
+    peptide_handler = PeptideHandler(length)
+    with open(path, 'rU') as handle:
+        if file_format == 'FASTA':
+            for record in SeqIO.parse(handle, 'fasta'):
+                sequence = record.seq
+                peptide_handler.add(sequence)
+                
+        elif file_format == 'peptides':
+            for line in handle:
+                sequence = line.strip()
+                peptide_handler.add(sequence)
+        else:
+            assert(False)
+    
     return peptides
 
 def write_peptides(file_path, peptide_set):

@@ -89,11 +89,19 @@ class Base:
             else:
                 raise InvalidSearchTypeError(search_type)
 
-    def add_contaminant_file(self, fasta_path, contaminant_row_name, lengths):
+    def add_contaminant_file(self, path, contaminant_row_name, lengths, protein_format):
+        print('format: ' + protein_format)
+        print(protein_format == 'FASTA')
         directory = self.create_storage_directory('contaminants')
-        shutil.copyfile(fasta_path, os.path.join(self.project_path, directory, 'contaminants.fasta'))
+        filename = 'contaminants.fasta' if protein_format is 'FASTA' else 'contaminants.txt'
+        shutil.copyfile(path, os.path.join(self.project_path, directory, filename))
         #the constructor for ContaminantSet extracts the peptides from the FASTA file and puts them in os.path.join(directory, 'contaminant_peptides.txt')
-        row = DB.ContaminantSet(self.project_path, os.path.join(directory, 'contaminants.fasta'), os.path.join(directory, 'contaminant_set.txt'), lengths, contaminant_row_name)
+        if protein_format == 'FASTA':
+            row = DB.ContaminantSet(self.project_path, os.path.join(directory, filename), os.path.join(directory, 'contaminant_set.txt'), lengths, contaminant_row_name, protein_format)
+        elif protein_format == 'peptides':
+            row = DB.ContaminantSet(self.project_path, os.path.join(directory, filename), None, lengths, contaminant_row_name, protein_format)
+        else:
+            assert(False)
         self.db_session.add(row)
         
     def add_param_file(self, program, name, path, comment = None):
