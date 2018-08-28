@@ -1,43 +1,44 @@
 cd ../..
-python Initialize.py ContaminantTest config.ini ~/unimod.xml
-python AddParamFile.py ContaminantTest tide-search tide_search.params default_search_params
-python AddParamFile.py ContaminantTest percolator percolator.params default_percolator_params
-python AddMGF.py ContaminantTest tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3MGF
-python AddHLA.py ContaminantTest H-2-Kb
-python AddHLA.py ContaminantTest H-2-Db
-python AddFASTA.py ContaminantTest ~/Downloads/all_mouse_proteins_head.fasta MouseProteins
-python KChop.py ContaminantTest MouseProteins 9 MouseProteinNineMers
-python KChop.py ContaminantTest MouseProteins 8 MouseProteinEightMers
-python KChop.py ContaminantTest MouseProteins 10 MouseProteinTenMers
-python KChop.py ContaminantTest MouseProteins 11 MouseProteinElevenMers
-python RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Kb 2 MouseProteinsEightMersKbTwoPercent 
-python RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Kb 1 MouseProteinsEightMersKbOnePercent
-python RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Kb 2 MouseProteinsNineMersKbTwoPercent
-python RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Kb 1 MouseProteinsNineMersKbOnePercent
-python RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Kb 2 MouseProteinsTenMersKbTwoPercent
-python RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Kb 1 MouseProteinsTenMersKbOnePercent
-python RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Kb 2 MouseProteinsElevenMersKbTwoPercent
-python RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Kb 1 MouseProteinsElevenMersKbOnePercent
+python3 Initialize.py ContaminantTest murphy_replication/config.ini ~/unimod.xml
+python3 AddParamFile.py ContaminantTest tide-search murphy_replication/tide_search.params default_search_params
+python3 AddParamFile.py ContaminantTest percolator murphy_replication/percolator.params default_percolator_params
+python3 AddMGF.py ContaminantTest ~/Downloads/160127_609_015_EL4_Y3.mgf Y3MGF
+python3 AddHLA.py ContaminantTest H-2-Kb
+python3 AddHLA.py ContaminantTest H-2-Db
+python3 AddFASTA.py ContaminantTest ~/Downloads/first_mouse_protein.fasta MouseProteins
+python3 KChop.py ContaminantTest MouseProteins 9 MouseProteinNineMers
+python3 KChop.py ContaminantTest MouseProteins 8 MouseProteinEightMers
+python3 KChop.py ContaminantTest MouseProteins 10 MouseProteinTenMers
+python3 KChop.py ContaminantTest MouseProteins 11 MouseProteinElevenMers
+echo "GOING TO START NETMHC"
+python3 RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Kb 2 MouseProteinsEightMersKbTwoPercent 
+python3 RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Kb 1 MouseProteinsEightMersKbOnePercent
+python3 RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Kb 2 MouseProteinsNineMersKbTwoPercent
+python3 RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Kb 1 MouseProteinsNineMersKbOnePercent
+python3 RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Kb 2 MouseProteinsTenMersKbTwoPercent
+python3 RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Kb 1 MouseProteinsTenMersKbOnePercent
+python3 RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Kb 2 MouseProteinsElevenMersKbTwoPercent
+python3 RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Kb 1 MouseProteinsElevenMersKbOnePercent
 
-python RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Db 2 MouseProteinsEightMersDbTwoPercent
-python RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Db 1 MouseProteinsEightMersDbOnePercent
-python RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Db 2 MouseProteinsNineMersDbTwoPercent
-python RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Db 1 MouseProteinsNineMersDbOnePercent
-python RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Db 2 MouseProteinsTenMersDbTwoPercent
-python RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Db 1 MouseProteinsTenMersDbOnePercent
-python RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Db 2 MouseProteinsElevenMersDbTwoPercent
-python RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Db 1 MouseProteinsElevenMersDbOnePercent
+python3 RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Db 2 MouseProteinsEightMersDbTwoPercent
+python3 RunNetMHC.py ContaminantTest MouseProteinEightMers H-2-Db 1 MouseProteinsEightMersDbOnePercent
+python3 RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Db 2 MouseProteinsNineMersDbTwoPercent
+python3 RunNetMHC.py ContaminantTest MouseProteinNineMers H-2-Db 1 MouseProteinsNineMersDbOnePercent
+python3 RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Db 2 MouseProteinsTenMersDbTwoPercent
+python3 RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Db 1 MouseProteinsTenMersDbOnePercent
+python3 RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Db 2 MouseProteinsElevenMersDbTwoPercent
+python3 RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Db 1 MouseProteinsElevenMersDbOnePercent
 
-python CreatTargetSet ContaminantTest CombinedTwoPercent --FilteredNetMHC MouseProteinsEightMersKbTwoPercent --FilteredNetMHC MouseProteinsNineMersKbTwoPercent --FilteredNetMHC MouseProteinsTenMersKbTwoPercent --FilteredNetMHC MouseProteinsElevenMersKbTwoPercent --FilteredNetMHC MouseProteinsEightMersDbTwoPercent --FilteredNetMHC MouseProteinsNineMersDbTwoPercent --FilteredNetMHC MouseProteinsTenMersDbTwoPercent --FilteredNetMHC MouseProteinsElevenMersDbTwoPercent
+python3 CreatTargetSet ContaminantTest CombinedTwoPercent --FilteredNetMHC MouseProteinsEightMersKbTwoPercent --FilteredNetMHC MouseProteinsNineMersKbTwoPercent --FilteredNetMHC MouseProteinsTenMersKbTwoPercent --FilteredNetMHC MouseProteinsElevenMersKbTwoPercent --FilteredNetMHC MouseProteinsEightMersDbTwoPercent --FilteredNetMHC MouseProteinsNineMersDbTwoPercent --FilteredNetMHC MouseProteinsTenMersDbTwoPercent --FilteredNetMHC MouseProteinsElevenMersDbTwoPercent
 
-python CreatTargetSet ContaminantTest CombinedOnePercent --FilteredNetMHC MouseProteinsEightMersKbOnePercent --FilteredNetMHC MouseProteinsNineMersKbOnePercent --FilteredNetMHC MouseProteinsTenMersKbOnePercent --FilteredNetMHC MouseProteinsElevenMersKbOnePercent --FilteredNetMHC MouseProteinsEightMersDbOnePercent --FilteredNetMHC MouseProteinsNineMersDbOnePercent --FilteredNetMHC MouseProteinsTenMersDbOnePercent --FilteredNetMHC MouseProteinsElevenMersDbOnePercent
+python3 CreatTargetSet ContaminantTest CombinedOnePercent --FilteredNetMHC MouseProteinsEightMersKbOnePercent --FilteredNetMHC MouseProteinsNineMersKbOnePercent --FilteredNetMHC MouseProteinsTenMersKbOnePercent --FilteredNetMHC MouseProteinsElevenMersKbOnePercent --FilteredNetMHC MouseProteinsEightMersDbOnePercent --FilteredNetMHC MouseProteinsNineMersDbOnePercent --FilteredNetMHC MouseProteinsTenMersDbOnePercent --FilteredNetMHC MouseProteinsElevenMersDbOnePercent
 
-python AddContaminantFile.py ContaminantTest FASTA tests/contaminant_test/contaminants.fasta TestContaminantSetFASTANoLengths
-python CreateTargetSet.py ContaminantTest Combined --PeptideList MouseProteinNineMers --PeptideList MouseProteinEightMers --PeptideList MouseProteinTenMers --PeptideList MouseProteinElevenMers
+python3 AddContaminantFile.py ContaminantTest FASTA tests/contaminant_test/contaminants.fasta TestContaminantSetFASTANoLengths
+python3 CreateTargetSet.py ContaminantTest Combined --PeptideList MouseProteinNineMers --PeptideList MouseProteinEightMers --PeptideList MouseProteinTenMers --PeptideList MouseProteinElevenMers
 
-python CreateTideIndex.py ContaminantTest TargetSet Combined CombinedIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
-python CreateTideIndex.py ContaminantTest TargetSet CombinedTwoPercent CombinedTwoPercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
-python CreateTideIndex.py ContaminantTest TargetSet CombinedOnePercent CombinedOnePercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
+python3 CreateTideIndex.py ContaminantTest TargetSet Combined CombinedIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
+python3 CreateTideIndex.py ContaminantTest TargetSet CombinedTwoPercent CombinedTwoPercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
+python3 CreateTideIndex.py ContaminantTest TargetSet CombinedOnePercent CombinedOnePercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
 
 #python RunTideSearch.py ContaminantTest Y3MGF MiniTargetSetIndex MiniTargetSearch --param_file tide_search --param_file default_search_params
 

@@ -43,7 +43,7 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
         else:
             assert(False)
     
-    return peptides
+    return peptide_handler.get_peptides()
 
 def write_peptides(file_path, peptide_set):
     peptide_list = list(peptide_set)

@@ -607,11 +607,16 @@ class Base:
         if os.path.exists(project_path):
             raise ProjectPathAlreadyExistsError(project_path)
         else:
+            print('going to get config')
             config = configparser.ConfigParser()
+            print('config location: ' + config_location)
             config.read(config_location)
+            print('config reading')
+            print(config)
             assert('EXECUTABLES' in config.sections())
             config_keys = ['netmhc', 'crux', 'msgfplus', 'msgf2pin']
             for key in config_keys:
+                print('key: ' + key)
                 assert(key in config['EXECUTABLES'])
                 value = config['EXECUTABLES'][key]
                 assert(len(value) > 0)

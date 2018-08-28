@@ -11,7 +11,7 @@ parser.add_argument('unimodXML', help='The location of a unimod.xml file. This a
 args = parser.parse_args()
 
 project_folder = args.project_folder
-
+print('hello')
 try:
     Base.Base.createEmptyProject(project_folder, ' '.join(sys.argv), args.config, args.unimodXML)
 except ProjectPathAlreadyExistsError as e:
