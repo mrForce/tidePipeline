@@ -1,0 +1,65 @@
+mkdir CombinedTwoPercentTide_Prep_percolator_filtered
+mkdir CombinedOnePercentTide_Prep_percolator_filtered
+mkdir CombinedTide_Prep_percolator_filtered
+mkdir CombinedTwoPercentTide_Run2_percolator_filtered
+mkdir CombinedOnePercentTide_Run2_percolator_filtered
+mkdir CombinedTide_Run2_percolator_filtered
+mkdir CombinedTwoPercentMSGF_Prep_percolator_filtered
+mkdir CombinedOnePercentMSGF_Prep_percolator_filtered
+mkdir CombinedMSGF_Run2_percolator_filtered
+mkdir CombinedOnePercentMSGF_Run2_percolator_filtered
+mkdir CombinedTwoPercentMSGF_Run2_percolator_filtered
+mkdir CombinedMSGF_Prep_percolator_filtered
+cd ..
+python3 FilterQValue.py HealthCenter percolator CombinedTwoPercentTide_Prep_percolator 0.01 CombinedTwoPercentTide_Prep_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedOnePercentTide_Prep_percolator 0.01 CombinedOnePercentTide_Prep_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedTide_Prep_percolator 0.01 CombinedTide_Prep_percolator_filtered
+
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedTwoPercentTide_Run2_percolator 0.01 CombinedTwoPercentTide_Run2_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedOnePercentTide_Run2_percolator 0.01 CombinedOnePercentTide_Run2_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedTide_Run2_percolator 0.01 CombinedTide_Run2_percolator_filtered
+
+
+
+
+echo "going to do MSGF"
+
+python3 FilterQValue.py HealthCenter percolator CombinedTwoPercentMSGF_Prep_percolator 0.01 CombinedTwoPercentMSGF_Prep_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedOnePercentMSGF_Prep_percolator 0.01 CombinedOnePercentMSGF_Prep_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedMSGF_Prep_percolator 0.01 CombinedMSGF_Prep_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedTwoPercentMSGF_Run2_percolator 0.01 CombinedTwoPercentMSGF_Run2_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedOnePercentMSGF_Run2_percolator 0.01 CombinedOnePercentMSGF_Run2_percolator_filtered
+
+
+
+python3 FilterQValue.py HealthCenter percolator CombinedMSGF_Run2_percolator 0.01 CombinedMSGF_Run2_percolator_filtered
+
+
+
