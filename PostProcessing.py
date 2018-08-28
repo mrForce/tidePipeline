@@ -164,9 +164,13 @@ class PostProcessing(Base):
                 raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
     def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False):
+        print('search name to query: ' + search_name)
+        print('search type: ' + search_type)
         search_row = None
         if search_type == 'tide':
             search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = search_name).first()
+            print('search row: ')
+            print(search_row)
         elif search_type == 'msgfplus':
             search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = search_name).first()
             assert(search_row.addFeatures == 1)

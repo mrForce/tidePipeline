@@ -49,6 +49,10 @@ class TideEngine(AbstractEngine):
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         multistep_search_row = self.db_session.query(DB.TideIterativeRun).filter_by(IterativeSearchRunName = multistep_search_name).first()
         crux_location = self.executables['crux']
+        print('tide index names: ' + ', '.join(tide_index_names))
+        tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = tide_index_names[0]).first()
+        if tide_index_row is None:
+            raise NoSuchTideIndexError(tide_index_names[0])
         contaminant_sets = {contaminant_set.idContaminantSet for contaminant_set in self.db_session.query(DB.TideIndex).filter_by(TideIndexName = tide_index_names[0]).first().get_contaminant_sets()}
         if mgf_row and (multistep_search_row is None):
             mgf_location = os.path.abspath(os.path.join(self.project_path, mgf_row.MGFPath))
@@ -136,7 +140,7 @@ class TideEngine(AbstractEngine):
                     search_name = multistep_search_name + '_' + index_name
                 peptide_identifier_name = multistep_search_name + '_' + index_name + '_' + peptide_identifier
                 filtered_name = peptide_identifier_name + '_filtered'
-                
+                print('need search: ' + str(need_search))
                 if need_search:
                     if search_param_file:
                         row = self.get_tide_search_parameter_file(search_param_file)
@@ -145,6 +149,7 @@ class TideEngine(AbstractEngine):
                     else:
                         search_runner = Runners.TideSearchRunner(crux_location, self.project_path)
                     self.run_search(new_mgf_name, index_name, search_runner, search_name, None, True)
+                    print('search name: ' + search_name)
                     search_names.append(search_name)
                 if peptide_identifier == 'percolator':
                     #We ran the search, so now we need to call Percolator
@@ -156,7 +161,9 @@ class TideEngine(AbstractEngine):
                         percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path, row)
                     else:
                         percolator_runner = Runners.PercolatorRunner(crux_location, self.project_path)
-                    postprocessing_object.percolator(search_name, percolator_runner, peptide_identifier_name, True)
+                    print('search name: ' + search_name)
+                    postprocessing_object.db_session = self.db_session
+                    postprocessing_object.percolator(search_name, 'tide', percolator_runner, peptide_identifier_name, True)
                     postprocessing_object.filter_q_value_percolator(peptide_identifier_name, fdr, filtered_name, True)
                 elif peptide_identifier == 'assign-confidence':
                     if param_file:
@@ -191,7 +198,7 @@ class TideEngine(AbstractEngine):
                 filtered_row = self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = filtered_name).first()
                 association_row = DB.IterativeFilteredSearchAssociation(step = step)
                 association_row.filteredsearch_result = filtered_row
-                iterativerun_row.FilteredSearchAssociations.append(association_row)
+                iterativerun_row.IterativeFilteredSearchAssociations.append(association_row)
                 rows.append(association_row)
             for search_name in search_names:
                 search_row = self.db_session.query(DB.SearchBase).filter_by(SearchName = search_name).first()
@@ -221,8 +228,14 @@ class TideEngine(AbstractEngine):
                 directory_name = str(uuid.uuid4().hex)
                 full_directory_path= os.path.join(self.project_path, 'tide_search_results', directory_name)
             row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name, partOfIterativeSearch)
-
+            print('about to add new row to db')
+            print(row)
+            print('name: ' + tide_search_name)
             self.db_session.add(row)
+            self.db_session.merge(row)
+            temp_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = tide_search_name).first()
+            print('temp row')
+            print(temp_row)
             #self.db_session.commit()
         else:
             if mgf_row is None:

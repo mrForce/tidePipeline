@@ -25,8 +25,8 @@ class MSGF2PinRunner:
 
 class TideSearchRunner:
     def __init__(self, crux_binary, project_path, param_file_row = None):
-        self.param_file_row = param_file_row
         self.project_path = project_path
+        self.param_file_row = param_file_row
         self.crux_binary = crux_binary
     @staticmethod
     def get_tide_search_options():
@@ -153,10 +153,10 @@ class MSGFPlusIndexRunner:
 
 
 class TideIndexRunner:
-    def __init__(self, tide_index_options, crux_binary, project_path, param_file_row = False):
+    def __init__(self, tide_index_options, crux_binary, project_path, param_file_row = None):
         #tide_index_options is a dictionary.
         self.project_path = project_path
-        self.param_file_row = param_file_row 
+        self.param_file_row = param_file_row
         self.tide_index_options = tide_index_options
         self.crux_binary = crux_binary
 
@@ -199,6 +199,7 @@ class TideIndexRunner:
             if column_name:
                 column_arguments[column_name] = v
         column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
+
         if self.param_file_row:
             column_arguments['parameterFile'] = self.param_file_row
         return DB.TideIndex(**column_arguments)
@@ -256,9 +257,9 @@ class AssignConfidenceRunner:
 
 
 class PercolatorRunner:
-    def __init__(self, crux_binary, project_path, param_file_row = False):
-        self.param_file_row = param_file_row
+    def __init__(self, crux_binary, project_path, param_file_row = None):
         self.crux_binary = crux_binary
+        self.param_file_row = param_file_row
         self.project_path = project_path
     
     def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row, partOfIterativeSearch = False):

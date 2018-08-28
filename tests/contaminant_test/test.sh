@@ -5,7 +5,8 @@ python3 AddParamFile.py ContaminantTest percolator murphy_replication/percolator
 python3 AddMGF.py ContaminantTest ~/Downloads/160127_609_015_EL4_Y3.mgf Y3MGF
 python3 AddHLA.py ContaminantTest H-2-Kb
 python3 AddHLA.py ContaminantTest H-2-Db
-python3 AddFASTA.py ContaminantTest ~/Downloads/first_mouse_protein.fasta MouseProteins
+python3 AddFASTA.py ContaminantTest ~/Downloads/all_mouse_proteins_head.fasta MouseProteins
+#python3 AddFASTA.py ContaminantTest ~/Downloads/first_mouse_protein.fasta MouseProteins
 python3 KChop.py ContaminantTest MouseProteins 9 MouseProteinNineMers
 python3 KChop.py ContaminantTest MouseProteins 8 MouseProteinEightMers
 python3 KChop.py ContaminantTest MouseProteins 10 MouseProteinTenMers
@@ -29,9 +30,9 @@ python3 RunNetMHC.py ContaminantTest MouseProteinTenMers H-2-Db 1 MouseProteinsT
 python3 RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Db 2 MouseProteinsElevenMersDbTwoPercent
 python3 RunNetMHC.py ContaminantTest MouseProteinElevenMers H-2-Db 1 MouseProteinsElevenMersDbOnePercent
 
-python3 CreatTargetSet ContaminantTest CombinedTwoPercent --FilteredNetMHC MouseProteinsEightMersKbTwoPercent --FilteredNetMHC MouseProteinsNineMersKbTwoPercent --FilteredNetMHC MouseProteinsTenMersKbTwoPercent --FilteredNetMHC MouseProteinsElevenMersKbTwoPercent --FilteredNetMHC MouseProteinsEightMersDbTwoPercent --FilteredNetMHC MouseProteinsNineMersDbTwoPercent --FilteredNetMHC MouseProteinsTenMersDbTwoPercent --FilteredNetMHC MouseProteinsElevenMersDbTwoPercent
+python3 CreateTargetSet.py ContaminantTest CombinedTwoPercent --FilteredNetMHC MouseProteinsEightMersKbTwoPercent --FilteredNetMHC MouseProteinsNineMersKbTwoPercent --FilteredNetMHC MouseProteinsTenMersKbTwoPercent --FilteredNetMHC MouseProteinsElevenMersKbTwoPercent --FilteredNetMHC MouseProteinsEightMersDbTwoPercent --FilteredNetMHC MouseProteinsNineMersDbTwoPercent --FilteredNetMHC MouseProteinsTenMersDbTwoPercent --FilteredNetMHC MouseProteinsElevenMersDbTwoPercent
 
-python3 CreatTargetSet ContaminantTest CombinedOnePercent --FilteredNetMHC MouseProteinsEightMersKbOnePercent --FilteredNetMHC MouseProteinsNineMersKbOnePercent --FilteredNetMHC MouseProteinsTenMersKbOnePercent --FilteredNetMHC MouseProteinsElevenMersKbOnePercent --FilteredNetMHC MouseProteinsEightMersDbOnePercent --FilteredNetMHC MouseProteinsNineMersDbOnePercent --FilteredNetMHC MouseProteinsTenMersDbOnePercent --FilteredNetMHC MouseProteinsElevenMersDbOnePercent
+python3 CreateTargetSet.py ContaminantTest CombinedOnePercent --FilteredNetMHC MouseProteinsEightMersKbOnePercent --FilteredNetMHC MouseProteinsNineMersKbOnePercent --FilteredNetMHC MouseProteinsTenMersKbOnePercent --FilteredNetMHC MouseProteinsElevenMersKbOnePercent --FilteredNetMHC MouseProteinsEightMersDbOnePercent --FilteredNetMHC MouseProteinsNineMersDbOnePercent --FilteredNetMHC MouseProteinsTenMersDbOnePercent --FilteredNetMHC MouseProteinsElevenMersDbOnePercent
 
 python3 AddContaminantFile.py ContaminantTest FASTA tests/contaminant_test/contaminants.fasta TestContaminantSetFASTANoLengths
 python3 CreateTargetSet.py ContaminantTest Combined --PeptideList MouseProteinNineMers --PeptideList MouseProteinEightMers --PeptideList MouseProteinTenMers --PeptideList MouseProteinElevenMers
@@ -40,6 +41,9 @@ python3 CreateTideIndex.py ContaminantTest TargetSet Combined CombinedIndex --cu
 python3 CreateTideIndex.py ContaminantTest TargetSet CombinedTwoPercent CombinedTwoPercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
 python3 CreateTideIndex.py ContaminantTest TargetSet CombinedOnePercent CombinedOnePercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme --contaminant_set TestContaminantSetFASTANoLengths
 
+#python3 RunIterativeTideSearch.py ContaminantTest Y3MGF 0.5 percolator Y3TideLargeToSmall CombinedIndex CombinedTwoPercentIndex CombinedOnePercentIndex --peptide_identifier_param_file default_percolator_params --tidesearch_param_file default_search_params
+
+#python3 ExportPeptides.py ContaminantTest TideIterativeSearch Y3TideLargeToSmall tests/contaminant_test/y3_tide_large_to_small.txt
 #python RunTideSearch.py ContaminantTest Y3MGF MiniTargetSetIndex MiniTargetSearch --param_file tide_search --param_file default_search_params
 
 #python RunPercolator.py ContaminantTest tide MiniTargetSearch MiniTargetSearchPercolator --param_file default_percolator_params

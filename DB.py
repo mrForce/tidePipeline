@@ -505,6 +505,9 @@ class IndexBase(BaseTable):
         'polymorphic_identity': 'indexbase',
         'polymorphic_on': indexType
     }
+
+    def get_contaminant_sets(self):
+        return self.contaminants
 class TideIndex(IndexBase):
     __tablename__ = 'TideIndex'
     idIndex = Column(Integer, ForeignKey('IndexBase.idIndex'), primary_key=True)
