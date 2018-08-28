@@ -63,8 +63,8 @@ class PostProcessing(Base):
         peptides = msgfplus_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold, partOfIterativeSearch)
 
-    def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False):
-        percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path())
+    def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False, *, use_percolator_peptides = False):
+        percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path(), use_percolator_peptides)
         peptides = percolator_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold, partOfIterativeSearch)
 
