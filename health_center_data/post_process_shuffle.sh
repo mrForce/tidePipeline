@@ -1,0 +1,14 @@
+cd ..
+export HealthCenter=/data1/jordan/PipelineProjects/HealthCenter
+python3 RunPercolator.py $HealthCenter tide CombinedTwoPercentTide_Prep_shuffled_decoys CombinedTwoPercentTide_Prep_percolator_shuffled_decoys --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedOnePercentTide_Prep_shuffled_decoys CombinedOnePercentTide_Prep_percolator_shuffled_decoys --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedTide_Prep_shuffled_decoys CombinedTide_Prep_percolator_shuffled_decoys --param_file default_search_params
+
+
+python3 RunPercolator.py $HealthCenter tide CombinedTwoPercentTide_Run2_shuffled_decoys CombinedTwoPercentTide_Run2_percolator_shuffled_decoys --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedOnePercentTide_Run2_shuffled_decoys CombinedOnePercentTide_Run2_percolator_shuffled_decoys --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedTide_Run2_shuffled_decoys CombinedTide_Run2_percolator_shuffled_decoys --param_file default_search_params
+
+
+
+

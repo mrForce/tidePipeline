@@ -1,0 +1,17 @@
+cd ..
+
+export HealthCenter=/data1/jordan/PipelineProjects/HealthCenter
+echo "Going to do Tide searches"
+
+python3 RunTideSearch.py $HealthCenter PrepMGF CombinedTwoPercentTideIndex_shuffled_decoys CombinedTwoPercentTide_Prep_shuffled_decoys --param_file default_search_params
+
+python3 RunTideSearch.py $HealthCenter PrepMGF CombinedOnePercentTideIndex_shuffled_decoys CombinedOnePercentTide_Prep_shuffled_decoys --param_file default_search_params
+
+python3 RunTideSearch.py $HealthCenter PrepMGF CombinedTideIndex_shuffled_decoys CombinedTide_Prep_shuffled_decoys --param_file default_search_params
+
+python3 RunTideSearch.py $HealthCenter Run2MGF CombinedTwoPercentTideIndex_shuffled_decoys CombinedTwoPercentTide_Run2_shuffled_decoys --param_file default_search_params
+
+python3 RunTideSearch.py $HealthCenter Run2MGF CombinedOnePercentTideIndex_shuffled_decoys CombinedOnePercentTide_Run2_shuffled_decoys --param_file default_search_params
+
+python3 RunTideSearch.py $HealthCenter Run2MGF CombinedTideIndex_shuffled_decoys CombinedTide_Run2_shuffled_decoys --param_file default_search_params
+

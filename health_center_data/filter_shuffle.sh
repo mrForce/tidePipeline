@@ -1,0 +1,28 @@
+
+export HealthCenter=/data1/jordan/PipelineProjects/HealthCenter
+cd ..
+python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentTide_Prep_percolator_shuffled_decoys 0.05 CombinedTwoPercentTide_Prep_percolator_filtered_five_percent_fdr_shuffled_decoys
+
+
+
+python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentTide_Prep_percolator_shuffled_decoys 0.05 CombinedOnePercentTide_Prep_percolator_filtered_five_percent_fdr_shuffled_decoys
+
+
+
+python3 FilterQValue.py $HealthCenter percolator CombinedTide_Prep_percolator_shuffled_decoys 0.05 CombinedTide_Prep_percolator_filtered_five_percent_fdr_shuffled_decoys
+
+
+
+
+python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentTide_Run2_percolator_shuffled_decoys 0.05 CombinedTwoPercentTide_Run2_percolator_filtered_five_percent_fdr_shuffled_decoys
+
+
+
+python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentTide_Run2_percolator_shuffled_decoys 0.05 CombinedOnePercentTide_Run2_percolator_filtered_five_percent_fdr_shuffled_decoys
+
+
+
+python3 FilterQValue.py $HealthCenter percolator CombinedTide_Run2_percolator_shuffled_decoys 0.05 CombinedTide_Run2_percolator_filtered_five_percent_fdr_shuffled_decoys
+
+
+
