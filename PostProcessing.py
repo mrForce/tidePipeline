@@ -16,7 +16,7 @@ class PostProcessing(Base):
     def call_msgf2pin(self, msgf_search_name, percolator_location, msgf2pin_runner, fasta_files, decoy_pattern):
         msgf_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = msgf_search_name).first()
         assert(msgf_row is not None)
-        msgf2pin_runner.runConversion(msgf_row.resultFilePath, percolator_location, fasta_files, decoy_pattern)
+        msgf2pin_runner.runConversion(os.path.join(self.project_path, msgf_row.resultFilePath), percolator_location, fasta_files, decoy_pattern)
     def list_filtered_search_results(self, showIterative):
         headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
         rows = []
@@ -185,7 +185,7 @@ class PostProcessing(Base):
             if search_type == 'tide':
                 target_path = os.path.join(self.project_path, search_row.targetPath)
             elif search_type == 'msgfplus':
-                target_path = search_row.resultFilePath + '.pin'
+                target_path = os.path.join(self.project_path, search_row.resultFilePath + '.pin')
                 if not os.path.exists(target_path):
                     msgf2pin_runner = Runners.MSGF2PinRunner(self.executables['msgf2pin'], os.path.join(self.project_path, 'unimod.xml'))
                     head, tail = os.path.split(search_row.index.MSGFPlusIndexPath)

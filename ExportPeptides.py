@@ -58,8 +58,6 @@ if args.CollectionType == 'FilteredSearchResult' or args.CollectionType == 'Tide
     else:
         row = project.get_msgfplusiterativesearch_row(args.Name)
     contaminant_sets = row.get_contaminant_sets()
-    print('contaminant sets')
-    print(contaminant_sets)
     contaminant_peptides = set()
     if contaminant_sets:
         for contaminant_set in contaminant_sets:
@@ -81,8 +79,7 @@ if args.CollectionType == 'FilteredSearchResult' or args.CollectionType == 'Tide
                 contaminant_file.write(peptide + '\n')
     if contaminant_file:
         contaminant_file.close()
-    print('contaminant peptides')
-    print(contaminant_peptides)
+
 else:
     if args.CollectionType == 'TargetSet':
         row = project.get_target_set_row(args.Name)
