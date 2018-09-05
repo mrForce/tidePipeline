@@ -168,7 +168,9 @@ class Base:
     def get_tide_index_parameter_file(self, name):
         row = self.db_session.query(DB.TideIndexParameterFile).filter_by(Name = name).first()
         return row
-    
+    def get_tide_index(self, name):
+        row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = name).first()
+        return row
     #returns row or None
     def get_maxquant_parameter_file(self, name):
         row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
