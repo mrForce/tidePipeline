@@ -21,12 +21,14 @@ class AbstractNode:
         pass
 
 class PeptideSourceNode(AbstractNode):
-    def __init__(self, sourceType, sourceName, index_nodes):
+    def __init__(self, sourceType, sourceName):
         self.sourceType = sourceType
         self.sourceName = sourceName
-        self.index_nodes = index_nodes
+        self.index_nodes = []
     def get_text(self):
         return self.sourceType + '.' + self.sourceName
+    def set_index_nodes(self, nodes):
+        self.index_nodes = nodes
     def get_child_nodes(self):
         return [('', node) for node in self.index_nodes]
 
@@ -61,6 +63,8 @@ class SearchNode(AbstractNode):
         self.post_process_nodes = []
     def set_post_process_nodes(self, nodes):
         self.post_process_nodes = nodes
+    def add_post_process_node(self, node):
+        self.post_process_nodes.append(node)
     def get_text(self):
         text = self.search_type + '.' + self.search_name + '\nmgf name: ' + self.mgf_name
         if self.param_file:
@@ -161,6 +165,7 @@ class Index:
     Returns a tuple. 
     """
     def create_index(self, project_folder, test_run = False):
+        source_node = PeptideSourceNode(self.sourceType, self.sourceName)
         project = None
         index_name = None
         index_names = []
@@ -212,7 +217,7 @@ class Index:
                 if not test_run:
                     project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants)
-        return (project, index_name, index_node)
+        return (project, index_name, index_node, source_node)
     
 
 
@@ -243,7 +248,8 @@ class Search:
         search_name = None
         search_node = None
         if self.searchType == 'msgf':
-            assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))
+            if not test_run:
+                assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))
             msgfplus_jar = project.executables['msgfplus']
             runner = Runners.MSGFPlusSearchRunner(self.options, msgfplus_jar)
             search_name = index_name + '_msgf_' + self.mgfName
@@ -261,7 +267,8 @@ class Search:
                     project.run_search(self.mgfName, index_name, None, runner, search_name)
                 search_node = SearchNode(self.searchType, search_name, self.mgfName, options = self.options)
         elif self.searchType == 'tide':
-            assert(project.verify_row_existence(DB.TideIndex.TideIndexName, index_name))
+            if not test_run:
+                assert(project.verify_row_existence(DB.TideIndex.TideIndexName, index_name))
             crux_exec_path = project.get_crux_executable_path()
             search_name = index_name + '_tide_' + self.mgfName
             num = 1
@@ -291,6 +298,7 @@ class PostProcess:
         searchNumMap = searchNumMap
         assert(searchNum in self.searchNumMap)
         self.searchName = searchNumMap[searchNum][0]
+        self.searchNum = searchNum
         self.searchType = searchNumMap[searchNum][1]
         """
         Just a bunch of comma seperated tuples of the form (cutoff, peptide output, [contaminant output])
@@ -309,23 +317,31 @@ class PostProcess:
         else:
             self.postProcessParamFile = None
             assert(self.postProcessType == 'msgf')
-    def run_post_process_and_export(self, project):
+    def run_post_process_and_export(self, project, test_run = False):
         crux_exec_path = project.get_crux_executable_path()
         post_processor_names = []
         filtered_names = []
         runner = None
+
+        filter_nodes = []
         if self.postProcessType == 'percolator':
             project.verify_row_existence(DB.PercolatorParameterFile, self.postProcessParamFile)
             parameter_file_row = project.get_percolator_parameter_file(self.postProcessParamFile)
             runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, parameter_file_row)
             post_processor_names = project.get_column_values(DB.Percolator, 'PercolatorName')
-        
+        elif self.postProcessType == 'assign-confidence':
+            project.verify_row_existence(DB.AssignConfidenceParameterFile, self.postProcessParamFile)
+            parameter_file_row = project.get_assign_confidence_parameter_file(self.postProcessParamFile)
+            runner = Runners.AssignConfidenceRunner(crux_exec_path, project.project_path, parameter_file_row)
+            post_processor_names = project.get_column_values(DB.AssignConfidence, 'AssignConfidenceName')
         for tup in self.cutoffsAndLocations:
             cutoff = tup[0]
             peptide_output = tup[1]
-            contaminant_output = False
+            contaminant_output = None
             if len(tup) == 3:
                 contaminant_output = tup[2]
+            filter_node = None
+            export_node = ExportNode(peptide_output, contaminant_output)
             post_process_name = self.searchName + '_' + self.postProcessType
             if post_process_name in post_processor_names:
                 num = 1
@@ -333,46 +349,55 @@ class PostProcess:
                     num += 1
                 post_process_name = post_process_name + '_' + str(num)
             filtered_name = post_process_name + '_' + str(cutoff)
+            
             if filtered_name in filtered_names:
                 num = 1
                 while (filtered_name + '_' + str(num)) in filtered_names:
                     num += 1
                 filtered_name = filtered_names + '_' + str(num)
+            filtered_node = FilterNode(filtered_name, str(cutoff))
+            filtered_node.set_export_nodes([export_node])
+            filter_nodes.append(filtered_node)
             if self.postProcessType == 'percolator':
-                project.percolator(self.searchName, self.searchType, runner, post_process_name)
-                assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
-                project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
+                if not test_run:
+                    project.percolator(self.searchName, self.searchType, runner, post_process_name)
+                    assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
+                    project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
             elif self.postProcessType == 'assign-confidence':
-                project.assign_confidence(self.searchName, runner, name)
-                assert(project.verify_row_existence(DB.AssignConfidence.AssignConfidenceName, filtered_name))
-                project.filter_q_value_assign_confidence(post_process_name, cutoff, post_process_name)            
+                if not test_run:
+                    project.assign_confidence(self.searchName, runner, name)
+                    assert(project.verify_row_existence(DB.AssignConfidence.AssignConfidenceName, filtered_name))
+                    project.filter_q_value_assign_confidence(post_process_name, cutoff, post_process_name)            
             elif self.postProcessType == 'msgf':
-                project.filter_q_value_msgfplus(self.searchName, cutoff, filtered_name)
-            assert(project.verify_row_existence(DB.FilteredSearchResult.filteredSearchResultName, filtered_name))
-            row = project.get_filtered_search_result_row(filtered_name)
-            contaminant_sets = row.get_contaminant_sets()
-            contaminant_peptides = set()
-            if contaminant_sets:
-                for contaminant_set in contaminant_sets:
-                    peptide_file = os.path.join(project.project_path, contaminant_set.peptide_file)
-                    with open(peptide_file, 'r') as f:
-                        for line in f:
-                            line = line.strip()
-                            if len(line) > 1:
-                                contaminant_peptides.add(line)
-            peptides = row.get_peptides(project_folder)
-            contaminant_file = None
-            if contaminant_output:
-                contaminant_file = open(contaminant_output, 'w')
-            with open(peptide_output, 'w') as f:
-                for peptide in list(peptides):
-                    if peptide not in contaminant_peptides:
-                        f.write(peptide + '\n')
-                    elif contaminant_file:
-                        contaminant_file.write(peptide + '\n')
-            if contaminant_file:
-                contaminant_file.close()
-
+                if not test_run:
+                    project.filter_q_value_msgfplus(self.searchName, cutoff, filtered_name)
+            if not test_run:
+                assert(project.verify_row_existence(DB.FilteredSearchResult.filteredSearchResultName, filtered_name))
+                row = project.get_filtered_search_result_row(filtered_name)
+                contaminant_sets = row.get_contaminant_sets()
+                contaminant_peptides = set()
+                if contaminant_sets:
+                    for contaminant_set in contaminant_sets:
+                        peptide_file = os.path.join(project.project_path, contaminant_set.peptide_file)
+                        with open(peptide_file, 'r') as f:
+                            for line in f:
+                                line = line.strip()
+                                if len(line) > 1:
+                                    contaminant_peptides.add(line)
+                peptides = row.get_peptides(project_folder)
+                contaminant_file = None
+                if contaminant_output:
+                    contaminant_file = open(contaminant_output, 'w')
+                with open(peptide_output, 'w') as f:
+                    for peptide in list(peptides):
+                        if peptide not in contaminant_peptides:
+                            f.write(peptide + '\n')
+                        elif contaminant_file:
+                            contaminant_file.write(peptide + '\n')                            
+                if contaminant_file:
+                    contaminant_file.close()
+        post_processor_node = PostProcessingNode(self.postProcessType, post_process_name, self.searchNum, param_file = self.postProcessParamFile)
+        return post_processor_node
 """
 Comma seperated string
 """
@@ -416,22 +441,24 @@ def run_pipeline(ini_file, project_folder, test_run = False):
     index_section = config['Index']
     index_object = Index(index_section)
     index_type = index_object.indexType
-
     """
     DON'T FORGET TO ADD THE CHILD NODES LATER ON!
     """
-    project, index_name, index_node = index_object.create_index(project_folder)
-    search_nodes = []
+    project, index_name, index_node, peptide_source_node = index_object.create_index(project_folder, test_run)
     post_process_nodes = []
     searchNumMap = {}
     searchNumToNodeMap = {}
     for search_section in config['Search']:
         search_object = Search(search_section, index_type)
-        search_name, search_node = search_object.run_search(project, index_name)
+        search_name, search_node = search_object.run_search(project, index_name, test_run)
         searchNumMap[search_object.searchNum] = search_name
         searchNumToNodeMap[search_object.searchNum] = search_node
     for post_process_section in config['PostProcess']:
         post_process_object = PostProcess(post_process_section, searchNumMap)
-        post_process_object.run_post_process_and_export(project)
-
-    
+        post_process_node =  post_process_object.run_post_process_and_export(project, test_run)
+        searchNumToNodeMap[post_process_object.searchNum].add_post_process_node(post_process_node)
+    search_nodes = list(searchNumToNodeMap.values())
+    index_node.set_search_nodes(search_nodes)
+    peptide_source_node.set_index_nodes([index_node])
+    tree = TestRunTree(peptide_source_node)
+    tree.display_tree()
