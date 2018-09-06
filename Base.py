@@ -77,7 +77,7 @@ class Base:
     #search_type is either 'tide', 'msgfplus', 'msgf', or 'maxquant'
     def verify_search(self, search_type, search_name):
         searchbase_row = self.db_session.query(DB.SearchBase).filter_by(SearchName = search_name).first()
-        if searchbase_row is None:
+        if searchbase_row is None
             return False
         else:
             if search_type == 'tide':
