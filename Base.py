@@ -1,5 +1,6 @@
 import DB
 from sqlalchemy import exists
+import BashScripts
 from create_target_set import *
 import sys
 import tempfile
@@ -64,6 +65,7 @@ class Base:
         for x in rows:
             values.append(getattr(x, column_name))
         return values
+
     def verify_row_existence(self, column_object, name):
         """
         Basically, pass the ROW.Name object as column_object, and name as the name argument.
@@ -228,7 +230,8 @@ class Base:
         return (header, results)
     def get_filtered_netmhc_row(self, name):
         return self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
-
+    def get_netmhc_row(self, name):
+        return self.db_session.query(DB.NetMHC).filter_by(Name=name).first()
     def get_target_set_row(self, name):
         return self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first()
     def get_peptide_list_row(self, name):
@@ -325,8 +328,8 @@ class Base:
         else:
             return True
 
-    def run_netmhc(self, peptide_list_name, hla, rank_cutoff, filtered_name, netmhcpan = False):
-        netmhc_row, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhcpan)
+    def run_netmhc(self, peptide_list_name, hla, rank_cutoff, netmhc_name, filtered_name, netmhcpan = False):
+        netmhc_row, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhc_name, netmhcpan)
        
         if is_netmhc_row_new:
             filtered_netmhc_row = None
@@ -356,10 +359,43 @@ class Base:
             #self.db_session.commit()
             
                 
-        
-    
-
-
+    def import_netmhc_run(self, hla, location, peptidelist_name):
+        #location is the NetMHC output
+        peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptidelist_name).first()
+        if peptide_list_row is None:
+            raise NoSuchPeptideListError(peptide_list_name)
+        hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla_name).first()
+        if hla_row is None:
+            raise NoSuchHLAError(hla_name)
+        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
+        if netmhc_row:
+            raise DuplicateNetMHCError(peptidelist_name, hla)
+        else:
+            netmhc_output_filename = str(uuid.uuid4().hex)
+            while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed')):
+                netmhc_output_filename = str(uuid.uuid4().hex)
+            shutil.copy(location, os.path.join(self.project_path, 'NetMHC', netmhc_output_filename))
+            parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
+            netmhc_row = DB.NetMHC(peptidelist = peptide_list_row, hla = hla_row, Name = peptidelist_name + '_' + hla, NetMHCOutputPath= os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
+            self.db_session.add(netmhc_row)
+            self.db_session.commit()
+            
+    def import_peptide_list(self, name, fasta_name, location):
+        fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
+        if fasta_row is None:
+            raise FASTAWithNameDoesNotExistError(fasta_name)
+        line_length_set = filter(lambda x: x > 0, BashScripts.line_length_set(location))
+        assert(len(line_length_set) == 1)
+        length = list(line_length_set)[0]
+        peptide_row = self.db_session.query(DB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
+        if peptide_row is None:
+            fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
+            peptide_filename = fasta_filename + '_' + str(length) + '.txt'
+            peptide_list_path = os.path.join('peptides', peptide_filename)
+            shutil.copyfile(location, peptide_list_path)
+            peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+            self.db_session.add(peptide_list)
+            self.db_session.commit()
     def add_peptide_list(self, name, length, fasta_name):
         fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
         if fasta_row is None:
@@ -383,7 +419,7 @@ class Base:
             
             
             
-    def _run_netmhc(self, peptide_list_name, hla_name, netmhcpan = False):
+    def _run_netmhc(self, peptide_list_name, hla_name, netmhc_name, netmhcpan = False):
         """
         This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (netmhc_row, PeptideScorePath)
         
@@ -395,16 +431,16 @@ class Base:
         hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla_name).first()
         if hla_row is None:
             raise NoSuchHLAError(hla_name)
-        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
+        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA, Name=netmhc_name).first()
         if netmhc_row:
             return (netmhc_row, netmhc_row.PeptideScorePath, False)
         else:
             netmhc_output_filename = str(uuid.uuid4().hex)
-            while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename, '-parsed')):
+            while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed')):
                 netmhc_output_filename = str(uuid.uuid4().hex)
             call_netmhc(self.executables['netmhc'], hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename))
             parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
-            netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
+            netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, Name = netmhc_name, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
             self.db_session.add(netmhc_row)
             self.db_session.commit()
             return (netmhc_row, netmhc_row.PeptideScorePath, True)

@@ -94,8 +94,11 @@ class MSGFPlusSearchRunner:
         memory_string = '-Xmx3500M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
-        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', '1', '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
-        
+        if index_row.netmhcdecoys:
+            tda = 0
+        else:
+            tda = 1
+        command = ['java', memory_string, '-jar', self.jar_file_location, '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
             modification_file_location = os.path.join(project_path, modifications_file_row.MSGFPlusModificationFilePath)
@@ -126,13 +129,15 @@ class MSGFPlusSearchRunner:
 class MSGFPlusIndexRunner:
     def __init__(self, jar_file_location):
         self.jar_file_location = jar_file_location
-    def run_index_create_row(self, fasta_path, output_directory_path, memory=None):
+    #netmhc_decoys should either be None or a tuple of form (location, row), where location is the location of a parsed NetMHC run, and row is the NetMHC row to use for creating decoys.
+    def run_index_create_row(self, fasta_path, output_directory_path, memory=None, *, netmhc_decoys = None):
         #copy the FASTA file to output_directory_path
         fasta_head, fasta_tail = os.path.split(fasta_path)
         new_fasta_path = ''
         if fasta_tail.endswith('.fasta'):
             new_fasta_path = shutil.copy(fasta_path, output_directory_path)
         else:
+            #I did this since the index builder needs the FASTA filename to end with .fasta
             new_fasta_path = shutil.copy(fasta_path, os.path.join(output_directory_path, fasta_tail + '.fasta'))
         new_fasta_head, new_fasta_tail = os.path.split(new_fasta_path)
         current_path = os.getcwd()
@@ -140,7 +145,12 @@ class MSGFPlusIndexRunner:
         memory_string = '-Xmx3500M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
-        command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', '2']
+        tda = 2
+        if netmhc_decoys:
+            netmhc_decoys_location = netmhc_decoys[0]
+            BashScripts.netMHCDecoys(netmhc_decoys, fasta_path, os.path.abspath(new_fasta_path))
+            tda = 0
+        command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', str(tda)]
         print('index command: ' + ' '.join(command))
         print('ran in: ' + str(os.getcwd()))
         try:
@@ -149,7 +159,11 @@ class MSGFPlusIndexRunner:
             assert(False)
             #raise MSGFPlusIndexFailedError(' '.join(command))
         os.chdir(current_path)
-        return (DB.MSGFPlusIndex(tda=2), new_fasta_tail)
+        if netmhc_decoys:
+            netmhc_row = netmhc_decoys[1]
+            return (DB.MSGFPlusIndex(tda=str(tda), netmhcdecoys=netmhc_row), new_fasta_tail)
+        else:
+            return (DB.MSGFPlusIndex(tda=str(tda)), new_fasta_tail)
 
 
 

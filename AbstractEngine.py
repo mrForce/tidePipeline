@@ -16,7 +16,7 @@ class AbstractEngine(Base, metaclass=ABCMeta):
     def list_indices(self):
         pass
     @abstractmethod
-    def create_index(self, set_type, set_name, index_runner, index_name, contaminant_names=[]):
+    def create_index(self, set_type, set_name, index_runner, index_name, contaminant_names=[], *, netmhc_decoys = None):
         pass
 
     def create_fasta_for_indexing(self, set_type, set_name, contaminants=False):

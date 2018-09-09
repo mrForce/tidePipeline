@@ -8,11 +8,11 @@ import argparse
 import sys
 import os
 import Runners
-import abc import ABC
+from abc import ABC, abstractmethod
 import networkx as nx
 import matplotlib.pyplot as plt
 
-class AbstractNode:
+class AbstractNode(ABC):
     @abstractmethod
     def get_text(self):
         pass
@@ -143,11 +143,11 @@ class TestRunTree:
 
 class Index:
     def __init__(self, section):
-        required_params=  ['indexType', 'indexNumber', 'sourceType', 'sourceName']
+        required_params=  ['indexType', 'sourceType', 'sourceName']
         for x in required_params:
             assert(x in section)
         self.indexType = section['indexType']
-        self.indexNumber = section['indexNumber']
+
         assert(self.indexType in ['tide', 'msgf'])
         self.sourceType = section['sourceType']
         assert(self.sourceType in ['FilteredNetMHC', 'PeptideList', 'TargetSet'])
@@ -156,6 +156,10 @@ class Index:
             self.indexParamFile = section['paramFile']
         else:
             assert(self.indexType == 'msgf')
+        if 'netmhcdecoys' in section:
+            self.netmhcdecoys  = section['netmhcdecoys']
+        else:
+            self.netmhcdecoys = None
         self.contaminants = section.getList('contaminants', [])
         self.memory = section.get_int('memory', 0)
             
@@ -209,14 +213,25 @@ class Index:
                     project.create_index(self.sourceType, self.sourceName, runner, index_name)
         elif self.indexType == 'msgf':
             runner = Runners.MSGFPlusIndex(msgf_exec_path)
+            if self.netmhcdecoys:
+                netmhc_row = project.get_netmhc_row(self.netmhcdecoys)
+                parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideScorePath))
+                self.netmhcdecoy_name = self.netmhcdecoys
+                self.netmhcdecoys = (parsed_location, netmhc_row)                
             if self.memory:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory)
-                index_node = IndexNode(self.indexType, index_name, self.contaminants, options = {'memory': self.memory})
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys = self.netmhcdecoys)
+                options = {'memory': self.memory}
+                if self.netmhcdecoys:
+                    options['netMHCDecoys'] = self.netmhcdecoy_name
+                index_node = IndexNode(self.indexType, index_name, self.contaminants, options = options)
             else:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants)
-                index_node = IndexNode(self.indexType, index_name, self.contaminants)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys = self.netmhcdecoys)
+                if self.netmhcdecoys:
+                    index_node = IndexNode(self.indexType, index_name, self.contaminants, options={'netMHCDecoys': self.netmhcdecoy_name})
+                else:
+                    index_node = IndexNode(self.indexType, index_name, self.contaminants)
         return (project, index_name, index_node, source_node)
     
 
@@ -225,6 +240,7 @@ class Index:
 class Search:
     def __init__(self, section, searchType):
         assert('mgfName' in section)
+        assert('searchNumber' in section)
         self.mgfName = section['mgfName']
         self.searchType = searchType
         if 'paramFile' in section:
@@ -291,7 +307,9 @@ class Search:
 
 class PostProcess:
     def __init__(self, section, searchNumMap):
-        assert('postProcessType' in section)
+        required_params = ['postProcessType', 'searchNum', 'cutoffsAndLocations']
+        for param in required_params:
+            assert(param in section)
         self.postProcessType = section['postProcessType']
         assert(self.postProcessType in ['percolator', 'assign-confidence', 'msgf'])
         searchNum = section.get_int('searchNum', -1)

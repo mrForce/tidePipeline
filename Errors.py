@@ -25,7 +25,12 @@ TideSearchLinkedToMSGFPlusIterativeError = CustomError.factory('TideSearchLinked
 MSGFPlusSearchLinkedToTideIterativeError = CustomError.factory('MSGFPlusSearchLinkedToTideIterativeError', 'The MSGF+ Search: ', ' is linked to a Tide Iterative Search')
 
 
-
+class DuplicateNetMHCError(Error):
+    def __init__(self, peptide_list_name, hla):
+        self.peptide_list_name = peptide_list_name
+        self.hla = hla
+    def __repr__(self):
+        return 'There is already a NetMHC run for PeptideList: ' + self.peptide_list_name + ' and HLA: ' + self.hla
 class MSGF2PinFailedError(Error):
     def __init__(self, command):
         self.command = command

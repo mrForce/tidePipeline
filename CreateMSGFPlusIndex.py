@@ -14,7 +14,7 @@ parser.add_argument('set_name', help='The name of the FilteredNetMHC, PeptideLis
 parser.add_argument('index_name', help='The name of the index')
 parser.add_argument('--memory', type=int, help='The number of megabytes of memory to give the jar file. Default is 3500 megabytes')
 parser.add_argument('--contaminantSet', help='The name of a contaminant set to include in the index', nargs='*')
-
+parser.add_argument('--netMHCDecoys', help='The name of a NetMHC which will be used for constructing the decoys')
 
 
 args = parser.parse_args()
@@ -38,9 +38,15 @@ msgfplus_index_runner = Runners.MSGFPlusIndexRunner(project.get_msgfplus_executa
 contaminants = []
 if args.contaminantSet:
     contaminants = args.contaminantSet
+netmhc_decoys = None
+if args.netMHCDecoys:
+    netmhc_row = project.get_netmhc_row(args.netMHCDecoys)
+    parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideScorePath))
+    netmhc_decoys = (parsed_location, netmhc_row)
+    
 if args.memory:
-    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, contaminants, args.memory)
+    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, contaminants, args.memory, netmhc_decoys = netmhc_decoys)
 else:
-    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, contaminants)
+    project.create_index(args.set_type, args.set_name, msgfplus_index_runner, args.index_name, contaminants, netmhc_decoys = netmhc_decoys)
 project.end_command_session()
 
