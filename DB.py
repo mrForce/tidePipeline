@@ -458,7 +458,7 @@ class NetMHC(BaseTable):
     idNetMHC = Column('idNetMHC', Integer, primary_key = True)
     peptidelistID = Column(Integer, ForeignKey('PeptideList.idPeptideList'))
     idHLA = Column(Integer, ForeignKey('HLA.idHLA'))
-    
+    Name = Column('Name', String, unique=True)
     hla = relationship('HLA', back_populates='netmhcs')
     #Raw output of NetMHC
     NetMHCOutputPath = Column('NetMHCOutputPath', String)

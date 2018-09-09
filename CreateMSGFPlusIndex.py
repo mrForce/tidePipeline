@@ -14,7 +14,7 @@ parser.add_argument('set_name', help='The name of the FilteredNetMHC, PeptideLis
 parser.add_argument('index_name', help='The name of the index')
 parser.add_argument('--memory', type=int, help='The number of megabytes of memory to give the jar file. Default is 3500 megabytes')
 parser.add_argument('--contaminantSet', help='The name of a contaminant set to include in the index', nargs='*')
-parser.add_argument('--netMHCDecoys', help='The name of a FilteredNetMHC, whose parent NetMHC run will be used for constructing decoys')
+parser.add_argument('--netMHCDecoys', help='The name of a NetMHC which will be used for constructing the decoys')
 
 
 args = parser.parse_args()
@@ -40,8 +40,7 @@ if args.contaminantSet:
     contaminants = args.contaminantSet
 netmhc_decoys = None
 if args.netMHCDecoys:
-    filtered_netmhc_row = project.get_filtered_netmhc_row(args.netMHCDecoys)
-    netmhc_row = filtered_netmhc_row.netmhc
+    netmhc_row = project.get_netmhc_row(args.netMHCDecoys)
     parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideScorePath))
     netmhc_decoys = (parsed_location, netmhc_row)
     

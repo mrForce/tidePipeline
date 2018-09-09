@@ -230,7 +230,8 @@ class Base:
         return (header, results)
     def get_filtered_netmhc_row(self, name):
         return self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
-
+    def get_netmhc_row(self, name):
+        return self.db_session.query(DB.NetMHC).filter_by(Name=name).first()
     def get_target_set_row(self, name):
         return self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first()
     def get_peptide_list_row(self, name):
@@ -358,7 +359,16 @@ class Base:
             #self.db_session.commit()
             
                 
-        
+    def import_netmhc_run(self, name, hla, location, peptidelist_name, filtered_netmhc_row):
+        peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptidelist_name).first()
+        if peptide_list_row is None:
+            raise NoSuchPeptideListError(peptide_list_name)
+        hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla_name).first()
+        if hla_row is None:
+            raise NoSuchHLAError(hla_name)
+        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
+        if netmhc_row:
+            
     def import_peptide_list(self, name, fasta_name, location):
         fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
         if fasta_row is None:

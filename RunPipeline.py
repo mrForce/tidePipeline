@@ -214,8 +214,7 @@ class Index:
         elif self.indexType == 'msgf':
             runner = Runners.MSGFPlusIndex(msgf_exec_path)
             if self.netmhcdecoys:
-                filtered_netmhc_row = project.get_filtered_netmhc_row(self.netmhcdecoys)
-                netmhc_row = filtered_netmhc_row.netmhc
+                netmhc_row = project.get_netmhc_row(self.netmhcdecoys)
                 parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideScorePath))
                 self.netmhcdecoy_name = self.netmhcdecoys
                 self.netmhcdecoys = (parsed_location, netmhc_row)                
