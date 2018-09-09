@@ -1,6 +1,6 @@
 import Base
 import argparse
-
+import sys
 parser = argparse.ArgumentParser(description='Import a PeptideList')
 parser.add_argument('project_folder')
 parser.add_argument('location', help='Location of the NetMHC output')
