@@ -19,5 +19,3 @@ def line_length_set(location):
     print(outs)
     return set([int(x) for x in outs.split()])
 
-
-print(line_length_set('a.txt'))
