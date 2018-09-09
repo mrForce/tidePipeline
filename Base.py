@@ -1,5 +1,6 @@
 import DB
 from sqlalchemy import exists
+import BashScripts
 from create_target_set import *
 import sys
 import tempfile
@@ -358,9 +359,22 @@ class Base:
             
                 
         
-    
-
-
+    def import_peptide_list(self, name, fasta_name, location):
+        fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
+        if fasta_row is None:
+            raise FASTAWithNameDoesNotExistError(fasta_name)
+        line_length_set = filter(lambda x: x > 0, BashScripts.line_length_set(location))
+        assert(len(line_length_set) == 1)
+        length = list(line_length_set)[0]
+        peptide_row = self.db_session.query(DB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
+        if peptide_row is None:
+            fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
+            peptide_filename = fasta_filename + '_' + str(length) + '.txt'
+            peptide_list_path = os.path.join('peptides', peptide_filename)
+            shutil.copyfile(location, peptide_list_path)
+            peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+            self.db_session.add(peptide_list)
+            self.db_session.commit()
     def add_peptide_list(self, name, length, fasta_name):
         fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
         if fasta_row is None:
