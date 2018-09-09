@@ -12,7 +12,7 @@ args = parser.parse_args()
 project_folder = args.project_folder
 location = args.location
 hla = args.HLA
-peptide_list_name = args.PeptideListname
+peptide_list_name = args.PeptideListName
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 project.import_netmhc_run(hla, location, peptide_list_name)
