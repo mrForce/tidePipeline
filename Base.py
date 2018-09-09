@@ -64,6 +64,7 @@ class Base:
         for x in rows:
             values.append(getattr(x, column_name))
         return values
+
     def verify_row_existence(self, column_object, name):
         """
         Basically, pass the ROW.Name object as column_object, and name as the name argument.
