@@ -363,7 +363,7 @@ class Base:
         #location is the NetMHC output
         peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptidelist_name).first()
         if peptide_list_row is None:
-            raise NoSuchPeptideListError(peptide_list_name)
+            raise NoSuchPeptideListError(peptidelist_name)
         hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla_name).first()
         if hla_row is None:
             raise NoSuchHLAError(hla_name)
