@@ -3,14 +3,15 @@ import Base
 import argparse
 import sys
 import os
-parser = argparse.ArgumentParser(description='Filter a PeptideList by NetMHC rank')
+parser = argparse.ArgumentParser(description='Filter a PeptideList by NetMHC rank.')
 
 parser.add_argument('project_folder', help='The location of the project folder')
 
 parser.add_argument('peptideList', help='Name of the peptidelist to run NetMHC on')
 parser.add_argument('HLA', help='Name of the HLA allele to run with NetMHC')
 parser.add_argument('rank', help='The rank cutoff', type=float)
-parser.add_argument('FilteredNetMHCName', help='The name referring to the set of peptides filtered by NetMHC')
+
+
 parser.add_argument('--netMHCPan', action='store_true', help='Use netMHCPan')
 
 args = parser.parse_args()
@@ -34,9 +35,10 @@ if project.verify_filtered_netMHC(args.FilteredNetMHCName):
 print(args.peptideList)
 print(args.HLA)
 print(args.rank)
-print(args.FilteredNetMHCName)
+netmhc_name = peptideList + '_' + args.HLA
+filtered_netmhc_name = netmhc_name + '_' + str(args.rank)
 
-project.run_netmhc(args.peptideList, args.HLA, float(args.rank), args.FilteredNetMHCName, args.netMHCPan)
+project.run_netmhc(args.peptideList, args.HLA, float(args.rank), netmhc_name, filtered_netmhc_name, args.netMHCPan)
 
 project.end_command_session()
 
