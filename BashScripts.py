@@ -13,8 +13,8 @@ def netMHCDecoys(parsed_netmhc_output_location, target_location, output_location
 def line_length_set(location):
     proc = subprocess.Popen(['bash_scripts/line_length_set.sh', location], stdout = subprocess.PIPE)
     try:
-        outs, errs = proc.communicate(timeout=10)
-    except TimeoutExpired:
+        outs, errs = proc.communicate(timeout=60)
+    except:
         assert(False)
     print(outs)
     return set([int(x) for x in outs.split()])
