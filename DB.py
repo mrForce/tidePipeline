@@ -465,6 +465,8 @@ class NetMHC(BaseTable):
     #a TXT file, each line is a peptide, then a comma, then the rank
     PeptideScorePath = Column('PeptideScorePath', String)
     peptidelist = relationship('PeptideList', cascade='all,delete')
+    def length(self):
+        return self.peptidelist.length
     def remove_files(self, project_root):
         delete_objects(project_root, [self.NetMHCOutputPath, self.PeptideScorePath])
     

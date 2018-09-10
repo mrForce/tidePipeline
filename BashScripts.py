@@ -1,16 +1,33 @@
 import subprocess
+import os
+import collections
+class ParsedNetMHC:
+    #row is a row from the NetMHC table
+    def __init__(self, project_location, row):
+        self.location = os.path.join(project_location, row.PeptideScorePath)
+        self.length = row.length()
+    def get_location(self):
+        return self.location
+    def get_length(self):
+        return self.length
 
 """
-
-Okay, so here's now this function works. You pass in the locations of the parsed NetMHC output, and peptides (either in peptide format, or FASTA format. We'll remove FASTA headers automatically by grepping for '>'), along with where to put the decoys. The script outputs the top n (ranked via NetMHC ranking) peptides from the NetMHC output that are not shared with target_location. 
-
-It will combine the targets and decoys into a proper FASTA file for MSGF+ to index
+parsed_netmhc_objects must be a list of ParsedNetMHC instances
 """
-def netMHCDecoys(parsed_netmhc_output_location, target_location, output_location):
+def netMHCDecoys(parsed_netmhc_objects, target_location, output_location):
+    lengths = line_length_set(target_location)
+    netmhc_length_dict = defaultdict(list)
+    for x in parsed_netmhc_objects:
+        netmhc_length_dict[x.get_length()] = x.get_location()
+    for length, locations:
+        
     assert(subprocess.call(['bash_scripts', 'netmhc_decoys.sh', parsed_netmhc_output_location, target_set_peptides_location, output_location]) == 0)
     
 
 def line_length_set(location):
+    """
+    This  automatically removes any FASTA headers
+    """
     proc = subprocess.Popen(['bash_scripts/line_length_set.sh', location], stdout = subprocess.PIPE)
     try:
         outs, errs = proc.communicate(timeout=60)
