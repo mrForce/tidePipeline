@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod, ABCMeta
 from Base import Base
 import DB
 import tempfile
+import BashScripts
 from Errors import *
 import subprocess
 import os
@@ -68,7 +69,8 @@ class AbstractEngine(Base, metaclass=ABCMeta):
             combined_peptide_file = peptide_files[0]
         temp_fasta = tempfile.NamedTemporaryFile(mode='w', suffix='.fasta')
         temp_files.append(temp_fasta)
-        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', combined_peptide_file, temp_fasta.name])
+        BashScripts.join_peptides_to_fasta(combined_peptide_file, temp_fasta.name)
+
 
         return (fasta_file_location, link_row, temp_files)
 

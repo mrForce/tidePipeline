@@ -1,6 +1,7 @@
 import subprocess
 import os
 import collections
+import tempfile
 class ParsedNetMHC:
     #row is a row from the NetMHC table
     def __init__(self, project_location, row):
@@ -33,7 +34,24 @@ def merge_netmhc_runs(mode, netmhc_runs):
     output_location = outs.strip()
     assert(os.path.isfile(output_location))
     return output_location
-    
+
+def call_netmhc_decoys(input_location, targets):
+    #returns the output location (which is a temporary file)
+    proc = subprocess.Popen(['bash_scripts/netmhc_decoys.sh', input_location, targets], stdout=subprocess.PIPE)
+    try:
+        outs, errors = proc.communicate(timeout=600)
+    except:
+        assert(False)
+    output_location = outs.strip()
+    assert(os.path.isfile(output_location))
+    return output_location
+
+def join_peptides_to_fasta(input_locations, output_location, prefix=None):
+    #prefix is what goes between the > and line number in the FASTA headers
+    if prefix:
+        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', '-P', prefix, *input_locations, output_location])
+    else:
+        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', *input_locations, output_location])
 """
 parsed_netmhc_objects must be a list of ParsedNetMHC instances
 
@@ -44,6 +62,7 @@ def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, mer
     netmhc_length_dict = collections.defaultdict(list)
     for x in parsed_netmhc_objects:
         netmhc_length_dict[x.get_length()] = x.get_location()
+    temp_outputs = []
     for length, locations in netmhc_length_dict.items():
         """
         If there are multple locations, merge the runs using merge_netmhc_runs.sh
@@ -55,7 +74,15 @@ def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, mer
         if len(locations) > 1:
             locations = [merge_netmhc_runs(merge_mode, locations)]
         targets_with_length = extract_peptides_with_length(target_location, length)
-        assert(subprocess.call(['bash_scripts/netmhc_decoys.sh', locations[0], targets_with_length, output_location]) == 0)
+        temp_output_location = call_netmhc_decoys(locations[0], targets_with_length)
+        temp_outputs.append(temp_output_location)
+    with tempfile.NamedTemporaryFile() as f:
+        join_peptides_to_fasta(temp_outputs, f.name, 'XXX_')
+        for temp_output in temp_outputs:
+            os.remove(temp_output)
+        combine_files([output_location, f.name], output_location)
+   
+    
     
 
 def line_length_set(location):
@@ -78,4 +105,5 @@ def netmhc_percentile(input_location, output_location):
     assert(os.path.isfile(input_location))
     subprocess.call(['bash_scripts/netmhc_percentile.sh', input_location, output_location])
 
-
+def combine_files(input_files, output_file):
+    subprocess.call(['bash_scripts/combine_files', *input_files, output_file])

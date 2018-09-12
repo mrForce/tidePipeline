@@ -148,7 +148,7 @@ class MSGFPlusIndexRunner:
         tda = 2
         if netmhc_decoys:
             netmhc_decoys_location = netmhc_decoys[0]
-            BashScripts.netMHCDecoys(netmhc_decoys, fasta_path, os.path.abspath(new_fasta_path))
+            BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path))
             tda = 0
         command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.msdbsearch.BuildSA', '-d', new_fasta_tail, '-tda', str(tda)]
         print('index command: ' + ' '.join(command))
