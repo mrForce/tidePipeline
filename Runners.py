@@ -94,7 +94,7 @@ class MSGFPlusSearchRunner:
         memory_string = '-Xmx3500M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
-        if index_row.netmhcdecoys:
+        if index_row.netmhc_decoys:
             tda = 0
         else:
             tda = 1
