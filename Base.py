@@ -353,13 +353,13 @@ class Base:
                             if rank <= rank_cutoff:
                                 g.write(peptide + '\n')
             
-            
+                                
             filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
             #self.db_session.commit()
             
                 
-    def import_netmhc_run(self, hla, location, peptidelist_name):
+    def import_netmhc_run(self, hla, location, peptidelist_name, ranks=None):
         #location is the NetMHC output
         peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptidelist_name).first()
         if peptide_list_row is None:
@@ -384,6 +384,27 @@ class Base:
             netmhc_row = DB.NetMHC(peptidelist = peptide_list_row, hla = hla_row, Name = peptidelist_name + '_' + hla, NetMHCOutputPath= os.path.join('NetMHC', netmhc_output_filename), PeptideAffinityPath = affinity_path, PeptideRankPath=rank_path)
             self.db_session.add(netmhc_row)
             self.db_session.commit()
+            if ranks:
+                for rank_cutoff in ranks:
+                    filtered_name = peptidelist_name + '_' + hla + '_' + rank
+                    file_name = str(uuid.uuid4())
+                    while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
+                        file_name = str(uuid.uuid4())
+                    output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
+                    input_path = os.path.join(self.project_path, rank_path)
+                    rank_cutoff_float = float(rank_cutoff)
+                    with open(input_path, 'r') as f:
+                        with open(output_path, 'w') as g:
+                            for line in f:
+                                parts = line.split(',')
+                                if len(parts) == 2:
+                                    peptide = parts[0].strip()
+                                    rank = float(parts[1])
+                                    if rank <= rank_cutoff_float:
+                                        g.write(peptide + '\n')
+                    filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+                    self.db_sessioen.add(filtered_row)
+
             
     def import_peptide_list(self, name, fasta_name, location):
         fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
