@@ -386,7 +386,7 @@ class Base:
             self.db_session.commit()
             if ranks:
                 for rank_cutoff in ranks:
-                    filtered_name = peptidelist_name + '_' + hla + '_' + rank
+                    filtered_name = peptidelist_name + '_' + hla + '_' + rank_cutoff
                     file_name = str(uuid.uuid4())
                     while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
                         file_name = str(uuid.uuid4())

@@ -16,5 +16,5 @@ else
     fileArgs=${@:3: $#-1}
     joined=$(mktemp)
     chainJoin $fileArgs > $joined
-    awk -F "," -f select_netmhc_rank.awk $joined $1 
+    awk -F "," -f bash_scripts/select_netmhc_rank.awk $joined $1 
 fi
