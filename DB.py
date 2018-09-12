@@ -471,7 +471,7 @@ class NetMHC(BaseTable):
     PeptideAffinityPath = Column('PeptideAffinityPath', String)
     PeptideRankPath = Column('PeptideRankPath', String)
     peptidelist = relationship('PeptideList', cascade='all,delete')
-    indexbase_decoys = relationship('IndexBase', secondary=indexbase_netmhc_decoys, back_populates='netmhc_id')
+    indexbase_decoys = relationship('IndexBase', secondary=indexbase_netmhc_decoys, back_populates='netmhc_decoys')
     def length(self):
         return self.peptidelist.length
     def remove_files(self, project_root):
@@ -509,7 +509,7 @@ class IndexBase(BaseTable):
     __tablename__ = 'IndexBase'
     idIndex = Column('idIndex', Integer, primary_key=True)
     indexType = Column(String(50))
-    netmhc_decoys = relationship('NetMHC', secondary=indexbase_netmhc_decoys, back_populates='indexbase_id')
+    netmhc_decoys = relationship('NetMHC', secondary=indexbase_netmhc_decoys, back_populates='indexbase_decoys')
     contaminants = relationship('ContaminantSet', secondary = indexbase_contaminantSet, back_populates='indices')
     __mapper_args__ = {
         'polymorphic_identity': 'indexbase',
