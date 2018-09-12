@@ -364,9 +364,9 @@ class Base:
         peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptidelist_name).first()
         if peptide_list_row is None:
             raise NoSuchPeptideListError(peptidelist_name)
-        hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla_name).first()
+        hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla).first()
         if hla_row is None:
-            raise NoSuchHLAError(hla_name)
+            raise NoSuchHLAError(hla)
         netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
         if netmhc_row:
             raise DuplicateNetMHCError(peptidelist_name, hla)
@@ -384,7 +384,7 @@ class Base:
         fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
         if fasta_row is None:
             raise FASTAWithNameDoesNotExistError(fasta_name)
-        line_length_set = filter(lambda x: x > 0, BashScripts.line_length_set(location))
+        line_length_set = list(filter(lambda x: x > 0, BashScripts.line_length_set(location)))
         assert(len(line_length_set) == 1)
         length = list(line_length_set)[0]
         peptide_row = self.db_session.query(DB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
@@ -392,7 +392,7 @@ class Base:
             fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
             peptide_filename = fasta_filename + '_' + str(length) + '.txt'
             peptide_list_path = os.path.join('peptides', peptide_filename)
-            shutil.copyfile(location, peptide_list_path)
+            shutil.copyfile(location, os.path.join(self.project_path, peptide_list_path))
             peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
             self.db_session.commit()
