@@ -379,7 +379,7 @@ class Base:
             rank_path =  os.path.join('NetMHC', netmhc_output_filename + '-rank')
             full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
             BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
-            BashScripts.netmhc_percentile(full_output_path, os.path.join(self.project_path, rank_path))
+            BashScripts.netmhc_percentile(os.path.abspath(os.path.join(self.project_path, affinity_path)), os.path.abspath(os.path.join(self.project_path, rank_path)))
 
             netmhc_row = DB.NetMHC(peptidelist = peptide_list_row, hla = hla_row, Name = peptidelist_name + '_' + hla, NetMHCOutputPath= os.path.join('NetMHC', netmhc_output_filename), PeptideAffinityPath = affinity_path, PeptideRankPath=rank_path)
             self.db_session.add(netmhc_row)
@@ -469,7 +469,7 @@ class Base:
             rank_path =  os.path.join('NetMHC', netmhc_output_filename + '-rank')
             full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
             BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
-            BashScripts.netmhc_percentile(full_output_path, os.path.join(self.project_path, rank_path))
+            BashScripts.netmhc_percentile(os.path.abspath(os.path.join(self.project_path, affinity_path)), os.path.abspath(os.path.join(self.project_path, rank_path)))
             
             netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, Name = netmhc_name, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideRankPath = rank_path, PeptideAffinityPath=affinity_path)
             self.db_session.add(netmhc_row)

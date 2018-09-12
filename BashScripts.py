@@ -11,19 +11,51 @@ class ParsedNetMHC:
     def get_length(self):
         return self.length
 
+def extract_peptides_with_length(location, length):
+    #peptides can be in FASTA or peptide format. Returns the output location (hint: it's a temporary file)
+    proc = subprocess.Popen(['bash_scripts/extract_peptides_with_length.sh', location, length], stdout=subprocess.PIPE)
+    try:
+        outs, errors = proc.communicate(timeout=240)
+    except:
+        assert(False)
+    output_location = outs.strip()
+    assert(os.path.isfile(output_location))
+    return output_location
+
+
+def merge_netmhc_runs(mode, netmhc_runs):
+    #netmhc_runs is a list of filenames. This returns the output location, which is a temp file created by mktemp
+    proc = subprocess.Popen(['bash_scripts/merge_netmhc_runs.sh', mode, *netmhc_runs], stdout=subprocess.PIPE)
+    try:
+        outs, errors = proc.communicate(timeout=240)
+    except:
+        assert(False)
+    output_location = outs.strip()
+    assert(os.path.isfile(output_location))
+    return output_location
+    
 """
 parsed_netmhc_objects must be a list of ParsedNetMHC instances
 
 Finish these later
 """
-def netMHCDecoys(parsed_netmhc_objects, target_location, output_location):
+def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, merge_mode = 0):
     lengths = line_length_set(target_location)
     netmhc_length_dict = collections.defaultdict(list)
     for x in parsed_netmhc_objects:
         netmhc_length_dict[x.get_length()] = x.get_location()
-    #for length, locations:
-        
-    #assert(subprocess.call(['bash_scripts/netmhc_decoys.sh', parsed_netmhc_output_location, target_set_peptides_location, output_location]) == 0)
+    for length, locations in netmhc_length_dict.items():
+        """
+        If there are multple locations, merge the runs using merge_netmhc_runs.sh
+
+        Then, extract the targets with the given length
+
+        Then, call netmhc_decoys.sh
+        """
+        if len(locations) > 1:
+            locations = [merge_netmhc_runs(merge_mode, locations)]
+        targets_with_length = extract_peptides_with_length(target_location, length)
+        assert(subprocess.call(['bash_scripts/netmhc_decoys.sh', locations[0], targets_with_length, output_location]) == 0)
     
 
 def line_length_set(location):
@@ -32,7 +64,7 @@ def line_length_set(location):
     """
     proc = subprocess.Popen(['bash_scripts/line_length_set.sh', location], stdout = subprocess.PIPE)
     try:
-        outs, errs = proc.communicate(timeout=60)
+        outs, errs = proc.communicate(timeout=240)
     except:
         assert(False)
     print(outs)

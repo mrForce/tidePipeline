@@ -11,10 +11,14 @@ chainJoin(){
 
 
 if [ $# -lt 4 ]; then
-    echo "Usage: merge_netmhc_runs.sh mode output netmhc_run_1 netmhc_run_2...\n where mode is 0 if we want to randomly select the rank to use; if 1, then select lowest (best) rank; if 2 then select greatest (worst) rank"
+    echo "Usage: merge_netmhc_runs.sh mode netmhc_run_1 netmhc_run_2...\n where mode is 0 if we want to randomly select the rank to use; if 1, then select lowest (best) rank; if 2 then select greatest (worst) rank"
 else
-    fileArgs=${@:3: $#-1}
+    fileArgs=${@:2: $#-1}
     joined=$(mktemp)
     chainJoin $fileArgs > $joined
-    awk -F "," -f bash_scripts/select_netmhc_rank.awk $joined $1 
+    
+    output=$(mktemp)
+    awk -F "," -f bash_scripts/select_netmhc_rank.awk $joined $1 > $output
+    echo $output
+
 fi
