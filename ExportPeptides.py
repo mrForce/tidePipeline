@@ -49,7 +49,7 @@ except:
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 row = None
-if args.CollectionType == 'FilteredSearchResult' or args.CollectionType == 'TideIterativeSearch' or args.collectionType == 'MSGFPlusIterativeSearch':
+if args.CollectionType == 'FilteredSearchResult' or args.CollectionType == 'TideIterativeSearch' or args.CollectionType == 'MSGFPlusIterativeSearch':
     print('in')
     if args.CollectionType == 'FilteredSearchResult':
         row = project.get_filtered_search_result_row(args.Name)

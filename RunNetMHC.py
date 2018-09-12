@@ -20,7 +20,8 @@ project_folder = args.project_folder
 print('project folder: ' + project_folder)
 project = Base.Base(project_folder, ' '.join(sys.argv))
 
-
+netmhc_name = args.peptideList + '_' + args.HLA
+filtered_netmhc_name = netmhc_name + '_' + str(args.rank)
 project.begin_command_session()
 if not project.verify_peptide_list(args.peptideList):
     print('peptide list: ' + args.peptideList + ' does not exist')
@@ -28,17 +29,16 @@ if not project.verify_peptide_list(args.peptideList):
 if not project.verify_hla(args.HLA):
     print('HLA: ' + args.HLA + ' does not exist')
     sys.exit()
-if project.verify_filtered_netMHC(args.FilteredNetMHCName):
+if project.verify_filtered_netMHC(filtered_netmhc_name):
     print('There is already a FilteredNetMHC entry with that name')
     sys.exit()
 
 print(args.peptideList)
 print(args.HLA)
 print(args.rank)
-netmhc_name = args.peptideList + '_' + args.HLA
-filtered_netmhc_name = netmhc_name + '_' + str(args.rank)
 
-project.run_netmhc(args.peptideList, args.HLA, float(args.rank), netmhc_name, filtered_netmhc_name, args.netMHCPan)
+
+project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, filtered_netmhc_name, args.netMHCPan)
 
 project.end_command_session()
 

@@ -10,6 +10,8 @@ parser.add_argument('PeptideListName')
 args = parser.parse_args()
 project_folder = args.project_folder
 location = args.location
+print('location')
+print(location)
 fasta = args.FASTA
 name = args.PeptideListName
 project = Base.Base(project_folder, ' '.join(sys.argv))

@@ -14,8 +14,8 @@ import os
 import Runners
 from abc import ABC, abstractmethod
 import networkx as nx
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+#import matplotlib.pyplot as plt
+#import matplotlib.image as mpimg
 
 import re
 number = 0

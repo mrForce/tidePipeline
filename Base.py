@@ -343,6 +343,7 @@ class Base:
             print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
             input_path = os.path.join(self.project_path, pep_score_path)
+            rank_cutoff_float = float(rank_cutoff)
             with open(input_path, 'r') as f:
                 with open(output_path, 'w') as g:
                     for line in f:
@@ -350,7 +351,7 @@ class Base:
                         if len(parts) == 2:
                             peptide = parts[0].strip()
                             rank = float(parts[1])
-                            if rank <= rank_cutoff:
+                            if rank <= rank_cutoff_float:
                                 g.write(peptide + '\n')
             
                                 

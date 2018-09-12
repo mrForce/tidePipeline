@@ -11,9 +11,9 @@ import subprocess
 
 def extract_peptides_from_fasta(fasta_path, output_path):
     with open(fasta_path, 'rU') as input_handle:
-        with open(output_path, 'wU') as output_handle:
+        with open(output_path, 'w') as output_handle:
             for record in SeqIO.parse(input_handle, 'fasta'):
-                sequence = record.seq
+                sequence = str(record.seq)
                 if len(sequence) > 0:
                     output_handle.write(sequence + '\n')
                 
