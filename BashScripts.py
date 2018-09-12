@@ -7,6 +7,7 @@ class ParsedNetMHC:
     def __init__(self, project_location, row):
         self.location = os.path.join(project_location, row.PeptideRankPath)
         self.length = row.length()
+        self.row = row
     def get_row(self):
         return self.row
     def get_location(self):

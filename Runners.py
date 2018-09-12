@@ -159,7 +159,7 @@ class MSGFPlusIndexRunner:
             #raise MSGFPlusIndexFailedError(' '.join(command))
         os.chdir(current_path)
         if netmhc_decoys:
-            return (DB.MSGFPlusIndex(tda=str(tda), netmhc_decoys=[x.get_row() for x in netmhc_decoys], new_fasta_tail)
+            return (DB.MSGFPlusIndex(tda=str(tda), netmhc_decoys=[x.get_row() for x in netmhc_decoys]), new_fasta_tail)
         else:
             return (DB.MSGFPlusIndex(tda=str(tda)), new_fasta_tail)
 

@@ -1,6 +1,7 @@
 import configparser
 import TideEngine
 import Base
+import BashScripts
 import MSGFPlusEngine
 from collections import defaultdict
 import DB
@@ -215,7 +216,8 @@ class Index:
             runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.netmhcdecoys:
                 self.parsed_netmhc_objects = []
-                for x in self.netmhcdecoys.split(','):                    
+                for x in self.netmhcdecoys.split(','):
+                    x = x.strip()
                     netmhc_row = project.get_netmhc_row(x)
                     parsed_netmhc_object = BashScripts.ParsedNetMHC(project_folder, netmhc_row)
                     
@@ -233,7 +235,7 @@ class Index:
                 if not test_run:
                     project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys = self.parsed_netmhc_objects)
                 if self.netmhcdecoys:
-                    index_node = IndexNode(self.indexType, index_name, self.contaminants, options={'netMHCDecoys': self.netmhcdecoy_name})
+                    index_node = IndexNode(self.indexType, index_name, self.contaminants, options={'netMHCDecoys': ''.join(self.netmhcdecoys)})
                 else:
                     index_node = IndexNode(self.indexType, index_name, self.contaminants)
         return (project, index_name, index_node, source_node)
@@ -316,12 +318,12 @@ class PostProcess:
             assert(param in section)
         self.postProcessType = section['postProcessType']
         assert(self.postProcessType in ['percolator', 'assign-confidence', 'msgf'])
-        searchNum = section.get_int('searchNum', -1)
+        searchNumber = section.get_int('searchNumber', -1)
         self.searchNumMap = searchNumMap
-        assert(searchNum in self.searchNumMap)
-        self.searchName = self.searchNumMap[searchNum][0]
-        self.searchNumber = searchNum
-        self.searchType = self.searchNumMap[searchNum][1]
+        assert(searchNumber in self.searchNumMap)
+        self.searchName = self.searchNumMap[searchNumber][0]
+        self.searchNumber = searchNumber
+        self.searchType = self.searchNumMap[searchNumber][1]
         """
         Just a bunch of comma seperated tuples of the form (cutoff, peptide output, [contaminant output])
         """
