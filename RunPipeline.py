@@ -214,20 +214,24 @@ class Index:
         elif self.indexType == 'msgf':
             runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.netmhcdecoys:
-                netmhc_row = project.get_netmhc_row(self.netmhcdecoys)
-                parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideRankPath))
-                self.netmhcdecoy_name = self.netmhcdecoys
-                self.netmhcdecoys = (parsed_location, netmhc_row)                
+                self.parsed_netmhc_objects = []
+                for x in self.netmhcdecoys.split(','):                    
+                    netmhc_row = project.get_netmhc_row(x)
+                    parsed_netmhc_object = BashScripts.ParsedNetMHC(project_folder, netmhc_row)
+                    
+                    self.parsed_netmhc_objects.append(parsed_netmhc_object)
+                
+
             if self.memory:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys = self.netmhcdecoys)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys = self.parsed_netmhc_objects)
                 options = {'memory': self.memory}
                 if self.netmhcdecoys:
-                    options['netMHCDecoys'] = self.netmhcdecoy_name
+                    options['netMHCDecoys'] = ', '.join(self.netmhcdecoys)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants, options = options)
             else:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys = self.netmhcdecoys)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys = self.parsed_netmhc_objects)
                 if self.netmhcdecoys:
                     index_node = IndexNode(self.indexType, index_name, self.contaminants, options={'netMHCDecoys': self.netmhcdecoy_name})
                 else:
