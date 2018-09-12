@@ -1,3 +1,2 @@
 #!/bin/bash
-
-awk '{print length($0)}' $1 | sort | uniq
+grep -v -F ">" $1 | awk '{print length($0)}' | sort -n | uniq

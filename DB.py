@@ -463,10 +463,14 @@ class NetMHC(BaseTable):
     #Raw output of NetMHC
     NetMHCOutputPath = Column('NetMHCOutputPath', String)
     #a TXT file, each line is a peptide, then a comma, then the rank
-    PeptideScorePath = Column('PeptideScorePath', String)
+    #used to be PeptideScorePath
+    PeptideAffinityPath = Column('PeptideAffinityPath', String)
+    PeptideRankPath = Column('PeptideRankPath', String)
     peptidelist = relationship('PeptideList', cascade='all,delete')
+    def length(self):
+        return self.peptidelist.length
     def remove_files(self, project_root):
-        delete_objects(project_root, [self.NetMHCOutputPath, self.PeptideScorePath])
+        delete_objects(project_root, [self.NetMHCOutputPath, self.PeptideAffinityPath, self.PeptideRankPath])
     
 class FilteredNetMHC(BaseTable, AbstractPeptideCollection):
     __abstract__ = False
