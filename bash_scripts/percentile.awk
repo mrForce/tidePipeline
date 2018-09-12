@@ -1,5 +1,6 @@
-BEGIN{
-    FOS=",";
+BEGIN {
+    FS=",";
+    OFS=","
     num_lines=ARGV[1];
     last_affinity=-1;
     

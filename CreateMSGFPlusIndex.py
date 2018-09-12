@@ -41,7 +41,7 @@ if args.contaminantSet:
 netmhc_decoys = None
 if args.netMHCDecoys:
     netmhc_row = project.get_netmhc_row(args.netMHCDecoys)
-    parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideScorePath))
+    parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideRankPath))
     netmhc_decoys = (parsed_location, netmhc_row)
     
 if args.memory:
