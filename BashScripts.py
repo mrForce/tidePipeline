@@ -23,7 +23,7 @@ def netMHCDecoys(parsed_netmhc_objects, target_location, output_location):
         netmhc_length_dict[x.get_length()] = x.get_location()
     #for length, locations:
         
-    assert(subprocess.call(['bash_scripts', 'netmhc_decoys.sh', parsed_netmhc_output_location, target_set_peptides_location, output_location]) == 0)
+    assert(subprocess.call(['bash_scripts/netmhc_decoys.sh', parsed_netmhc_output_location, target_set_peptides_location, output_location]) == 0)
     
 
 def line_length_set(location):
@@ -44,6 +44,6 @@ def extract_netmhc_output(input_location, output_location):
 
 def netmhc_percentile(input_location, output_location):
     assert(os.path.isfile(input_location))
-    subprocess.call(['bash_scripts', 'netmhc_percentile.sh', input_location, output_location])
+    subprocess.call(['bash_scripts/netmhc_percentile.sh', input_location, output_location])
 
 
