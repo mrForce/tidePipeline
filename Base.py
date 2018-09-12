@@ -403,7 +403,7 @@ class Base:
                                     if rank <= rank_cutoff_float:
                                         g.write(peptide + '\n')
                     filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
-                    self.db_sessioen.add(filtered_row)
+                    self.db_session.add(filtered_row)
 
             
     def import_peptide_list(self, name, fasta_name, location):

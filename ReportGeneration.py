@@ -205,7 +205,7 @@ class Report:
             q_val_col = row.estimation_method + ' q-value'
             handler = AssignConfidenceHandler(row, q_val_col, threshold, project_path)
             self.assign_confidence_handlers.append(handler)
-            summary_rows.append(row.AssignConfidenceName, row.search.mgf.MGFName, row.search.SearchName, str(handler.getNumPSMs()), str(handler.getNumPassingPSMs()), str(len(handler.getPeptides())))
+            summary_rows.append(row.AssignConfidenceName, row.search.mgf.MGFName, row.search.SearchName, str(len(handler.get_psms())), str(handler.getNumPassingPSMs()), str(len(handler.get_peptides())))
         self.latex_objects.append(LatexTable(summary_table_headers, summary_rows))
         num_assign_confidence_runs = len(assign_confidence_runs)
         peptide_overlap_headers = ['Assign Confidence Name'] + ['']*(num_assign_confidence_runs - 1) + ['Peptide Overlap']

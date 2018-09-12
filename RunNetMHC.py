@@ -35,7 +35,7 @@ if project.verify_filtered_netMHC(args.FilteredNetMHCName):
 print(args.peptideList)
 print(args.HLA)
 print(args.rank)
-netmhc_name = peptideList + '_' + args.HLA
+netmhc_name = args.peptideList + '_' + args.HLA
 filtered_netmhc_name = netmhc_name + '_' + str(args.rank)
 
 project.run_netmhc(args.peptideList, args.HLA, float(args.rank), netmhc_name, filtered_netmhc_name, args.netMHCPan)

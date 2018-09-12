@@ -66,7 +66,7 @@ class AbstractEngine(Base, metaclass=ABCMeta):
             combined_peptide_file = temp_file.name
         else:
             combined_peptide_file = peptide_files[0]
-        temp_fasta = temp_fasta.NamedTemporaryFile(mode='w', suffix='.fasta')
+        temp_fasta = tempfile.NamedTemporaryFile(mode='w', suffix='.fasta')
         temp_files.append(temp_fasta)
         subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', combined_peptide_file, temp_fasta.name])
 

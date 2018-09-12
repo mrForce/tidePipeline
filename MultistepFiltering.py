@@ -94,7 +94,7 @@ class MultistepFiltering(Base):
             if row.estimation_method and len(row.estimation_method) > 0:
                 q_val_column = row.estimation_method + ' q-value'
             handler = ReportGeneration.AssignConfidenceHandler(row, q_val_column, q_val_threshold, self.project_path, self.get_crux_executable_path())
-            peptides = handler.getPeptides()
+            peptides = handler.get_peptides()
             
             return TargetSetSourceCount.count_sources(self.project_path, target_set_row, peptides)
     def get_assign_confidence(self, assign_confidence_name):

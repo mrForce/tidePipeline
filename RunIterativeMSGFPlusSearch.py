@@ -51,6 +51,6 @@ postprocessing_object = PostProcessing.PostProcessing(None, None, project)
 if args.use_percolator:
     project.multistep_search(args.mgf_name, args.msgfplusindices, good_arguments, args.iterativesearch_name, args.fdr, postprocessing_object, args.use_percolator, args.modifications_name, args.memory, disable_contaminants_check = args.disableContaminantSetCheck)
 else:
-    project.multistep_search(args.mgf_name, args.msgfplusindices, good_arguments, args.iterativesearch_name, args.fdr, postprocessing_object, False, args.modifications_name, args.memory, disable_contaminants_check = )
+    project.multistep_search(args.mgf_name, args.msgfplusindices, good_arguments, args.iterativesearch_name, args.fdr, postprocessing_object, False, args.modifications_name, args.memory, disable_contaminants_check = args.disableContaminantSetCheck)
 project.end_command_session()
 

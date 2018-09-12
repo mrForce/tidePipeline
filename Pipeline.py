@@ -225,7 +225,7 @@ class Index:
                 else:
                     project.create_index(self.sourceType, self.sourceName, runner, index_name)
         elif self.indexType == 'msgf':
-            runner = Runners.MSGFPlusIndex(msgf_exec_path)
+            runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.memory:
                 if not test_run:
                     project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory)
@@ -392,7 +392,7 @@ class PostProcess:
                     project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
             elif self.postProcessType == 'assign-confidence':
                 if not test_run:
-                    project.assign_confidence(self.searchName, runner, name)
+                    project.assign_confidence(self.searchName, runner, filtered_name)
                     assert(project.verify_row_existence(DB.AssignConfidence.AssignConfidenceName, filtered_name))
                     project.filter_q_value_assign_confidence(post_process_name, cutoff, post_process_name)            
             elif self.postProcessType == 'msgf':
@@ -411,7 +411,7 @@ class PostProcess:
                                 line = line.strip()
                                 if len(line) > 1:
                                     contaminant_peptides.add(line)
-                peptides = row.get_peptides(project_folder)
+                peptides = row.get_peptides(project.project_path)
                 contaminant_file = None
                 if contaminant_output:
                     contaminant_file = open(contaminant_output, 'w')

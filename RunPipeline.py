@@ -204,7 +204,7 @@ class Index:
         if self.indexType == 'tide':
             index_node = IndexNode(self.indexType, index_name, self.contaminants, param_file = self.indexParamFile)
             param_file_row = project.get_tide_index_parameter_file(self.indexParamFile)
-            assert(row is not None)
+            assert(param_file_row is not None)
             runner = Runners.TideIndexRunner({}, crux_exec_path, project.project_path, param_file_row)
             if not test_run:
                 if self.contaminants:
@@ -212,7 +212,7 @@ class Index:
                 else:
                     project.create_index(self.sourceType, self.sourceName, runner, index_name)
         elif self.indexType == 'msgf':
-            runner = Runners.MSGFPlusIndex(msgf_exec_path)
+            runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.netmhcdecoys:
                 netmhc_row = project.get_netmhc_row(self.netmhcdecoys)
                 parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideRankPath))
@@ -292,7 +292,7 @@ class Search:
                 while (search_name + str(num)) in search_names:
                     num += 1
                 search_name = search_name + str(num)
-            param_file_row = project.get_tide_search_parameter_file(args.param_file)
+            param_file_row = project.get_tide_search_parameter_file(self.searchParamFile)
             runner = Runners.TideSearchRunner(crux_exec_path, project.project_path, param_file_row)
             if not test_run:
                 project.run_search(self.mgfName, index_name, runner, search_name)
@@ -313,11 +313,11 @@ class PostProcess:
         self.postProcessType = section['postProcessType']
         assert(self.postProcessType in ['percolator', 'assign-confidence', 'msgf'])
         searchNum = section.get_int('searchNum', -1)
-        searchNumMap = searchNumMap
+        self.searchNumMap = searchNumMap
         assert(searchNum in self.searchNumMap)
-        self.searchName = searchNumMap[searchNum][0]
-        self.searchNum = searchNum
-        self.searchType = searchNumMap[searchNum][1]
+        self.searchName = self.searchNumMap[searchNum][0]
+        self.searchNumber = searchNum
+        self.searchType = self.searchNumMap[searchNum][1]
         """
         Just a bunch of comma seperated tuples of the form (cutoff, peptide output, [contaminant output])
         """
@@ -329,7 +329,7 @@ class PostProcess:
         contaminant_locations = filter(lambda x: len(x), [x[2] if len(x) == 3 else False for x in self.cutoffsAndLocations])
         assert(len(contaminant_locations) == len(set(contaminant_locations)))
         assert(self.cutoffsAndLocations)
-        assert(self.searchNum > -1)
+        assert(self.searchNumber > -1)
         if 'paramFile' in section:
             self.postProcessParamFile = section['paramFile']
         else:
@@ -383,9 +383,9 @@ class PostProcess:
                     project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
             elif self.postProcessType == 'assign-confidence':
                 if not test_run:
-                    project.assign_confidence(self.searchName, runner, name)
+                    project.assign_confidence(self.searchName, runner, post_process_name)
                     assert(project.verify_row_existence(DB.AssignConfidence.AssignConfidenceName, filtered_name))
-                    project.filter_q_value_assign_confidence(post_process_name, cutoff, post_process_name)            
+                    project.filter_q_value_assign_confidence(post_process_name, cutoff, filtered_name)            
             elif self.postProcessType == 'msgf':
                 if not test_run:
                     project.filter_q_value_msgfplus(self.searchName, cutoff, filtered_name)
@@ -402,7 +402,7 @@ class PostProcess:
                                 line = line.strip()
                                 if len(line) > 1:
                                     contaminant_peptides.add(line)
-                peptides = row.get_peptides(project_folder)
+                peptides = row.get_peptides(project.project_path)
                 contaminant_file = None
                 if contaminant_output:
                     contaminant_file = open(contaminant_output, 'w')
@@ -414,7 +414,7 @@ class PostProcess:
                             contaminant_file.write(peptide + '\n')                            
                 if contaminant_file:
                     contaminant_file.close()
-        post_processor_node = PostProcessingNode(self.postProcessType, post_process_name, self.searchNum, param_file = self.postProcessParamFile)
+        post_processor_node = PostProcessingNode(self.postProcessType, post_process_name, self.searchNumber, param_file = self.postProcessParamFile)
         return post_processor_node
 """
 Comma seperated string
@@ -469,12 +469,12 @@ def run_pipeline(ini_file, project_folder, test_run = False):
     for search_section in config['Search']:
         search_object = Search(search_section, index_type)
         search_name, search_node = search_object.run_search(project, index_name, test_run)
-        searchNumMap[search_object.searchNum] = search_name
-        searchNumToNodeMap[search_object.searchNum] = search_node
+        searchNumMap[search_object.searchNumber] = search_name
+        searchNumToNodeMap[search_object.searchNumber] = search_node
     for post_process_section in config['PostProcess']:
         post_process_object = PostProcess(post_process_section, searchNumMap)
         post_process_node =  post_process_object.run_post_process_and_export(project, test_run)
-        searchNumToNodeMap[post_process_object.searchNum].add_post_process_node(post_process_node)
+        searchNumToNodeMap[post_process_object.searchNumber].add_post_process_node(post_process_node)
     search_nodes = list(searchNumToNodeMap.values())
     index_node.set_search_nodes(search_nodes)
     peptide_source_node.set_index_nodes([index_node])

@@ -107,7 +107,7 @@ class ContaminantSet(BaseTable, AbstractPeptideCollection):
 
     def get_peptides(self, project_path):
         peptides = []
-        lengths = self.lengths()
+        lengths = self.lengths
         with open(self.peptide_file, 'r') as f:
             for line in f:
                 line = line.strip()
