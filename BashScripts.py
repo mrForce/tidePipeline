@@ -110,3 +110,11 @@ def netmhc_percentile(input_location, output_location):
 
 def combine_files(input_files, output_file):
     subprocess.call(['bash_scripts/combine_files', *input_files, output_file])
+
+
+def top_percent_netmhc(input_location, percent, output_location):
+    assert(os.path.isfile(input_location))
+    assert(float(percent) > 0.0)
+    assert(float(percent) <= 100.0)
+    subprocess.call(['bash_scripts/top_percent.sh', os.path.abspath(input_location), percent, os.path.abspath(output_location)])
+    assert(oos.path.isfile(output_location))

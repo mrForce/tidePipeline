@@ -3,6 +3,18 @@ import Base
 import argparse
 import sys
 import os
+
+class NameCreator:
+    def __init__(self, start_string):
+        self.start_string = start_string
+        self.version = 0
+    def increase_version(self):
+        self.version += 1
+    def __str__(self):
+        if self.version == 0:
+            return self.start_string
+        else:
+            return self.start_string + '_' + str(self.version)
 parser = argparse.ArgumentParser(description='Filter a PeptideList by NetMHC rank.')
 
 parser.add_argument('project_folder', help='The location of the project folder')
@@ -29,9 +41,9 @@ if not project.verify_peptide_list(args.peptideList):
 if not project.verify_hla(args.HLA):
     print('HLA: ' + args.HLA + ' does not exist')
     sys.exit()
-if project.verify_filtered_netMHC(filtered_netmhc_name):
-    print('There is already a FilteredNetMHC entry with that name')
-    sys.exit()
+name_creator = NameCreator(filtered_netmhc_name)
+while project.verify_filtered_netMHC(str(name_creator)):
+    name_creator.increase_version()
 
 print(args.peptideList)
 print(args.HLA)

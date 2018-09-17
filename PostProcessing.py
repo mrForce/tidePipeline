@@ -213,7 +213,7 @@ class PostProcessing(Base):
         tempfiles = []
         if peptide_set_type == 'PeptideList':
             for hla in hla_names:
-                netmhc_id, peptide_score_path = self._run_netmhc(peptide_set_name, hla, netmhcpan)
+                netmhc_row, peptide_affinity_path, peptide_score_path, is_netmhc_row_new = self._run_netmhc(peptide_set_name, hla, netmhcpan)
                 peptide_score_paths.append(peptide_score_path)
         else:
             row = None

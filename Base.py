@@ -329,7 +329,7 @@ class Base:
             return True
 
     def run_netmhc(self, peptide_list_name, hla, rank_cutoff, netmhc_name, filtered_name, netmhcpan = False):
-        netmhc_row, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhc_name, netmhcpan)
+        netmhc_row, pep_affinity_path, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhc_name, netmhcpan)
        
         if is_netmhc_row_new:
             filtered_netmhc_row = None
@@ -343,8 +343,10 @@ class Base:
             print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
             input_path = os.path.join(self.project_path, pep_score_path)
-            rank_cutoff_float = float(rank_cutoff)
-            with open(input_path, 'r') as f:
+            BashScripts.top_percent_netmhc(os.path.join(self.project_path, pep_affinity_path), rank_cutoff, output_path)
+            
+            #rank_cutoff_float = float(rank_cutoff)
+            """with open(input_path, 'r') as f:
                 with open(output_path, 'w') as g:
                     for line in f:
                         parts = line.split(',')
@@ -353,8 +355,8 @@ class Base:
                             rank = float(parts[1])
                             if rank <= rank_cutoff_float:
                                 g.write(peptide + '\n')
-            
-                                
+            """
+
             filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
             #self.db_session.commit()
@@ -460,7 +462,7 @@ class Base:
             raise NoSuchHLAError(hla_name)
         netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA, Name=netmhc_name).first()
         if netmhc_row:
-            return (netmhc_row, netmhc_row.PeptideRankPath, False)
+            return (netmhc_row, netmhc_row.PeptideAffinityPath, netmhc_row.PeptideRankPath, False)
         else:
             netmhc_output_filename = str(uuid.uuid4().hex)
             while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed')):
@@ -475,7 +477,7 @@ class Base:
             netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, Name = netmhc_name, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideRankPath = rank_path, PeptideAffinityPath=affinity_path)
             self.db_session.add(netmhc_row)
             self.db_session.commit()
-            return (netmhc_row, netmhc_row.PeptideRankPath, True)
+            return (netmhc_row, netmhc_row.PeptideAffinityPath, netmhc_row.PeptideRankPath, True)
 
 
     def list_peptide_lists(self):
