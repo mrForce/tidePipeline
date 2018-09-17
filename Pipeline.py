@@ -5,6 +5,7 @@ import numpy as np
 import TideEngine
 import Base
 import MSGFPlusEngine
+import PostProcessing
 import traceback
 from collections import defaultdict
 import DB
@@ -251,8 +252,8 @@ class Search:
         else:
             assert(searchType == 'msgf')
         self.options = {}
-        self.searchNum = section.getint('searchnumber', -1)
-        assert(self.searchNum > -1)
+        self.searchNumber = section.getint('searchnumber', -1)
+        assert(self.searchNumber > -1)
         self.memory = section.getint('memory', 0)
         if searchType == 'msgf':
             keys = Runners.MSGFPlusSearchRunner.converter.keys()
@@ -312,17 +313,22 @@ class Search:
 
 class PostProcess:
     def __init__(self, section, searchNumMap):
-        required_params = ['postprocesstype', 'searchnum', 'cutoffsandlocations']
+        required_params = ['postprocesstype', 'searchnumber', 'cutoffsandlocations']
+        print('section')
+        print(section)
         for param in required_params:
+            print('param: ' + param)
+            
             assert(param in section)
         self.postProcessType = section['postprocesstype']
         assert(self.postProcessType in ['percolator', 'assign-confidence', 'msgf'])
-        searchNum = section.getint('searchnum', -1)
+        searchNumber = section.getint('searchnumber', -1)
         self.searchNumMap = searchNumMap
-        assert(searchNum in self.searchNumMap)
-        self.searchName = searchNumMap[searchNum]
-        self.searchNum = searchNum
-        self.searchType = searchNumMap[searchNum]
+        
+        assert(searchNumber in self.searchNumMap)
+        self.searchName = searchNumMap[searchNumber]
+        self.searchNumber = searchNumber
+        self.searchType = searchNumMap[searchNumber]
         """
         Just a bunch of comma seperated tuples of the form (cutoff, peptide output, [contaminant output])
         """
@@ -338,7 +344,7 @@ class PostProcess:
         contaminant_locations = list(filter(lambda x: x, [x[2] if len(x) == 3 else False for x in self.cutoffsAndLocations]))
         assert(len(contaminant_locations) == len(set(contaminant_locations)))
         assert(self.cutoffsAndLocations)
-        assert(self.searchNum > -1)
+        assert(self.searchNumber > -1)
         if 'paramfile' in section:
             self.postProcessParamFile = section['paramfile']
         else:
@@ -423,7 +429,7 @@ class PostProcess:
                             contaminant_file.write(peptide + '\n')                            
                 if contaminant_file:
                     contaminant_file.close()
-        post_processor_node = PostProcessingNode(self.postProcessType, post_process_name, self.searchNum, param_file = self.postProcessParamFile)
+        post_processor_node = PostProcessingNode(self.postProcessType, post_process_name, self.searchNumber, param_file = self.postProcessParamFile)
         post_processor_node.set_export_nodes(export_nodes)
         return post_processor_node
 
@@ -496,12 +502,15 @@ def run_pipeline(ini_file, project_folder, image_location, test_run = False):
     for search_section in search_sections:
         search_object = Search(search_section, index_type)
         search_name, search_node = search_object.run_search(project, index_name, test_run)
-        searchNumMap[search_object.searchNum] = search_name
-        searchNumToNodeMap[search_object.searchNum] = search_node
+        searchNumMap[search_object.searchNumber] = search_name
+        searchNumToNodeMap[search_object.searchNumber] = search_node
+
+    project.end_command_session()
+    project = PostProcessing.PostProcessing(project_folder, '')
     for post_process_section in postprocess_sections:
         post_process_object = PostProcess(post_process_section, searchNumMap)
         post_process_node =  post_process_object.run_post_process_and_export(project, test_run)
-        searchNumToNodeMap[post_process_object.searchNum].add_post_process_node(post_process_node)
+        searchNumToNodeMap[post_process_object.searchNumber].add_post_process_node(post_process_node)
     search_nodes = list(searchNumToNodeMap.values())
     index_node.set_search_nodes(search_nodes)
     peptide_source_node.set_index_nodes([index_node])
