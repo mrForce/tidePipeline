@@ -48,9 +48,9 @@ while project.verify_filtered_netMHC(str(name_creator)):
 print(args.peptideList)
 print(args.HLA)
 print(args.rank)
+print('filtered name: ' + str(name_creator))
 
-
-project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, filtered_netmhc_name, args.netMHCPan)
+project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, str(name_creator), args.netMHCPan)
 
 project.end_command_session()
 

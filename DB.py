@@ -27,12 +27,12 @@ def delete_objects(root, files, directories = []):
     for file_name in files:
         file_path = os.path.join(root, file_name)
         print('removing file: ' + file_path)
-        """
+    
         if os.path.isfile(file_path):
             os.remove(file_path)
         else:
             raise Errors.FileMarkedForDeletionDoesNotExistError(file_path)
-        """
+        
 
     for dir_name in directories:
         dir_path = os.path.join(root, dir_name)

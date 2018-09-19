@@ -394,6 +394,7 @@ class PostProcess:
             if self.postProcessType == 'percolator':
                 if not test_run:
                     project.percolator(self.searchName, self.searchType, runner, post_process_name)
+                    print('ran percolator on searchName: ' + self.searchName)
                     assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
                     project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
             elif self.postProcessType == 'assign-confidence':

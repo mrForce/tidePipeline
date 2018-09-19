@@ -258,7 +258,7 @@ class Base:
                 row  = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
                 if row:
                     location = os.path.join(self.project_path, row.filtered_path)
-                    netmhc_filter_locations.append((name, location))
+                    netmhc_filter_locations.append((name, location, row))
                 else:
                     raise NoSuchFilteredNetMHCError(name)
         if peptide_list_names:
@@ -280,7 +280,7 @@ class Base:
         output_json_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'sources.json')
 
         source_id_map = create_target_set(netmhc_filter_locations, peptide_list_locations, output_fasta_location, output_json_location)
-        target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name)
+        target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name, filteredNetMHCs=[row for name, location, row in netmhc_filter_locations])
         self.db_session.add(target_set_row)
         self.db_session.commit()
     def verify_filtered_netMHC(self, name):
@@ -335,8 +335,9 @@ class Base:
             filtered_netmhc_row = None
         else:
             filtered_netmhc_row = self.db_session.query(DB.FilteredNetMHC).filter_by(idNetMHC = netmhc_row.idNetMHC, RankCutoff = rank_cutoff).first()
-
-        if filtered_netmhc_row is None:
+        print('hello')
+        if self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = filtered_name).first() is None:
+            print('going to do it')
             file_name = str(uuid.uuid4())
             while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
                 file_name = str(uuid.uuid4())
