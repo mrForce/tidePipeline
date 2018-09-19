@@ -326,9 +326,9 @@ class PostProcess:
         self.searchNumMap = searchNumMap
         
         assert(searchNumber in self.searchNumMap)
-        self.searchName = searchNumMap[searchNumber]
+        self.searchName = searchNumMap[searchNumber][0]
         self.searchNumber = searchNumber
-        self.searchType = searchNumMap[searchNumber]
+        self.searchType = searchNumMap[searchNumber][1]
         """
         Just a bunch of comma seperated tuples of the form (cutoff, peptide output, [contaminant output])
         """
@@ -394,7 +394,7 @@ class PostProcess:
             if self.postProcessType == 'percolator':
                 if not test_run:
                     project.percolator(self.searchName, self.searchType, runner, post_process_name)
-                    print('ran percolator on searchName: ' + self.searchName)
+                    print('ran percolator on searchName: ' + self.searchName + ' with search type: ' + self.searchType)
                     assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
                     project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
             elif self.postProcessType == 'assign-confidence':
@@ -503,7 +503,7 @@ def run_pipeline(ini_file, project_folder, image_location, test_run = False):
     for search_section in search_sections:
         search_object = Search(search_section, index_type)
         search_name, search_node = search_object.run_search(project, index_name, test_run)
-        searchNumMap[search_object.searchNumber] = search_name
+        searchNumMap[search_object.searchNumber] = (search_name, index_type)
         searchNumToNodeMap[search_object.searchNumber] = search_node
 
     project.end_command_session()
