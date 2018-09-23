@@ -4,7 +4,7 @@ netmhc_peptides=$(mktemp)
 decoy_candidates=$(mktemp)
 sorted_netmhc=$(mktemp)
 peptides_no_fasta_headers=$(mktemp)
-output_location = $(mktemp)
+output_location=$(mktemp)
 sort -t , -k1 $1 > $sorted_netmhc
 cat  $sorted_netmhc | awk -F "," '{print $1}' > $netmhc_peptides
 grep -v -F ">" $2 | sort > $peptides_no_fasta_headers
