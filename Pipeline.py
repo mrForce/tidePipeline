@@ -356,16 +356,36 @@ class PostProcess:
         filtered_names = []
         runner = None
         export_nodes = []
+        post_process_name = self.searchName + '_' + self.postProcessType
         if self.postProcessType == 'percolator':
             project.verify_row_existence(DB.PercolatorParameterFile.Name, self.postProcessParamFile)
             parameter_file_row = project.get_percolator_parameter_file(self.postProcessParamFile)
             runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, parameter_file_row)
             post_processor_names = project.get_column_values(DB.Percolator, 'PercolatorName')
+            if post_process_name in post_processor_names:
+                num = 1
+                while (post_process_name + '_' + str(num)) in post_processor_names:
+                    num += 1
+                post_process_name = post_process_name + '_' + str(num)
+            if not test_run:
+                #PostProcess.py percolator function expects msgfplus or tide. 
+                searchtype_converter = {'tide': 'tide', 'msgf': 'msgfplus'}
+                project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name)
+                print('ran percolator on searchName: ' + self.searchName + ' with search type: ' + self.searchType)
+                assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
         elif self.postProcessType == 'assign-confidence':
             project.verify_row_existence(DB.AssignConfidenceParameterFile.Name, self.postProcessParamFile)
             parameter_file_row = project.get_assign_confidence_parameter_file(self.postProcessParamFile)
             runner = Runners.AssignConfidenceRunner(crux_exec_path, project.project_path, parameter_file_row)
             post_processor_names = project.get_column_values(DB.AssignConfidence, 'AssignConfidenceName')
+            if post_process_name in post_processor_names:
+                num = 1
+                while (post_process_name + '_' + str(num)) in post_processor_names:
+                    num += 1
+                post_process_name = post_process_name + '_' + str(num)
+            
+            project.assign_confidence(self.searchName, runner, post_process_name)
+            assert(project.verify_row_existence(DB.AssignConfidence.AssignConfidenceName, post_process_name))
         for tup in self.cutoffsAndLocations:
             cutoff = tup[0]
             peptide_output = tup[1]
@@ -375,13 +395,8 @@ class PostProcess:
             filter_node = None
             export_node = ExportNode(str(cutoff), peptide_output, contaminant_output)
             export_nodes.append(export_node)
-            post_process_name = self.searchName + '_' + self.postProcessType
-            print('post process name: ' + post_process_name)
-            if post_process_name in post_processor_names:
-                num = 1
-                while (post_process_name + '_' + str(num)) in post_processor_names:
-                    num += 1
-                post_process_name = post_process_name + '_' + str(num)
+            
+            print('post process name: ' + post_process_name)            
             filtered_name = post_process_name + '_' + str(cutoff)
             
             if filtered_name in filtered_names:
@@ -392,17 +407,10 @@ class PostProcess:
 
 
             if self.postProcessType == 'percolator':
-                if not test_run:
-                    #PostProcess.py percolator function expects msgfplus or tide. 
-                    searchtype_converter = {'tide': 'tide', 'msgf': 'msgfplus'}
-                    project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name)
-                    print('ran percolator on searchName: ' + self.searchName + ' with search type: ' + self.searchType)
-                    assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
+                if not test_run:                    
                     project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
             elif self.postProcessType == 'assign-confidence':
-                if not test_run:
-                    project.assign_confidence(self.searchName, runner, filtered_name)
-                    assert(project.verify_row_existence(DB.AssignConfidence.AssignConfidenceName, filtered_name))
+                if not test_run:                    
                     project.filter_q_value_assign_confidence(post_process_name, cutoff, post_process_name)            
             elif self.postProcessType == 'msgf':
                 if not test_run:
