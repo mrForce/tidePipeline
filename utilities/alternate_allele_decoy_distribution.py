@@ -1,9 +1,14 @@
 import argparse
 import subprocess
 import os
+
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(description='Get alternate allele decoy distribution')
 parser.add_argument('k', type=float, help='Take top k% of the peptides in the target netmhc runs as the targets')
+parser.add_argument('output', help='Location of the plot')
+parser.add_argument('plot_type', choices=['percent', 'absolute'])
 parser.add_argument('--target', help='Path to a NetMHC run. Each line should be of the form: sequence,IC50', action='append')
 parser.add_argument('--decoy', help='Path to a NetMHC run. Each line should be of the form: sequence,IC50', action='append')
 
@@ -82,6 +87,11 @@ for i in range(0, len(matched_decoy_indices) - 1):
     next_index = matched_decoy_indices[i + 1]
     num_overlap.extend([i + 1]*(next_index - index))
 num_overlap.extend([num_overlap[-1] + 1]*(num_targets - len(num_overlap) - 1))
+if args.plot_type == 'percent':
+    for i in range(0, len(num_overlap)):
+        num_overlap[i] /= (1.0*i + 1)
+fig = plt.figure()
+
 plt.plot(num_overlap)
-plt.show()
+plt.savefig(args.output)
     
