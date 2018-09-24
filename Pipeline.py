@@ -250,7 +250,7 @@ class Search:
         if 'paramfile' in section:
             self.searchParamFile = section['paramfile']
         else:
-            assert(searchType == 'msgf')
+            assert(searchType == 'msgfplus')
         self.options = {}
         self.searchNumber = section.getint('searchnumber', -1)
         assert(self.searchNumber > -1)
@@ -393,7 +393,9 @@ class PostProcess:
 
             if self.postProcessType == 'percolator':
                 if not test_run:
-                    project.percolator(self.searchName, self.searchType, runner, post_process_name)
+                    #PostProcess.py percolator function expects msgfplus or tide. 
+                    searchtype_converter = {'tide': 'tide', 'msgf': 'msgfplus'}
+                    project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name)
                     print('ran percolator on searchName: ' + self.searchName + ' with search type: ' + self.searchType)
                     assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
                     project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
