@@ -59,7 +59,7 @@ class IndexNode(AbstractNode):
         if self.param_file:
             text += '\nparam file: ' + self.param_file
         if self.options:
-            for option, value in self.options:
+            for option, value in self.options.items():
                 text += '\n' + option + ': ' + value
         return text
     def get_child_nodes(self):
