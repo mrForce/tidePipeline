@@ -250,7 +250,7 @@ class Search:
         if 'paramfile' in section:
             self.searchParamFile = section['paramfile']
         else:
-            assert(searchType == 'msgfplus')
+            assert(searchType == 'msgf')
         self.options = {}
         self.searchNumber = section.getint('searchnumber', -1)
         assert(self.searchNumber > -1)
