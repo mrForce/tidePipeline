@@ -60,7 +60,7 @@ class IndexNode(AbstractNode):
             text += '\nparam file: ' + self.param_file
         if self.options:
             for option, value in self.options.items():
-                text += '\n' + option + ': ' + value
+                text += '\n' + str(option) + ': ' + str(value)
         return text
     def get_child_nodes(self):
         return [('', node) for node in self.search_nodes]
