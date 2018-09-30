@@ -27,3 +27,7 @@ python3 ImportNetMHC.py $project $importing_project/NetMHC/398b5248d4734fbb859c8
 python3 ImportNetMHC.py $project $importing_project/NetMHC/ad284cc721f143a3ac25f20c942c2b34 H-2-Db MouseProteinElevenMers --rankCutoff 2
 
 python3 CreateTargetSet.py $project KbTargetSet --FilteredNetMHC MouseProteinEightMers_H-2-Kb_2 --FilteredNetMHC MouseProteinNineMers_H-2-Kb_2 --FilteredNetMHC MouseProteinTenMers_H-2-Kb_2 --FilteredNetMHC MouseProteinElevenMers_H-2-Kb_2
+
+python3 CreateTargetSet.py $project DbTargetSet --FilteredNetMHC MouseProteinEightMers_H-2-Db_2 --FilteredNetMHC MouseProteinNineMers_H-2-Db_2 --FilteredNetMHC MouseProteinTenMers_H-2-Db_2 --FilteredNetMHC MouseProteinElevenMers_H-2-Db_2
+
+python3 CreateTargetSet.py $project Combined --FilteredNetMHC MouseProteinEightMers_H-2-Kb_2 --FilteredNetMHC MouseProteinNineMers_H-2-Kb_2 --FilteredNetMHC MouseProteinTenMers_H-2-Kb_2 --FilteredNetMHC MouseProteinElevenMers_H-2-Kb_2 --FilteredNetMHC MouseProteinEightMers_H-2-Db_2 --FilteredNetMHC MouseProteinNineMers_H-2-Db_2 --FilteredNetMHC MouseProteinTenMers_H-2-Db_2 --FilteredNetMHC MouseProteinElevenMers_H-2-Db_2

@@ -383,29 +383,21 @@ class Base:
             rank_path =  os.path.join('NetMHC', netmhc_output_filename + '-rank')
             full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
             BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
-            BashScripts.netmhc_percentile(os.path.abspath(os.path.join(self.project_path, affinity_path)), os.path.abspath(os.path.join(self.project_path, rank_path)))
 
-            netmhc_row = DB.NetMHC(peptidelist = peptide_list_row, hla = hla_row, Name = peptidelist_name + '_' + hla, NetMHCOutputPath= os.path.join('NetMHC', netmhc_output_filename), PeptideAffinityPath = affinity_path, PeptideRankPath=rank_path)
+            netmhc_row = DB.NetMHC(peptidelist = peptide_list_row, hla = hla_row, Name = peptidelist_name + '_' + hla, NetMHCOutputPath= os.path.join('NetMHC', netmhc_output_filename), PeptideAffinityPath = affinity_path, PeptideRankPath=None)
             self.db_session.add(netmhc_row)
             self.db_session.commit()
-            if ranks:
+            if ranks:       
                 for rank_cutoff in ranks:
                     filtered_name = peptidelist_name + '_' + hla + '_' + rank_cutoff
                     file_name = str(uuid.uuid4())
                     while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
                         file_name = str(uuid.uuid4())
+                    
                     output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
-                    input_path = os.path.join(self.project_path, rank_path)
-                    rank_cutoff_float = float(rank_cutoff)
-                    with open(input_path, 'r') as f:
-                        with open(output_path, 'w') as g:
-                            for line in f:
-                                parts = line.split(',')
-                                if len(parts) == 2:
-                                    peptide = parts[0].strip()
-                                    rank = float(parts[1])
-                                    if rank <= rank_cutoff_float:
-                                        g.write(peptide + '\n')
+                    print('about to call top_percent_netmhc')
+                    print(os.path.abspath(os.path.join(self.project_path, affinity_path)))
+                    BashScripts.top_percent_netmhc(os.path.abspath(os.path.join(self.project_path, affinity_path)), rank_cutoff, output_path)
                     filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
                     self.db_session.add(filtered_row)
 

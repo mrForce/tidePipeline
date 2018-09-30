@@ -2,6 +2,7 @@ import subprocess
 import os
 import collections
 import tempfile
+from Bio import SeqIO
 class ParsedNetMHC:
     #row is a row from the NetMHC table
     def __init__(self, project_location, row):
@@ -22,7 +23,7 @@ def extract_peptides_with_length(location, length):
         outs, errors = proc.communicate(timeout=240)
     except:
         assert(False)
-    output_location = outs.strip()
+    output_location = outs.strip().decode('utf-8')
     assert(os.path.isfile(output_location))
     return output_location
 def num_lines(file_path):
@@ -37,12 +38,12 @@ def num_lines(file_path):
 
 def merge_netmhc_runs(mode, netmhc_runs):
     #netmhc_runs is a list of filenames. This returns the output location, which is a temp file created by mktemp
-    proc = subprocess.Popen(['bash_scripts/merge_netmhc_runs.sh', mode, *netmhc_runs], stdout=subprocess.PIPE)
+    proc = subprocess.Popen(['bash_scripts/merge_netmhc_runs.sh', mode] +  netmhc_runs, stdout=subprocess.PIPE)
     try:
         outs, errors = proc.communicate(timeout=240)
     except:
         assert(False)
-    output_location = outs.strip()
+    output_location = outs.strip().decode('utf-8')
     assert(os.path.isfile(output_location))
     return output_location
 
@@ -53,27 +54,29 @@ def call_netmhc_decoys(input_location, target, num_decoys):
         outs, errors = proc.communicate(timeout=600)
     except:
         assert(False)
-    output_location = outs.strip()
+    output_location = outs.strip().decode('utf-8')
+    print('output location')
+    print(output_location)
     assert(os.path.isfile(output_location))
     return output_location
 
 def call_merge_and_sort(files):
     #files should be a list of file paths
-    proc = subprocess.Popen(['bash_scripts/merge_and_sort.sh', *files], stdout=subprocess.PIPE)
+    proc = subprocess.Popen(['bash_scripts/merge_and_sort.sh'] + files, stdout=subprocess.PIPE)
     try:
         outs, errors = proc.communicate(timeout=240)
     except:
         assert(False)
-    output_location = outs.strip()
+    output_location = outs.strip().decode('utf-8')
     assert(os.path.isfile(output_location))
     return output_location
 
 def join_peptides_to_fasta(input_locations, output_location, prefix=None):
     #prefix is what goes between the > and line number in the FASTA headers
     if prefix:
-        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', '-P', prefix, *input_locations, output_location])
+        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', '-P', prefix] +  input_locations + [output_location])
     else:
-        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh', *input_locations, output_location])
+        subprocess.call(['bash_scripts/join_peptides_to_fasta.sh'] + input_locations + [output_location])
 """
 parsed_netmhc_objects must be a list of ParsedNetMHC instances
 
@@ -81,11 +84,18 @@ Finish these later
 """
 def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, merge_mode = 0):
     merged_decoy_candidates = call_merge_and_sort([x[1] for x in parsed_netmhc_objects.items()])
-    num_target_lines = num_lines(target_location)
-    decoy_location = call_netmhc_decoys(merged_decoy_candidates, target_location, num_target_lines)
 
+    num_target_lines = num_lines(target_location)
+    
+    decoy_location = call_netmhc_decoys(merged_decoy_candidates, target_location, str(int(num_target_lines/2)))
     with tempfile.NamedTemporaryFile() as f:
-        join_peptides_to_fasta(decoy_location, f.name, 'XXX_')
+        with open(decoy_location, 'r') as g:
+            for record in SeqIO.parse(target_location, 'fasta'):
+                fasta_header = record.description
+                f.write(b'>' + str(fasta_header).encode() + b'\n')
+                peptide = g.readline().strip()
+                assert(len(peptide) > 0)
+                f.write(peptide.encode() + b'\n')
         os.remove(decoy_location)
         combine_files([output_location, f.name], output_location)
     
@@ -114,7 +124,7 @@ def netmhc_percentile(input_location, output_location):
     subprocess.call(['bash_scripts/netmhc_percentile.sh', input_location, output_location])
 
 def combine_files(input_files, output_file):
-    subprocess.call(['bash_scripts/combine_files', *input_files, output_file])
+    subprocess.call(['bash_scripts/combine_files.sh', *input_files, output_file])
 
 
 def top_percent_netmhc(input_location, percent, output_location):

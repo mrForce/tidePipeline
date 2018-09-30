@@ -12,6 +12,7 @@ do
 done
 
 sorted=$(mktemp)
-sort -t, -k2 -n $merged > $sorted
+#the sed call removes any whitespace lines.
+sort -t, -k2 -n $merged | sed '/^\s*$/d' > $sorted
 rm $merged
 echo $sorted
