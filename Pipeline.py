@@ -170,6 +170,9 @@ class Index:
         self.sourceType = section['sourcetype']
         assert(self.sourceType in ['FilteredNetMHC', 'PeptideList', 'TargetSet'])
         self.sourceName = section['sourcename']
+        self.section = section
+
+
         if 'paramfile' in section:
             self.indexParamFile = section['paramfile']
         else:
@@ -205,6 +208,14 @@ class Index:
             index_name = index_name + str(num)
         crux_exec_path = project.get_crux_executable_path()
         msgf_exec_path = project.get_msgfplus_executable_path()
+        netmhc_decoys = None
+        if 'netmhcdecoys' in self.section:
+            netmhc_decoys = []
+            for x in [x.strip() for x in self.section['netmhcdecoys'].split(',')]:
+                netmhc_row = project.get_netmhc_row(x)
+                parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideRankPath))
+                netmhc_decoy = (parsed_location, netmhc_row)
+                netmhc_decoys.append(netmhc_decoy)
         if self.sourceType == 'FilteredNetMHC':
             assert(project.verify_filtered_netMHC(self.sourceName))
         elif self.sourceType == 'PeptideList':
@@ -229,11 +240,11 @@ class Index:
             runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.memory:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys=netmhc_decoys)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants, options = {'memory': self.memory})
             else:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys=netmhc_decoys)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants)
         return (project, index_name, index_node, source_node)
     

@@ -21,10 +21,10 @@ BEGIN {
 		    min = $i
 		}
 	    }
-	
+	    
+
 	    print $1 "," min
-	   
-	}else if(mode == 2){e
+	}else if(mode == 2){
 	    max=$2
 	    for(i = 3; i <= NF; i++){
 		if($i > max){
