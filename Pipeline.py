@@ -213,7 +213,7 @@ class Index:
             netmhc_decoys = []
             for x in [x.strip() for x in self.section['netmhcdecoys'].split(',')]:
                 netmhc_row = project.get_netmhc_row(x)
-                parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideRankPath))
+                parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideAffinityPath))
                 netmhc_decoy = (parsed_location, netmhc_row)
                 netmhc_decoys.append(netmhc_decoy)
         if self.sourceType == 'FilteredNetMHC':
