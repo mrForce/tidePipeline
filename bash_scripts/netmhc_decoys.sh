@@ -11,6 +11,8 @@ sort $2 > $sorted_targets
 sort -t, -k1 $1 > $alphabetically_sorted_decoy_candidates
 #remove any target duplicates from the decoys.
 join -1 1 -t, -v1 $alphabetically_sorted_decoy_candidates $sorted_targets > $decoy_candidates_no_targets
+rm $sorted_targets $alphabetically_sorted_decoy_candidates
 #resort by IC50, then take head
 head -n $3 <(sort -t, -k2 $decoy_candidates_no_targets) | awk -F "," '{print $1}' > $output
+rm $decoy_candidates_no_targets
 echo $output

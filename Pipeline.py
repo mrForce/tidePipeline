@@ -215,6 +215,7 @@ class Index:
                 netmhc_row = project.get_netmhc_row(x)
                 parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideAffinityPath))
                 netmhc_decoys.append((netmhc_row, parsed_location))
+            netmhc_decoys = dict(netmhc_decoys)
         if self.sourceType == 'FilteredNetMHC':
             assert(project.verify_filtered_netMHC(self.sourceName))
         elif self.sourceType == 'PeptideList':
@@ -239,11 +240,11 @@ class Index:
             runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.memory:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys=dict(netmhc_decoys))
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys=netmhc_decoys)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants, options = {'memory': self.memory})
             else:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys=dict(netmhc_decoys))
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys=netmhc_decoys)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants)
         return (project, index_name, index_node, source_node)
     
@@ -532,6 +533,7 @@ def run_pipeline(ini_file, project_folder, image_location, test_run = False):
         post_process_object = PostProcess(post_process_section, searchNumMap)
         post_process_node =  post_process_object.run_post_process_and_export(project, test_run)
         searchNumToNodeMap[post_process_object.searchNumber].add_post_process_node(post_process_node)
+    project.end_command_session()
     search_nodes = list(searchNumToNodeMap.values())
     index_node.set_search_nodes(search_nodes)
     peptide_source_node.set_index_nodes([index_node])

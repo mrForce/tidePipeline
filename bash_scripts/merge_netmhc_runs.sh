@@ -18,7 +18,8 @@ else
     chainJoin $fileArgs > $joined
     
     output=$(mktemp)
+    echo $(pwd) 1&>&2
     awk -F "," -f bash_scripts/select_netmhc_rank.awk $joined $1 > $output
     echo $output
-
+    rm $joined
 fi

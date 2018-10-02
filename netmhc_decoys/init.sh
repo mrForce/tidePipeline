@@ -8,7 +8,9 @@ python3 AddMGF.py $project /import3/MassSpec/PRAMOD/E.G7-OVA/Aug7_2018/jlb201808
 
 python3 AddFASTA.py $project health_center_data/mutated_mouse_proteome.fasta MouseProteins
 python3 AddHLA.py $project H-2-Kb
+python3 AddHLA.py $project H-2-Kd
 python3 AddHLA.py $project H-2-Db
+python3 AddHLA.py $project H-2-Dd
 python3 AddContaminantFile.py $project FASTA health_center_data/contaminants.fasta JeremyContaminants 8 9 10 11
 
 importing_project="/data1/jordan/PipelineProjects/HealthCenter"
@@ -25,6 +27,18 @@ python3 ImportNetMHC.py $project $importing_project/NetMHC/12b9af98cc3541f9b0355
 python3 ImportNetMHC.py $project $importing_project/NetMHC/161743ff77e6454086e5cf4919725fb2 H-2-Db MouseProteinNineMers --rankCutoff 2
 python3 ImportNetMHC.py $project $importing_project/NetMHC/398b5248d4734fbb859c8a669ae0b2ff H-2-Db MouseProteinTenMers --rankCutoff 2
 python3 ImportNetMHC.py $project $importing_project/NetMHC/ad284cc721f143a3ac25f20c942c2b34 H-2-Db MouseProteinElevenMers --rankCutoff 2
+
+importing_project="/data1/jordan/PipelineProjects/PairwiseOverlap"
+python3 ImportNetMHC.py $project $importing_project/NetMHC/0afe925bdf17445588fc2be2fc3116c3 H-2-Kd MouseProteinEightMers --rankCutoff 2
+python3 ImportNetMHC.py $project $importing_project/NetMHC/245ebf55e84e414389f86974228216b9 H-2-Kd MouseProteinNineMers --rankCutoff 2
+python3 ImportNetMHC.py $project $importing_project/NetMHC/d3b7dafbd5d74886b36f47127582fec6 H-2-Kd MouseProteinTenMers --rankCutoff 2
+python3 ImportNetMHC.py $project $importing_project/NetMHC/c8c3d3d8fd4440c7852a050167597698 H-2-Kd MouseProteinElevenMers --rankCutoff 2
+python3 ImportNetMHC.py $project $importing_project/NetMHC/8ffce7dd2f2a4f60885dec466357cafb H-2-Dd MouseProteinEightMers --rankCutoff 2
+python3 ImportNetMHC.py $project $importing_project/NetMHC/34722eff49de41f984634b47652cb85a H-2-Dd MouseProteinNineMers --rankCutoff 2
+python3 ImportNetMHC.py $project $importing_project/NetMHC/1a12d99a3f954a3faf72a7225fe09444 H-2-Dd MouseProteinTenMers --rankCutoff 2
+python3 ImportNetMHC.py $project $importing_project/NetMHC/3fe23b76962e4a03930bb2b11a53297e H-2-Dd MouseProteinElevenMers --rankCutoff 2
+
+
 
 python3 CreateTargetSet.py $project KbTargetSet --FilteredNetMHC MouseProteinEightMers_H-2-Kb_2 --FilteredNetMHC MouseProteinNineMers_H-2-Kb_2 --FilteredNetMHC MouseProteinTenMers_H-2-Kb_2 --FilteredNetMHC MouseProteinElevenMers_H-2-Kb_2
 

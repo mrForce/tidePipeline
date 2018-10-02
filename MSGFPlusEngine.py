@@ -163,7 +163,7 @@ class MSGFPlusEngine(AbstractEngine):
         return rows
         
     
-    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False):
+    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, *, commit=False):
         #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         assert(mgf_row)
@@ -180,7 +180,8 @@ class MSGFPlusEngine(AbstractEngine):
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)
-        #self.db_session.commit()
+        if commit:
+            self.db_session.commit()
         
             
     def list_indices(self):

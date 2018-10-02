@@ -38,7 +38,7 @@ class PostProcessing(Base):
         return tabulate(rows, headers=headers)
         
             
-    def create_filtered_search_result(self, name, peptides, qvalue_row, threshold, partOfIterativeSearch = False):
+    def create_filtered_search_result(self, name, peptides, qvalue_row, threshold, partOfIterativeSearch = False, *, commit = False):
         row = self.get_filtered_search_result_row(name)
         if row:
             raise FilteredSearchResultNameMustBeUniqueError(name)        
@@ -50,23 +50,24 @@ class PostProcessing(Base):
                 f.write(peptide + '\n')
         filtered_row = DB.FilteredSearchResult(filteredSearchResultName = name, filteredSearchResultPath = os.path.join('FilteredSearchResult', filtered_filename), q_value_threshold = threshold, QValue = qvalue_row, partOfIterativeSearch = partOfIterativeSearch)
         self.db_session.add(filtered_row)
-        #self.db_session.commit()
+        if commit:
+            self.db_session.commit()
 
     def filter_q_value_assign_confidence(self, assign_confidence_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False):
         assign_confidence_handler = ReportGeneration.AssignConfidenceHandler(assign_confidence_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path())
         peptides = assign_confidence_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, assign_confidence_handler.get_row() , q_value_threshold, partOfIterativeSearch)
 
-    def filter_q_value_msgfplus(self, msgfplus_search_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False):
+    def filter_q_value_msgfplus(self, msgfplus_search_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False, *, commit=False):
         msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(msgfplus_search_name, q_value_threshold, self.project_path, self.db_session)
         row = msgfplus_handler.get_row()
         peptides = msgfplus_handler.get_peptides()
-        self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold, partOfIterativeSearch)
+        self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold, partOfIterativeSearch, commit=commit)
 
-    def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False, *, use_percolator_peptides = False):
+    def filter_q_value_percolator(self, percolator_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False, *, use_percolator_peptides = False, commit=False):
         percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, q_value_threshold, self.project_path, self.db_session, self.get_crux_executable_path(), use_percolator_peptides)
         peptides = percolator_handler.get_peptides()
-        self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold, partOfIterativeSearch)
+        self.create_filtered_search_result(filtered_search_result_name, peptides, percolator_handler.get_row(), q_value_threshold, partOfIterativeSearch, commit=commit)
 
     def get_filtered_search_result_row(self, name):
         return self.db_session.query(DB.FilteredSearchResult).filter_by(filteredSearchResultName = name).first()
@@ -163,7 +164,7 @@ class PostProcessing(Base):
             if assign_confidence_row:
                 raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
-    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False):
+    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False, *, commit=False):
         print('search name to query: ' + search_name)
         print('search type: ' + search_type)
         search_row = None
@@ -195,7 +196,8 @@ class PostProcessing(Base):
                     self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
             new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch)
             self.db_session.add(new_row)
-            #self.db_session.commit()
+            if commit:
+                self.db_session.commit()
         else:
             if search_row is None:
                 if search_type == 'tide':
