@@ -419,7 +419,7 @@ class PostProcess:
 
             if self.postProcessType == 'percolator':
                 if not test_run:                    
-                    project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, True)
+                    project.filter_q_value_percolator(post_process_name, cutoff, filtered_name, use_percolator_peptides = True)
             elif self.postProcessType == 'assign-confidence':
                 if not test_run:                    
                     project.filter_q_value_assign_confidence(post_process_name, cutoff, post_process_name)            

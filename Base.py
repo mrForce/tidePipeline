@@ -343,20 +343,8 @@ class Base:
                 file_name = str(uuid.uuid4())
             print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
-            input_path = os.path.join(self.project_path, pep_score_path)
             BashScripts.top_percent_netmhc(os.path.join(self.project_path, pep_affinity_path), rank_cutoff, output_path)
             
-            #rank_cutoff_float = float(rank_cutoff)
-            """with open(input_path, 'r') as f:
-                with open(output_path, 'w') as g:
-                    for line in f:
-                        parts = line.split(',')
-                        if len(parts) == 2:
-                            peptide = parts[0].strip()
-                            rank = float(parts[1])
-                            if rank <= rank_cutoff_float:
-                                g.write(peptide + '\n')
-            """
 
             filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
