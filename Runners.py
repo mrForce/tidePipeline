@@ -144,7 +144,7 @@ class MSGFPlusIndexRunner:
             BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path))
             tda = 0
         elif decoy_type:
-            BashScripts.generateDecoys(os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_type)
+            BashScripts.generateDecoys(os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_type)            
             tda = 0
         current_path = os.getcwd()
         os.chdir(output_directory_path)
