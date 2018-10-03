@@ -203,7 +203,7 @@ class MSGFPlusEngine(AbstractEngine):
             indices.append(index)
         return indices
 
-    def create_index(self, set_type, set_name, index_runner, index_name, contaminant_names = [], memory=None, *, netmhc_decoys = None):
+    def create_index(self, set_type, set_name, index_runner, index_name, contaminant_names = [], memory=None, *, netmhc_decoys = None, decoy_type = None):
         contaminants = []
         if contaminant_names:
             for name in contaminant_names:
@@ -217,7 +217,7 @@ class MSGFPlusEngine(AbstractEngine):
         storage_dir = self.create_storage_directory('msgfplus_indices')
         print('storage dir: ' + storage_dir)
         fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name, contaminants)
-        row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir), self.project_path, memory, netmhc_decoys=netmhc_decoys)
+        row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir), self.project_path, memory, netmhc_decoys=netmhc_decoys, decoy_type=decoy_type)
         if contaminants:
             row.contaminants = contaminants
         if set_type == 'TargetSet':

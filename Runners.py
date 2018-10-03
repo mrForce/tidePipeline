@@ -130,7 +130,7 @@ class MSGFPlusIndexRunner:
     def __init__(self, jar_file_location):
         self.jar_file_location = jar_file_location
     #netmhc_decoys should either be None or a list of BashScripts.ParsedNetMHC objects
-    def run_index_create_row(self, fasta_path, output_directory_path, project_path, memory=None, *, netmhc_decoys = None):
+    def run_index_create_row(self, fasta_path, output_directory_path, project_path, memory=None, *, netmhc_decoys = None, decoy_type=None):
         #copy the FASTA file to output_directory_path
         fasta_head, fasta_tail = os.path.split(fasta_path)
         new_fasta_path = ''
@@ -142,6 +142,9 @@ class MSGFPlusIndexRunner:
         new_fasta_head, new_fasta_tail = os.path.split(new_fasta_path)
         if netmhc_decoys:
             BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path))
+            tda = 0
+        elif decoy_type:
+            BashScripts.generateDecoys(os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_type)
             tda = 0
         current_path = os.getcwd()
         os.chdir(output_directory_path)

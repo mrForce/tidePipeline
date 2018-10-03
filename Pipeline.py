@@ -209,6 +209,7 @@ class Index:
         crux_exec_path = project.get_crux_executable_path()
         msgf_exec_path = project.get_msgfplus_executable_path()
         netmhc_decoys = None
+        decoy_type = None
         if 'netmhcdecoys' in self.section:
             netmhc_decoys = []
             for x in [x.strip() for x in self.section['netmhcdecoys'].split(',')]:
@@ -216,6 +217,9 @@ class Index:
                 parsed_location = os.path.abspath(os.path.join(project_folder, netmhc_row.PeptideAffinityPath))
                 netmhc_decoys.append((netmhc_row, parsed_location))
             netmhc_decoys = dict(netmhc_decoys)
+        elif 'decoys' in self.section:
+            assert(self.section['decoys'] in ['random', 'tide_random'])
+            decoy_type = self.section['decoys']
         if self.sourceType == 'FilteredNetMHC':
             assert(project.verify_filtered_netMHC(self.sourceName))
         elif self.sourceType == 'PeptideList':
@@ -240,11 +244,11 @@ class Index:
             runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.memory:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys=netmhc_decoys)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, self.memory, netmhc_decoys=netmhc_decoys, decoy_type=decoy_type)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants, options = {'memory': self.memory})
             else:
                 if not test_run:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys=netmhc_decoys)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys=netmhc_decoys, decoy_type=decoy_type)
                 index_node = IndexNode(self.indexType, index_name, self.contaminants)
         return (project, index_name, index_node, source_node)
     

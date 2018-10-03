@@ -3,6 +3,7 @@ import os
 import collections
 import tempfile
 from Bio import SeqIO
+import random
 class ParsedNetMHC:
     #row is a row from the NetMHC table
     def __init__(self, project_location, row):
@@ -85,10 +86,33 @@ def join_peptides_to_fasta(input_locations, output_location, prefix=None):
     else:
         print('command: ' + ' '.join(['bash_scripts/join_peptides_to_fasta.sh'] + input_locations + [output_location]))
         subprocess.call(['bash_scripts/join_peptides_to_fasta.sh'] + input_locations + [output_location])
+
+def randomDecoys(target_location, output_location, *, decoy_type):
+    random.seed()
+    with open(output_location, 'w') as f:
+        for record in SeqIO.parse(target_location, 'fasta'):
+            fasta_header = record.description
+            f.write('>XXX_' + str(fasta_header) + '\n')
+            peptide = g.readline().strip()
+            
+            if len(peptide) == 0:
+                print('peptide zero length!')
+                assert(False)
+            shuffled_line = ''
+            if decoy_type == 'random':
+                shuffled_line = random.shuffle(peptide.strip())
+            elif decoy_type == 'tide_random':
+                stripped_line = peptide.strip()                
+                shuffled_line = stripped_line[0] + random.shuffle(stripped_line[1:-1]) + stripped_line[-1]
+            f.write(shuffled_line + '\n')
+
+            
+
+
+            
 """
 parsed_netmhc_objects must be a list of ParsedNetMHC instances
 
-Finish these later
 """
 def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, merge_mode = 0):
     print('hello')
