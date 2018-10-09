@@ -3,6 +3,55 @@ import re
 import csv
 from xml.sax.saxutils import unescape
 
+
+
+
+class MSGFPINParser:
+    def __init__(self, path):
+        self.path = path
+    @staticmethod
+    def parse_peptide(self, peptide, length):
+        regex = re.compile('\.(.{%d})\.' % length)
+        match = regex.search(peptide)
+        return match.group(1)
+        
+    def _get_peptides(self, targets):
+        with open(self.path, 'r') as f:
+            self.reader = csv.DictReader(f, delimiter='\t')
+            """
+            The first row of the PIN file is the header (i.e. the field names)
+            The second row of the PIN file are the default values.
+
+            So, we want to advance past the second row
+            """
+            self.reader.__next__()
+            self.fieldnames = reader.fieldnames
+            peptides = set()
+            for row in self.reader:
+                if targets:
+                    if 'XXX' not in row['Proteins']:
+                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide']))
+                else:
+                    if 'XXX' in row['Proteins']:
+                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide']))
+            return peptides
+
+    def get_target_peptides(self):
+        return self._get_peptides(True)
+    def get_decoy_peptides(self):
+        return self._get_peptides(False)
+
+    def insert_netmhc_ranks(self, ranks, output_path):
+        """
+        ranks should be a dictionary that looks like this:
+
+        {'header1': {'targets': {...}, 'decoys':{...}}, 'header2': {'targets': {...}, 'decoys': {...}}}
+        
+        The headers could something along the lines of "H-2-Kb_rank"
+
+        Output path is the path to write the modified PIN to.
+        """
+        
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):
         self.peptide = peptide
