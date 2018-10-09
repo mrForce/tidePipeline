@@ -35,15 +35,21 @@ class MSGFPINParser:
                     if 'XXX' in row['Proteins']:
                         peptides.add(MSGFPINParser.parse_peptide(row['Peptide']))
             return peptides
-
+    """
+    To be completely clear, these are the target peptides found in the PSMs in the PIN file.
+    """
     def get_target_peptides(self):
         return self._get_peptides(True)
     def get_decoy_peptides(self):
         return self._get_peptides(False)
 
-    def insert_netmhc_ranks(self, ranks, output_path):
+    def insert_netmhc_ranks(self, header, target_ranks, decoy_ranks):
+        self.ranks[header] = {'targets': target_ranks, 'decoys': decoy_ranks}
+    def write(self, output_path):
+        self._insert_netmhc_ranks(output_path)
+    def insert_netmhc_ranks(self, output_path):
         """
-        ranks should be a dictionary that looks like this:
+        self.ranks should be a dictionary that looks like this:
 
         {'header1': {'targets': {...}, 'decoys':{...}}, 'header2': {'targets': {...}, 'decoys': {...}}}
         
@@ -53,14 +59,14 @@ class MSGFPINParser:
         """
         with open(self.path, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t')
-            new_fieldnames = self.fieldnames[0:10] + list(ranks.keys()) + self.fieldnames[10::]
+            new_fieldnames = self.fieldnames[0:10] + list(self.ranks.keys()) + self.fieldnames[10::]
             with open(output_path, 'w') as g:
                 writer = csv.DictWriter(g, delimiter='\t', fieldnames = new_fieldnames)
                 writer.writeheader()
                 for row in reader:
                     row_copy = dict(row)
                     key = 'decoys' if 'XXX' in row['Proteins'] else 'targets'
-                    for header, d in ranks.items():
+                    for header, d in self.ranks.items():
                         row_copy[header] = d[key][row['Peptide']]
                     writer.writerow(row_copy)
                     

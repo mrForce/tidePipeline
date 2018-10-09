@@ -10,6 +10,15 @@ def shuffle_string(string):
     l = list(string)
     random.shuffle(l)
     return ''.join(string)
+
+
+def call_target_netmhc_rank(peptides_location, output_location, parsed_netmhc_runs):
+    proc = subprocess.Popen(['bash_scripts/target_netmhc_rank.sh', peptides_location, output_location, *parsed_netmhc_runs])
+    try:
+        outs,errors = proc.communicate()
+    except:
+        assert(False)]
+
 class ParsedNetMHC:
     #row is a row from the NetMHC table
     def __init__(self, project_location, row):
