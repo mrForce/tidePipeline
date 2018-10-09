@@ -51,7 +51,19 @@ class MSGFPINParser:
 
         Output path is the path to write the modified PIN to.
         """
-        
+        with open(self.path, 'r') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            new_fieldnames = self.fieldnames[0:10] + list(ranks.keys()) + self.fieldnames[10::]
+            with open(output_path, 'w') as g:
+                writer = csv.DictWriter(g, delimiter='\t', fieldnames = new_fieldnames)
+                writer.writeheader()
+                for row in reader:
+                    row_copy = dict(row)
+                    key = 'decoys' if 'XXX' in row['Proteins'] else 'targets'
+                    for header, d in ranks.items():
+                        row_copy[header] = d[key][row['Peptide']]
+                    writer.writerow(row_copy)
+                    
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):
         self.peptide = peptide
