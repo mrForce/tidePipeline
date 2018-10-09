@@ -3,7 +3,13 @@ import os
 import collections
 import tempfile
 from Bio import SeqIO
+import shutil
 import random
+
+def shuffle_string(string):
+    l = list(string)
+    random.shuffle(l)
+    return ''.join(string)
 class ParsedNetMHC:
     #row is a row from the NetMHC table
     def __init__(self, project_location, row):
@@ -89,7 +95,10 @@ def join_peptides_to_fasta(input_locations, output_location, prefix=None):
 
 def generateDecoys(target_location, output_location, decoy_type):
     random.seed()
-    with open(output_location, 'w') as f:
+    shutil.copyfile(target_location, output_location)
+    print('target location: ' + target_location)
+    print('output location: ' + output_location)
+    with open(output_location, 'a') as f:
         for record in SeqIO.parse(target_location, 'fasta'):
             fasta_header = record.description
             f.write('>XXX_' + str(fasta_header) + '\n')
@@ -99,13 +108,9 @@ def generateDecoys(target_location, output_location, decoy_type):
                 assert(False)
             shuffled_line = ''
             if decoy_type == 'random':
-                random.shuffle(peptide)
-                shuffled_line = peptide
+                shuffled_line = shuffle_string(peptide)
             elif decoy_type == 'tide_random':
-                stripped_line = peptide.strip()
-                middle_part = peptide[1:-1]
-                random.shuffle(middle_part)
-                shuffled_line = stripped_line[0] + middle_part + stripped_line[-1]
+                shuffled_line = stripped_line[0] + shuffle_string(peptide) + stripped_line[-1]
             f.write(shuffled_line + '\n')
 
             

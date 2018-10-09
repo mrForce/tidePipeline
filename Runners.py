@@ -94,7 +94,7 @@ class MSGFPlusSearchRunner:
         memory_string = '-Xmx3500M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
-        if index_row.netmhc_decoys:
+        if index_row.netmhc_decoys or index_row.customDecoys:
             tda = 0
         else:
             tda = 1
@@ -162,10 +162,13 @@ class MSGFPlusIndexRunner:
             assert(False)
             #raise MSGFPlusIndexFailedError(' '.join(command))
         os.chdir(current_path)
+        customDecoys = 0
+        if decoy_type:
+            customDecoys = 1
         if netmhc_decoys:
-            return (DB.MSGFPlusIndex(tda=str(tda), netmhc_decoys=list(netmhc_decoys.keys())), new_fasta_tail)
+            return (DB.MSGFPlusIndex(tda=str(tda), customDecoys = customDecoys, netmhc_decoys=list(netmhc_decoys.keys())), new_fasta_tail)
         else:
-            return (DB.MSGFPlusIndex(tda=str(tda)), new_fasta_tail)
+            return (DB.MSGFPlusIndex(tda=str(tda), customDecoys = customDecoys), new_fasta_tail)
 
 
 

@@ -509,6 +509,7 @@ class IndexBase(BaseTable):
     __tablename__ = 'IndexBase'
     idIndex = Column('idIndex', Integer, primary_key=True)
     indexType = Column(String(50))
+    customDecoys = Column('customDecoys', Integer, default=0)
     netmhc_decoys = relationship('NetMHC', secondary=indexbase_netmhc_decoys, back_populates='indexbase_decoys')
     contaminants = relationship('ContaminantSet', secondary = indexbase_contaminantSet, back_populates='indices')
     __mapper_args__ = {

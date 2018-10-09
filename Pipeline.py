@@ -254,7 +254,6 @@ class Index:
     
 
 
-
 class Search:
     def __init__(self, section, searchType):
         assert('mgfname' in section)
