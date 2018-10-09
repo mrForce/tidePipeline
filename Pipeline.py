@@ -334,6 +334,15 @@ class PostProcess:
             print('param: ' + param)
             
             assert(param in section)
+
+        self.netmhc_groups_list = []
+        for x in section:
+            if x.startswith('netmhcgroup'):
+                groups = section.getList(x, []))
+                hla_name = project.db_session.query(DB.NetMHC).filter_by(Name=groups[0]).first().hla.HLAName
+                for group in groups[1::]:
+                    assert(project.db_session.query(DB.NetMHC).filter_by(Name=group).first().hla.HLAName == hla_name)
+                self.netmhc_groups_list.append((hla_name, groups))
         self.postProcessType = section['postprocesstype']
         assert(self.postProcessType in ['percolator', 'assign-confidence', 'msgf'])
         searchNumber = section.getint('searchnumber', -1)
@@ -384,7 +393,10 @@ class PostProcess:
             if not test_run:
                 #PostProcess.py percolator function expects msgfplus or tide. 
                 searchtype_converter = {'tide': 'tide', 'msgf': 'msgfplus'}
-                project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name)
+                if self.netmhc_groups_list:
+                    project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name, netmhc_ranking_information = self.netmhc_groups_list)
+                else:
+                    project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name)
                 print('ran percolator on searchName: ' + self.searchName + ' with search type: ' + self.searchType)
                 assert(project.verify_row_existence(DB.Percolator.PercolatorName, post_process_name))
         elif self.postProcessType == 'assign-confidence':
