@@ -17,7 +17,7 @@ def call_target_netmhc_rank(peptides_location, output_location, parsed_netmhc_ru
     try:
         outs,errors = proc.communicate()
     except:
-        assert(False)]
+        assert(False)
 
 class ParsedNetMHC:
     #row is a row from the NetMHC table
@@ -111,7 +111,7 @@ def generateDecoys(target_location, output_location, decoy_type):
         for record in SeqIO.parse(target_location, 'fasta'):
             fasta_header = record.description
             f.write('>XXX_' + str(fasta_header) + '\n')
-            peptide = str(record.seq)
+            peptide = str(record.seq).strip()
             if len(peptide) == 0:
                 print('peptide zero length!')
                 assert(False)
@@ -119,7 +119,7 @@ def generateDecoys(target_location, output_location, decoy_type):
             if decoy_type == 'random':
                 shuffled_line = shuffle_string(peptide)
             elif decoy_type == 'tide_random':
-                shuffled_line = stripped_line[0] + shuffle_string(peptide) + stripped_line[-1]
+                shuffled_line = peptide[0] + shuffle_string(peptide[1:-1]) + peptide[-1]
             f.write(shuffled_line + '\n')
 
             

@@ -6,6 +6,7 @@ import collections
 import Runners
 import TargetSetSourceCount
 import tempfile
+import BashScripts
 import Parsers
 from NetMHC import *
 import os
@@ -186,11 +187,11 @@ class PostProcessing(Base):
                 raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
     def _netmhc_rank(self, netmhc_ranking_information, input_pin_path, output_pin_path):
-        parser = Parser.MSGFPINParser(pin_path)
+        parser = Parsers.MSGFPINParser(input_pin_path)
         decoy_peptides = parser.get_decoy_peptides()
-        decoy_peptides_location = os.path.join(os.path.dirname(pin_path), 'psm_decoys.txt')
+        decoy_peptides_location = os.path.join(os.path.dirname(input_pin_path), 'psm_decoys.txt')
         target_peptides = parser.get_target_peptides()
-        target_peptides_location = os.path.join(os.path.dirname(pin_path), 'psm_targets.txt')
+        target_peptides_location = os.path.join(os.path.dirname(input_pin_path), 'psm_targets.txt')
         with open(decoy_peptides_location, 'w') as f:
             for peptide in decoy_peptides:
                 f.write(peptide + '\n')
@@ -199,9 +200,9 @@ class PostProcessing(Base):
                 g.write(peptide + '\n')
         
         for hla, groups in netmhc_ranking_information:
-            netmhc_output_path = os.path.join(os.path.dirname(pin_path), 'decoys-netmhc%s.txt' % hla)
-            affinity_path = os.path.join(os.path.dirname(pin_path), 'decoys-netmhc%s-affinity.txt' % hla)
-            rank_path = os.path.join(os.path.dirname(pin_path), 'decoys-netmhc%s-rank.txt' % hla)
+            netmhc_output_path = os.path.join(os.path.dirname(input_pin_path), 'decoys-netmhc%s.txt' % hla)
+            affinity_path = os.path.join(os.path.dirname(input_pin_path), 'decoys-netmhc%s-affinity.txt' % hla)
+            rank_path = os.path.join(os.path.dirname(input_pin_path), 'decoys-netmhc%s-rank.txt' % hla)
             call_netmhc(self.executables['netmhc'], hla, decoy_peptides_location, os.path.abspath(netmhc_output_path))
             BashScripts.extract_netmhc_output(netmhc_output_path, affinity_path)
             BashScripts.call_target_netmhc_rank(decoy_peptides_location, rank_path, [affinity_path])
@@ -213,7 +214,7 @@ class PostProcessing(Base):
                 assert(row)
                 assert(row.PeptideAffinityPath)
                 netmhc_paths.append(row.PeptideAffinityPath)
-            target_rank_path = os.path.join(os.path.dirname(pin_path), 'targets-netmhc%s-rank.txt' % hla)
+            target_rank_path = os.path.join(os.path.dirname(input_pin_path), 'targets-netmhc%s-rank.txt' % hla)
             BashScripts.call_target_netmhc_rank(target_peptides_location, target_rank_path, netmhc_paths)
             targets_dict = file_to_dict(target_rank_path)
             parser.insert_netmhc_ranks(hla + '-rank', targets_dict, decoys_dict)

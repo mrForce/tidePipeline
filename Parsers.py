@@ -9,10 +9,10 @@ from xml.sax.saxutils import unescape
 class MSGFPINParser:
     def __init__(self, path):
         self.path = path
+        self.ranks = {}
     @staticmethod
-    def parse_peptide(self, peptide, length):
-        regex = re.compile('\.(.{%d})\.' % length)
-        match = regex.search(peptide)
+    def parse_peptide(peptide, length):
+        match = re.search('\.(.{%d})\.' % length, peptide)
         return match.group(1)
         
     def _get_peptides(self, targets):
@@ -25,15 +25,15 @@ class MSGFPINParser:
             So, we want to advance past the second row
             """
             self.reader.__next__()
-            self.fieldnames = reader.fieldnames
+            self.fieldnames = self.reader.fieldnames
             peptides = set()
             for row in self.reader:
                 if targets:
                     if 'XXX' not in row['Proteins']:
-                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide']))
+                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
                 else:
                     if 'XXX' in row['Proteins']:
-                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide']))
+                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
             return peptides
     """
     To be completely clear, these are the target peptides found in the PSMs in the PIN file.
@@ -47,7 +47,7 @@ class MSGFPINParser:
         self.ranks[header] = {'targets': target_ranks, 'decoys': decoy_ranks}
     def write(self, output_path):
         self._insert_netmhc_ranks(output_path)
-    def insert_netmhc_ranks(self, output_path):
+    def _insert_netmhc_ranks(self, output_path):
         """
         self.ranks should be a dictionary that looks like this:
 

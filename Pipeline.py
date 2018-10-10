@@ -335,19 +335,12 @@ class PostProcess:
             
             assert(param in section)
 
-        self.netmhc_groups_list = []
-        for x in section:
-            if x.startswith('netmhcgroup'):
-                groups = section.getList(x, []))
-                hla_name = project.db_session.query(DB.NetMHC).filter_by(Name=groups[0]).first().hla.HLAName
-                for group in groups[1::]:
-                    assert(project.db_session.query(DB.NetMHC).filter_by(Name=group).first().hla.HLAName == hla_name)
-                self.netmhc_groups_list.append((hla_name, groups))
+
         self.postProcessType = section['postprocesstype']
         assert(self.postProcessType in ['percolator', 'assign-confidence', 'msgf'])
         searchNumber = section.getint('searchnumber', -1)
         self.searchNumMap = searchNumMap
-        
+        self.section = section
         assert(searchNumber in self.searchNumMap)
         self.searchName = searchNumMap[searchNumber][0]
         self.searchNumber = searchNumber
@@ -374,6 +367,14 @@ class PostProcess:
             self.postProcessParamFile = None
             assert(self.postProcessType == 'msgf')
     def run_post_process_and_export(self, project, test_run = False):
+        netmhc_groups_list = []
+        for x in self.section:
+            if x.startswith('netmhcgroup'):
+                groups = self.section.getList(x, [])
+                hla_name = project.db_session.query(DB.NetMHC).filter_by(Name=groups[0]).first().hla.HLAName
+                for group in groups[1::]:
+                    assert(project.db_session.query(DB.NetMHC).filter_by(Name=group).first().hla.HLAName == hla_name)
+                netmhc_groups_list.append((hla_name, groups))
         crux_exec_path = project.get_crux_executable_path()
         post_processor_names = []
         filtered_names = []
@@ -393,8 +394,8 @@ class PostProcess:
             if not test_run:
                 #PostProcess.py percolator function expects msgfplus or tide. 
                 searchtype_converter = {'tide': 'tide', 'msgf': 'msgfplus'}
-                if self.netmhc_groups_list:
-                    project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name, netmhc_ranking_information = self.netmhc_groups_list)
+                if netmhc_groups_list:
+                    project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name, netmhc_ranking_information = netmhc_groups_list)
                 else:
                     project.percolator(self.searchName, searchtype_converter[self.searchType], runner, post_process_name)
                 print('ran percolator on searchName: ' + self.searchName + ' with search type: ' + self.searchType)
