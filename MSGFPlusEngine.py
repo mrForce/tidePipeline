@@ -19,6 +19,8 @@ class MSGFPlusEngine(AbstractEngine):
             raise MSGFPlusSearchRowDoesNotExistError(name)
         return row
 
+    def get_all_msgfplus_search(self):
+        return self.db_session.query(DB.MSGFPlusSearch).all()
     def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, percolator_param_file=False, modifications_name = None, memory = None, *, disable_contaminants_check = False):
         """
         percolator_param_file is False if we want to use the Q-values calculated by MSGF+. percolator_param_file should be a string with the name of a Percolator parameter file if we want to use Percolator for calculating Q-values

@@ -213,7 +213,7 @@ class PostProcessing(Base):
                 row = self.get_netmhc_row(group)
                 assert(row)
                 assert(row.PeptideAffinityPath)
-                netmhc_paths.append(row.PeptideAffinityPath)
+                netmhc_paths.append(os.path.join(self.project_path, row.PeptideAffinityPath))
             target_rank_path = os.path.join(os.path.dirname(input_pin_path), 'targets-netmhc%s-rank.txt' % hla)
             BashScripts.call_target_netmhc_rank(target_peptides_location, target_rank_path, netmhc_paths)
             targets_dict = file_to_dict(target_rank_path)
@@ -254,7 +254,7 @@ class PostProcessing(Base):
                     self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
                     if netmhc_ranking_information:
                         pp = pathlib.PurePath(target_path)
-                        output_path = pp.stem + '_netmhc_ranks' + pp.suffix
+                        output_path = os.path.join(str(pp.parent), pp.stem + '_netmhc_ranks' + pp.suffix)
                         self._netmhc_rank(netmhc_ranking_information, target_path, output_path)
             new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch)
             self.db_session.add(new_row)

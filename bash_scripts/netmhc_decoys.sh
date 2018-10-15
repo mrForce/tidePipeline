@@ -1,6 +1,6 @@
 #!/bin/bash
 #$1 is the combined parsed NetMHC output for the decoy candidates, while $2 are the target peptides, and $3 is the # of decoys needed
-
+(>&2 echo "In netmhc_decoys.sh")
 
 #first, we need to sort both alphabetically.
 sorted_targets=$(mktemp)

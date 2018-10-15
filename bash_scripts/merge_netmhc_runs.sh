@@ -1,5 +1,5 @@
 #!/bin/bash
-
+(>&2 echo "In merge_netmhc_runs.sh")
 chainJoin(){
 
     if [ "$#" -eq 1 ]; then

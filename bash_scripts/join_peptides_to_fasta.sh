@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+(>&2 echo "In join_peptides_to_fasta.sh")
 while getopts ":P:" opt; do
     case $opt in
 	P)

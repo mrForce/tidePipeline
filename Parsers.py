@@ -12,8 +12,11 @@ class MSGFPINParser:
         self.ranks = {}
     @staticmethod
     def parse_peptide(peptide, length):
-        match = re.search('\.(.{%d})\.' % length, peptide)
-        return match.group(1)
+        #remove anything but the peptide, including PTMs. 
+        matches = re.findall('([A-Za-z]+)(?:\[[+-\.\d]+\])?', peptide)
+        cleaned_peptide = ''.join(matches)
+        assert(len(cleaned_peptide) == length)
+        return cleaned_peptide
         
     def _get_peptides(self, targets):
         with open(self.path, 'r') as f:
@@ -58,17 +61,30 @@ class MSGFPINParser:
         Output path is the path to write the modified PIN to.
         """
         with open(self.path, 'r') as f:
-            reader = csv.DictReader(f, delimiter='\t')
+            reader = csv.DictReader(f, delimiter='\t', restkey='Proteins')
             new_fieldnames = self.fieldnames[0:10] + list(self.ranks.keys()) + self.fieldnames[10::]
             with open(output_path, 'w') as g:
                 writer = csv.DictWriter(g, delimiter='\t', fieldnames = new_fieldnames)
                 writer.writeheader()
                 for row in reader:
-                    row_copy = dict(row)
-                    key = 'decoys' if 'XXX' in row['Proteins'] else 'targets'
-                    for header, d in self.ranks.items():
-                        row_copy[header] = d[key][row['Peptide']]
-                    writer.writerow(row_copy)
+                    if row and row['Proteins']:
+                        row_copy = dict(row)
+                        key = 'decoys'
+                        assert(isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple) or isinstance(row['Proteins'], str))
+                        if isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple):
+                            summation = sum(['XXX' in x for x in row['Proteins']])
+                            #assert that all proteins are targets, or all proteins are decoys
+                            assert(summation == 0 or summation == len(row['Proteins']))
+                            if summation == 0:
+                                key = 'targets'
+                        else:
+                            if 'XXX' not in row['Proteins']:
+                                key = 'targets'
+                        for header, d in self.ranks.items():
+                            row_copy[header] = d[key][MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen']))]
+                        writer.writerow(row_copy)
+                    else:
+                        print('bad row or bad proteins')
                     
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):

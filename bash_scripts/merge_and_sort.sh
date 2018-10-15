@@ -1,5 +1,5 @@
 #!/bin/bash
-
+(>&2 echo "In merge_and_sort.sh")
 
 #each file should have a bunch of lines, each of the form: sequence,IC50
 merged=$(mktemp)

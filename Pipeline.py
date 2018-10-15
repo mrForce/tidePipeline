@@ -296,7 +296,9 @@ class Search:
             if self.memory:
                 if not test_run:
                     project.run_search(self.mgfName, index_name, None, runner, search_name, self.memory)
-                search_node = SearchNode(self.searchType, search_name, self.mgfName, options = self.options + {'memory': self.memory})
+                options_copy = dict(self.options)
+                options_copy['memory'] = self.memory
+                search_node = SearchNode(self.searchType, search_name, self.mgfName, options = options_copy)
             else:
                 if not test_run:
                     project.run_search(self.mgfName, index_name, None, runner, search_name)
@@ -544,12 +546,16 @@ def run_pipeline(ini_file, project_folder, image_location, test_run = False):
         searchNumToNodeMap[search_object.searchNumber] = search_node
 
     project.end_command_session()
+    
+    
+
     project = PostProcessing.PostProcessing(project_folder, '')
     for post_process_section in postprocess_sections:
         post_process_object = PostProcess(post_process_section, searchNumMap)
         post_process_node =  post_process_object.run_post_process_and_export(project, test_run)
         searchNumToNodeMap[post_process_object.searchNumber].add_post_process_node(post_process_node)
     project.end_command_session()
+
     search_nodes = list(searchNumToNodeMap.values())
     index_node.set_search_nodes(search_nodes)
     peptide_source_node.set_index_nodes([index_node])
