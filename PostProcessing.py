@@ -202,10 +202,11 @@ class PostProcessing(Base):
         for hla, groups in netmhc_ranking_information:
             netmhc_output_path = os.path.join(os.path.dirname(input_pin_path), 'decoys-netmhc%s.txt' % hla)
             affinity_path = os.path.join(os.path.dirname(input_pin_path), 'decoys-netmhc%s-affinity.txt' % hla)
+            affinity_check_path = os.path.join(os.path.dirname(input_pin_path), 'decoys-netmhc%s-affinity-check.txt' % hla)
             rank_path = os.path.join(os.path.dirname(input_pin_path), 'decoys-netmhc%s-rank.txt' % hla)
             call_netmhc(self.executables['netmhc'], hla, decoy_peptides_location, os.path.abspath(netmhc_output_path))
             BashScripts.extract_netmhc_output(netmhc_output_path, affinity_path)
-            BashScripts.call_target_netmhc_rank(decoy_peptides_location, rank_path, [affinity_path])
+            BashScripts.call_target_netmhc_rank(decoy_peptides_location, rank_path, affinity_check_path, [affinity_path])
             decoys_dict = file_to_dict(rank_path)
             #now do the targets.
             netmhc_paths = []
