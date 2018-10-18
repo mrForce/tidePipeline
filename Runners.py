@@ -118,6 +118,8 @@ class MSGFPlusSearchRunner:
                     assert(column_name)
 
         try:
+            print('command: ' +  ' '.join([str(x) for x in command]))
+            assert(False)
             p = subprocess.call([str(x) for x in command], stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise MSGFPlusSearchFailedError(' '.join(command))

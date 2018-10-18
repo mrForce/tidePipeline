@@ -81,7 +81,11 @@ class MSGFPINParser:
                             if 'XXX' not in row['Proteins']:
                                 key = 'targets'
                         for header, d in self.ranks.items():
-                            row_copy[header] = d[key][MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen']))]
+                            peptide = MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen']))
+                            if len(peptide) < 8 or len(peptide) > 11:
+                                print('peptide is of wrong size: ' + peptide)
+                                assert(False)
+                            row_copy[header] = d[key][peptide]
                         writer.writerow(row_copy)
                     else:
                         print('bad row or bad proteins')

@@ -15,9 +15,15 @@ def shuffle_string(string):
 def call_target_netmhc_rank(peptides_location, output_location_ranked, output_location_affinity, parsed_netmhc_runs):
     if output_location_affinity == None:
         output_location_affinity = '/dev/null'
+    print('peptides location: ' + peptides_location)
+
+    print('output location ranked: '+ output_location_ranked)
+    print('output location affinity: ' + output_location_affinity)
     proc = subprocess.Popen(['bash_scripts/target_netmhc_rank.sh', peptides_location, output_location_ranked, output_location_affinity, *parsed_netmhc_runs])
     try:
+        print('about to communicate')
         outs,errors = proc.communicate()
+        print('communicated')
     except:
         assert(False)
 
