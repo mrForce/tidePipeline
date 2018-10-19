@@ -35,11 +35,10 @@ class Base:
             self.command = parent_base.command
             self.executables = parent_base.executables
         else:
+            self.project_path = project_path
             if os.path.isfile('reminder.txt'):
                 subprocess.call(['cat', 'reminder.txt'])
-                self.project_path = project_path
                 print('project path: ' + project_path)
-            
             self.db_session = DB.init_session(os.path.join(project_path, 'database.db'))
             self.command = DB.Command(commandString = command)
             self.db_session.add(self.command)

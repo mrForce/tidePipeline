@@ -245,6 +245,10 @@ class PostProcessing(Base):
             output_directory_db = os.path.join('percolator_results', output_directory_name)
             if search_type == 'tide':
                 target_path = os.path.join(self.project_path, search_row.targetPath)
+                if netmhc_ranking_information:
+                    pp = pathlib.PurePath(target_path)
+                    output_path = os.path.join(str(pp.parent), pp.stem + '_netmhc_ranks' + pp.suffix)
+                    self._netmhc_rank(netmhc_ranking_information, target_path, output_path)
             elif search_type == 'msgfplus':
                 target_path = os.path.join(self.project_path, search_row.resultFilePath + '.pin')
                 if not os.path.exists(target_path):

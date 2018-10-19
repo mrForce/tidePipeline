@@ -29,7 +29,7 @@ else:
     comment = args.comment
 
 project = Base.Base(project_folder, ' '.join(sys.argv))
-project.begin_command_session()
+project.begin_command_session(False)
 project.add_param_file(args.Program, name, path, comment)
-project.end_command_session()
+project.end_command_session(False)
 
