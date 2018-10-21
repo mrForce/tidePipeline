@@ -4,20 +4,53 @@ import csv
 from xml.sax.saxutils import unescape
 import sys
 from enum import Enum
-
+from abc import ABC
 class PINType(Enum):
     tide=1
     msgf=1
 
+    """
+    An iterator that yields a tuple of the form (is_target_row, row), where is_target_row is a boolean that is True if the row is a target row, and False if the row is a decoy row.
+    """
+def readSinglePIN(pin_path, target_checker_fn, *, skipe_defaults_row = True, restkey='Proteins'):    
+    with open(pin_path, 'r') as f:
+        reader = csv.DictReader(f, delimiter='\t', restkey=restkey)
+        if skip_defaults_row:
+            self.reader.__next__()
+        for row in reader:
+            is_target_row = False
+            if target_checker_fn(row):
+                is_target_row = True
+            yield (is_target_row, row)
+
+def readDualPIN(target_pin_path, decoy_pin_path, *, skipe_defaults_row = True, restkey='Proteins'):    
+    with open(target_pin_path, 'r') as f:
+        reader = csv.DictReader(f, delimiter='\t', restkey=restkey)
+        for row in reader:
+            yield (True, row)
+    with open(decoy_pin_path, 'r') as f:
+        reader = csv.DictReader(f, delimiter='\t', restkey=restkey)
+        for row in reader:
+            yield (False, row)
+
+
 
 class PINParser:
-    def __init__(self, path, pin_type, target_checker_fn, min_peptide_length, max_peptide_length):
+    #pin_row_generator is either a readDualPIN or readSinglePIN generator.
+    def __init__(self, pin_row_generator, pin_type, min_peptide_length, max_peptide_length):
         self.path = path
         self.ranks = {}
         self.pin_type = pin_type
-        self.target_checker_fn = target_checker_fn
         self.min_peptide_length = min_peptide_length
         self.max_peptide_length = max_peptide_length
+        self.target_rows = []
+        self.decoy_rows = []
+        for is_target, row in pin_row_generator:
+            if is_target:
+                self.target_rows.append(row)
+            else:
+                self.decoy_rows.append(row)
+        
     @staticmethod
     def parse_peptide(peptide, length):
         #remove anything but the peptide, including PTMs. 
@@ -25,28 +58,16 @@ class PINParser:
         cleaned_peptide = ''.join(matches)
         assert(len(cleaned_peptide) == length)
         return cleaned_peptide
-        
-    def _get_peptides(self, targets):
-        with open(self.path, 'r') as f:
-            self.reader = csv.DictReader(f, delimiter='\t')
-            """
-            The first row of the PIN file is the header (i.e. the field names)
-            The second row of the PIN file are the default values (but only if MSGF+ pin!)
 
-            So, we want to advance past the second row
-            """
-            if self.pin_type == PINType.msgf:
-                self.reader.__next__()
-            self.fieldnames = self.reader.fieldnames
-            peptides = set()
-            for row in self.reader:
-                if targets:
-                    if 'XXX' not in row['Proteins']:
-                        peptides.add(PINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
-                else:
-                    if 'XXX' in row['Proteins']:
-                        peptides.add(PINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
-            return peptides
+    def _get_peptides(self, targets):
+        peptides = set()
+        if targets:
+            for row in self.target_rows:
+                peptides.add(PINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
+        else:
+            for row in self.decoy_rows:
+                peptides.add(PINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
+        return peptides
     """
     To be completely clear, these are the target peptides found in the PSMs in the PIN file.
     """
@@ -55,7 +76,7 @@ class PINParser:
     def get_decoy_peptides(self):
         return self._get_peptides(False)
 
-    def insert_netmhc_ranks(self, header, target_ranks, decoy_ranks):
+    def set_netmhc_ranks(self, header, target_ranks, decoy_ranks):
         self.ranks[header] = {'targets': target_ranks, 'decoys': decoy_ranks}
     def write(self, output_path):
         self._insert_netmhc_ranks(output_path)
@@ -84,23 +105,22 @@ class PINParser:
         The headers could something along the lines of "H-2-Kb_rank"
 
         Output path is the path to write the modified PIN to.
-
-        target_checker_fn is a function that takes in the row, and returns True if it's a target, and False otherwise. 
         """
-        with open(self.path, 'r') as f:
-            reader = csv.DictReader(f, delimiter='\t', restkey='Proteins')
-            new_fieldnames = self.fieldnames[0:10] + list(self.ranks.keys()) + self.fieldnames[10::]
-            with open(output_path, 'w') as g:
-                writer = csv.DictWriter(g, delimiter='\t', fieldnames = new_fieldnames)
-                writer.writeheader()
-                for row in reader:
+
+
+        
+        new_fieldnames = self.fieldnames[0:10] + list(self.ranks.keys()) + self.fieldnames[10::]
+        with open(output_path, 'w') as g:
+            writer = csv.DictWriter(g, delimiter='\t', fieldnames = new_fieldnames)
+            writer.writeheader()
+            for key in ['targets', 'decoys']:
+                row_list = self.target_rows
+                if key == 'decoys':
+                    row_list = self.decoy_rows
+                for row in row_list:
                     if row and row['Proteins']:
                         row_copy = dict(row)
                         assert(isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple) or isinstance(row['Proteins'], str))
-                        if self.target_checker_fn(row):
-                            key = 'targets'
-                        else:
-                            key = 'decoys'
                         for header, d in self.ranks.items():
                             peptide = PINParser.parse_peptide(row['Peptide'], int(row['PepLen']))
                             if len(peptide) < self.min_peptide_length or len(peptide) > self.max_peptide_length:
