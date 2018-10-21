@@ -237,9 +237,9 @@ class Index:
             runner = Runners.TideIndexRunner({}, crux_exec_path, project.project_path, param_file_row)
             if not test_run:
                 if self.contaminants:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys = netmhc_decoys)
                 else:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, netmhc_decoys=netmhc_decoys)
         elif self.indexType == 'msgf':
             runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.memory:

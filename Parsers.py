@@ -2,14 +2,22 @@ import xml.etree.ElementTree as ET
 import re
 import csv
 from xml.sax.saxutils import unescape
+import sys
+from enum import Enum
+
+class PINType(Enum):
+    tide=1
+    msgf=1
 
 
-
-
-class MSGFPINParser:
-    def __init__(self, path):
+class PINParser:
+    def __init__(self, path, pin_type, target_checker_fn, min_peptide_length, max_peptide_length):
         self.path = path
         self.ranks = {}
+        self.pin_type = pin_type
+        self.target_checker_fn = target_checker_fn
+        self.min_peptide_length = min_peptide_length
+        self.max_peptide_length = max_peptide_length
     @staticmethod
     def parse_peptide(peptide, length):
         #remove anything but the peptide, including PTMs. 
@@ -23,20 +31,21 @@ class MSGFPINParser:
             self.reader = csv.DictReader(f, delimiter='\t')
             """
             The first row of the PIN file is the header (i.e. the field names)
-            The second row of the PIN file are the default values.
+            The second row of the PIN file are the default values (but only if MSGF+ pin!)
 
             So, we want to advance past the second row
             """
-            self.reader.__next__()
+            if self.pin_type == PINType.msgf:
+                self.reader.__next__()
             self.fieldnames = self.reader.fieldnames
             peptides = set()
             for row in self.reader:
                 if targets:
                     if 'XXX' not in row['Proteins']:
-                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
+                        peptides.add(PINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
                 else:
                     if 'XXX' in row['Proteins']:
-                        peptides.add(MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
+                        peptides.add(PINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
             return peptides
     """
     To be completely clear, these are the target peptides found in the PSMs in the PIN file.
@@ -50,6 +59,22 @@ class MSGFPINParser:
         self.ranks[header] = {'targets': target_ranks, 'decoys': decoy_ranks}
     def write(self, output_path):
         self._insert_netmhc_ranks(output_path)
+    @staticmethod
+    def msgf_is_target(row):
+        #pass this as target_checker_fn if parsing MSGF+ output.
+        assert(isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple) or isinstance(row['Proteins'], str))
+        if isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple):            
+            summation = sum(['XXX' in x for x in row['Proteins']])
+            assert(summation == 0 or summation == len(row['Proteins']))
+            if summation == 0:
+                return True
+            else:
+                return False
+        else:
+            if 'XXX' not in row['Proteins']:
+                return True
+            else:
+                return False
     def _insert_netmhc_ranks(self, output_path):
         """
         self.ranks should be a dictionary that looks like this:
@@ -59,6 +84,8 @@ class MSGFPINParser:
         The headers could something along the lines of "H-2-Kb_rank"
 
         Output path is the path to write the modified PIN to.
+
+        target_checker_fn is a function that takes in the row, and returns True if it's a target, and False otherwise. 
         """
         with open(self.path, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t', restkey='Proteins')
@@ -69,26 +96,23 @@ class MSGFPINParser:
                 for row in reader:
                     if row and row['Proteins']:
                         row_copy = dict(row)
-                        key = 'decoys'
                         assert(isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple) or isinstance(row['Proteins'], str))
-                        if isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple):
-                            summation = sum(['XXX' in x for x in row['Proteins']])
-                            #assert that all proteins are targets, or all proteins are decoys
-                            assert(summation == 0 or summation == len(row['Proteins']))
-                            if summation == 0:
-                                key = 'targets'
+                        if self.target_checker_fn(row):
+                            key = 'targets'
                         else:
-                            if 'XXX' not in row['Proteins']:
-                                key = 'targets'
+                            key = 'decoys'
                         for header, d in self.ranks.items():
-                            peptide = MSGFPINParser.parse_peptide(row['Peptide'], int(row['PepLen']))
-                            if len(peptide) < 8 or len(peptide) > 11:
-                                print('peptide is of wrong size: ' + peptide)
-                                assert(False)
-                            row_copy[header] = d[key][peptide]
-                        writer.writerow(row_copy)
+                            peptide = PINParser.parse_peptide(row['Peptide'], int(row['PepLen']))
+                            if len(peptide) < self.min_peptide_length or len(peptide) > self.max_peptide_length:
+                                print('peptide is of wrong size: ' + peptide, file=sys.stderr)
+                            if peptide in d[key]:
+                                row_copy[header] = d[key][peptide]
+                                writer.writerow(row_copy)
+                            else:
+                                print('Peptide: %s is not in d[key]' % peptide, file=sys.stderr)
+                                
                     else:
-                        print('bad row or bad proteins')
+                        print('bad row or bad proteins: %s', str(row), file=sys.stderr)
                     
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):

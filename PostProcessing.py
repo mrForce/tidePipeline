@@ -186,8 +186,8 @@ class PostProcessing(Base):
             if assign_confidence_row:
                 raise AssignConfidenceNameMustBeUniqueError(assign_confidence_name)
 
-    def _netmhc_rank(self, netmhc_ranking_information, input_pin_path, output_pin_path):
-        parser = Parsers.MSGFPINParser(input_pin_path)
+    def _netmhc_rank(self, netmhc_ranking_information, input_pin_path, output_pin_path, *, use_ic50 = False, pin_type = Parsers.PINType.msgf):
+        parser = Parsers.PINParser(input_pin_path, pin_type)
         decoy_peptides = parser.get_decoy_peptides()
         decoy_peptides_location = os.path.join(os.path.dirname(input_pin_path), 'psm_decoys.txt')
         target_peptides = parser.get_target_peptides()
@@ -218,23 +218,30 @@ class PostProcessing(Base):
             target_rank_path = os.path.join(os.path.dirname(input_pin_path), 'targets-netmhc%s-rank.txt' % hla)
             target_affinity_path = os.path.join(os.path.dirname(input_pin_path), 'targets-netmhc%s-affinity.txt' % hla)
             BashScripts.call_target_netmhc_rank(target_peptides_location, target_rank_path, target_affinity_path, netmhc_paths)
-            targets_dict = file_to_dict(target_rank_path)
-            parser.insert_netmhc_ranks(hla + '-rank', targets_dict, decoys_dict)
+            if use_ic50:
+                targets_dict = file_to_dict(target_affinity_path)
+                parser.insert_netmhc_ranks(hla + '-affinity', targets_dict, decoys_dict)
+            else:
+                targets_dict = file_to_dict(target_rank_path)
+                parser.insert_netmhc_ranks(hla + '-rank', targets_dict, decoys_dict)
         parser.write(output_pin_path)
-    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False, *, commit=False, netmhc_ranking_information = False):
+    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False, *, commit=False, netmhc_ranking_information = False, use_ic50 = False):
         """
         If netmhc_ranking_information is used, it should be a list of tuples of the form [(allele, (group1, group2...))]
         """
         print('search name to query: ' + search_name)
         print('search type: ' + search_type)
         search_row = None
+        pin_type = None
         if search_type == 'tide':
             search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = search_name).first()
             print('search row: ')
             print(search_row)
+            pin_type = Parsers.PINType.tide
         elif search_type == 'msgfplus':
             search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = search_name).first()
             assert(search_row.addFeatures == 1)
+            pin_type = Parsers.PINType.msgf
         percolator_row = self.db_session.query(DB.Percolator).filter_by(PercolatorName = percolator_name).first()
         if search_row and (percolator_row is None):            
             output_directory_name = str(uuid.uuid4().hex)
@@ -248,7 +255,7 @@ class PostProcessing(Base):
                 if netmhc_ranking_information:
                     pp = pathlib.PurePath(target_path)
                     output_path = os.path.join(str(pp.parent), pp.stem + '_netmhc_ranks' + pp.suffix)
-                    self._netmhc_rank(netmhc_ranking_information, target_path, output_path)
+                    self._netmhc_rank(netmhc_ranking_information, target_path, output_path, use_ic50 = use_ic50, pin_type = pin_type)
             elif search_type == 'msgfplus':
                 target_path = os.path.join(self.project_path, search_row.resultFilePath + '.pin')
                 if not os.path.exists(target_path):
@@ -261,7 +268,7 @@ class PostProcessing(Base):
                     if netmhc_ranking_information:
                         pp = pathlib.PurePath(target_path)
                         output_path = os.path.join(str(pp.parent), pp.stem + '_netmhc_ranks' + pp.suffix)
-                        self._netmhc_rank(netmhc_ranking_information, target_path, output_path)
+                        self._netmhc_rank(netmhc_ranking_information, target_path, output_path, use_ic50=use_ic50, pin_type = pin_type)
             new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch)
             self.db_session.add(new_row)
             if commit:

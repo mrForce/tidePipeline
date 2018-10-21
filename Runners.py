@@ -39,14 +39,14 @@ class TideSearchRunner:
         print('current working directory: ' + os.getcwd())
         if self.param_file_row:
             param_file_path = os.path.join(self.project_path, self.param_file_row.Path)
-            command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', param_file_path, spectra_file, index_filename]
+            command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', param_file_path, spectra_file, index_filename, '--pin-output', 'T']
         else:        
-            command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, spectra_file, index_filename]
+            command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, spectra_file, index_filename, '--pin-output', 'T']
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideSearchFailedError(' '.join(command))
-        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.txt'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.txt'), parameterFile = self.param_file_row, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.pin'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.pin'), parameterFile = self.param_file_row, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
         return search_row
 
 class MaxQuantSearchRunner:
@@ -193,7 +193,7 @@ class TideIndexRunner:
             return cls.converter[option]
         else:
             return None
-    def run_index_create_row(self, fasta_path, output_directory_tide, output_directory_db, index_filename):
+    def run_index_create_row(self, fasta_path, output_directory_tide, output_directory_db, index_filename, *, netmhc_decoys = None):
         #first, need to create the tide-index command
         command = [self.crux_binary, 'tide-index']
         for k,v in self.tide_index_options.items():
@@ -205,12 +205,19 @@ class TideIndexRunner:
             command.append(os.path.join(self.project_path, self.param_file_row.Path))
         command.append('--output-dir')
         command.append(output_directory_tide)
+        if netmhc_decoys:
+            new_fasta_path = os.path.join(output_directory_tide, 'targets_and_decoys.fasta')
+            BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_prefix = 'decoy_')
+            command.append('--decoy-format')
+            command.append('none')
+            fasta_path= new_fasta_path
         command.append(fasta_path)
         command.append(os.path.join(output_directory_tide, index_filename))
         print('command')
         print(command)
         print('command')
         print(' '.join(command))
+        
         try:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
@@ -221,7 +228,8 @@ class TideIndexRunner:
             if column_name:
                 column_arguments[column_name] = v
         column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
-
+        if netmhc_decoys:
+            column_arguments['netmhc_decoys'] = list(netmhc_decoys.keys()))
         if self.param_file_row:
             column_arguments['parameterFile'] = self.param_file_row
         return DB.TideIndex(**column_arguments)

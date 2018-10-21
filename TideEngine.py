@@ -264,7 +264,7 @@ class TideEngine(AbstractEngine):
             indices.append(index)
         return indices
     
-    def create_index(self, set_type, set_name, tide_index_runner, tide_index_name, contaminant_names=[]):
+    def create_index(self, set_type, set_name, tide_index_runner, tide_index_name, contaminant_names=[], *, netmhc_decoys = None):
         """
         tide_index_runner is an instance of the TideIndexRunner class
         """
@@ -283,7 +283,7 @@ class TideEngine(AbstractEngine):
             output_directory_name = str(uuid.uuid4().hex)
             output_directory_path = os.path.join(self.project_path, 'tide_indices', output_directory_name)
         
-        row = tide_index_runner.run_index_create_row(fasta_file_location, output_directory_path, os.path.join('tide_indices', output_directory_name), 'index')
+        row = tide_index_runner.run_index_create_row(fasta_file_location, output_directory_path, os.path.join('tide_indices', output_directory_name), 'index', netmhc_decoys=netmhc_decoys)
         for x in temp_files:
             x.close()
         row.TideIndexName = tide_index_name
