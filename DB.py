@@ -661,6 +661,7 @@ class TideSearch(SearchBase):
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     targetPath = Column('targetPath', String)
     decoyPath = Column('decoyPath', String)
+    concat = Column('concat', Boolean, default=False)
     paramsPath = Column('paramsPath', String)
     logPath = Column('logPath', String)
     tideindex = relationship('TideIndex')

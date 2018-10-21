@@ -33,12 +33,14 @@ class TideSearchRunner:
         return {'--mod-precision': {'type':int}, '--auto-precursor-window': {'choices': ['false', 'warn', 'fail']}, '--max-precursor-charge': {'type': int}, '--precursor-window': {'type': float}, '--precursor-window-type': {'choices': ['mass', 'mz', 'ppm']}, '--auto-mz-bin-width': {'choices': ['false', 'warn', 'fail']}, '--compute-sp': {'choices': ['T', 'F']}, '--deisotope': {'type': float}, '--exact-p-value': {'choices':['T', 'F']}, '--isotope-error': {'type': str}, '--min-peaks': {'type': int}, '--mz-bin-offset': {'type': float}, '--mz-bin-width': {'type': float}, '--peptide-centric-search': {'choices': ['T', 'F']}, '--score-function': {'choices': ['xcorr', 'residue-evidence', 'both']}, '--fragment-tolerance': {'type': float}, '--evidence-granularity': {'type': int}, '--remove-precursor-peak': {'choices': ['T', 'F']}, '--remove-precursor-tolerance': {'type': float}, '--scan-number': {'type': str}, '--skip-processing': {'choices': ['T', 'F']}, '--spectrum-charge': {'choices': ['1', '2', '3', 'all']}, '--spectrum-max-mz': {'type': float}, '--spectrum-min-mz': {'type': float}, '--use-flanking-peaks': {'choices': ['T', 'F']}, '--use-neutral-loss-peaks': {'choices': ['T', 'F']}, '--num-threads': {'type': int}, '--pm-charge': {'type': int}, '--pm-max-frag-mz': {'type': float}, '--pm-max-precursor-delta-ppm': {'type': float}, '--pm-max-precursor-mz': {'type': float}, '--pm-max-scan-seperation': {'type': int}, '--pm-min-common-frag-peaks': {'type': int}, '--pm-min-frag-mz': {'type': float}, '--pm-min-peak-pairs': {'type': int}, '--pm-min-precursor-mz': {'type': float}, '--pm-min-scan-frag-peaks': {'type': int}, '--pm-pair-top-n-frag-peaks': {'type': int}, '--pm-top-n-frag-peaks': {'type': int}, '--concat': {'choices': ['T', 'F']}, '--file-column': {'choices': ['T', 'F']}, '--fileroot': {'type': str}, '--mass-precision': {'type': int}, '--mzid-output': {'choices': ['T', 'F']}, '--precision': {'type': int}, '--spectrum-parser': {'choices': ['pwiz', 'mstoolkit']}, '--store-spectra': {'type': str}, '--top-match': {'type': int}, '--use-z-line': {'choices': ['T', 'F']}}
 
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, tide_search_row_name, partOfIterativeSearch = False):    
+    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, tide_search_row_name, partOfIterativeSearch = False):
         spectra_file = os.path.join(self.project_path, mgf_row.MGFPath)
         index_filename = os.path.join(self.project_path, index_row.TideIndexPath)
         print('current working directory: ' + os.getcwd())
+        params = {}
         if self.param_file_row:
             param_file_path = os.path.join(self.project_path, self.param_file_row.Path)
+            params = Parsers.parseTideParamFile(param_file_path)
             command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', param_file_path, spectra_file, index_filename, '--pin-output', 'T']
         else:        
             command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, spectra_file, index_filename, '--pin-output', 'T']
@@ -46,6 +48,11 @@ class TideSearchRunner:
             p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise TideSearchFailedError(' '.join(command))
+        if 'concat' in params:
+            assert(params['concat'] in ['true', 'false'])
+            if params['concat'] == 'true':
+                search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search..pin'), parameterFile = self.param_file_row, concat = True, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
+                return search_row
         search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.pin'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.pin'), parameterFile = self.param_file_row, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
         return search_row
 
@@ -229,7 +236,7 @@ class TideIndexRunner:
                 column_arguments[column_name] = v
         column_arguments['TideIndexPath'] = os.path.join(output_directory_db, index_filename)
         if netmhc_decoys:
-            column_arguments['netmhc_decoys'] = list(netmhc_decoys.keys()))
+            column_arguments['netmhc_decoys'] = list(netmhc_decoys.keys())
         if self.param_file_row:
             column_arguments['parameterFile'] = self.param_file_row
         return DB.TideIndex(**column_arguments)

@@ -6,6 +6,10 @@ import shutil
 import uuid
 import threading
 import functools
+
+MIN_NETMHC_PEPTIDE_LENGTH=8
+MAX_NETMHC_PEPTIDE_LENGTH=12
+
 class NetMHCCommand:
     def __init__(self, command, output_location):
         self.command = command
