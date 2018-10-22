@@ -24,7 +24,7 @@ class PINType(Enum):
 
 class TargetOrDecoyType(Enum):
     target=1
-    decoy=1
+    decoy=2
 
 
 
@@ -65,6 +65,7 @@ class SinglePINRW(PINRW):
                 if target_checker_fn(row):
                     row_type = TargetOrDecoyType.target
                 self.rows.append((row_type, row))
+        good_fieldnames  = list(self.fieldnames[:-1])
         for t, row in self.rows:
             index_to_remove = len(good_fieldnames)
             for i,fn in enumerate(good_fieldnames):
@@ -86,13 +87,12 @@ class SinglePINRW(PINRW):
         assert(min(ids) == 0)
         assert(max(ids) == len(self.rows) - 1)
         assert(len(ids) == len(self.rows))
-        good_fieldnames = list(self.fieldnames)
         #Need to figure out which column to put the new feature into
         
         self.fieldnames.insert(self.insert_feature_index, name)
         #insert into each row
         for i,value in feature:
-            self.rows[i][name] = value
+            self.rows[i][1][name] = value
         
 
 
@@ -101,7 +101,7 @@ class SinglePINRW(PINRW):
             writer = csv.DictWriter(f, delimiter='\t', fieldnames = self.fieldnames)
             writer.writeheader()
             for row in self.rows:
-                writer.writerow(row)                
+                writer.writerow(row[1])                
 
 
 class DualPINRW(PINRW):
@@ -117,19 +117,19 @@ class DualPINRW(PINRW):
             if skip_defaults_row:
                 reader.__next__()
             for row in reader:
-                 self.target_rows.append(row)
+                 self.target_rows.append((TargetOrDecoyType.target, row))
         with open(decoy_pin_path, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t', restkey=restkey)
             self.decoy_fieldnames = reader.fieldnames
             if skip_defaults_row:
                 reader.__next__()
             for row in reader:
-                self.decoy_rows.append(row)
+                self.decoy_rows.append((TargetOrDecoyType.decoy, row))
         assert(len(self.target_fieldnames) == len(self.decoy_fieldnames))
         assert(all([i == j for i, j in zip(self.target_fieldnames, self.decoy_fieldnames)]))
-        good_fieldnames = list(self.target_fieldnames)
+        good_fieldnames = list(self.target_fieldnames[:-1])
         #Need to figure out which column to put the new feature into
-        for t, row in self.target_rows + self.decoy_rows:
+        for t, row in (self.target_rows + self.decoy_rows):
             index_to_remove = len(good_fieldnames)
             for i,fn in enumerate(good_fieldnames):
                 if row[fn] is None:
@@ -143,10 +143,8 @@ class DualPINRW(PINRW):
         assert(len(good_fieldnames) > 0)
         self.insert_feature_index = self.target_fieldnames.index(good_fieldnames[-1]) + 1
     def get_rows(self):
-        target_rows_with_type = [(TargetOrDecoyType.target, i, row) for i,row in enumerate(self.target_rows)]
         num_target_rows = len(self.target_rows)
-        decoy_rows_with_type = [(TargetOrDecoyType.decoy, i+ num_target_rows, row) for i,row in enumerate(self.decoy_rows)]
-        return target_rows_with_type + decoy_rows_with_type
+        return [(t, i, row) for i,(t,row) in enumerate(self.target_rows)] + [(t, num_target_rows + i, row) for i,(t,row) in enumerate(self.decoy_rows)]
     
     def add_feature(self, name, feature):        
         self.target_fieldnames.insert(self.insert_feature_index, name)
@@ -154,24 +152,30 @@ class DualPINRW(PINRW):
         #insert into each row
         for i,value in feature:
             if i < len(self.target_rows):
-                self.target_rows[i][name] = value
+                self.target_rows[i][1][name] = value
             else:
                 i -= len(self.target_rows)
-                self.decoy_rows[i][name] = value
+                self.decoy_rows[i][1][name] = value
         
 
 
-    def save(self):
-        with open(self.target_pin_path, 'w') as f:
-            writer = csv.DictWriter(f, delimiter='\t', fieldnames = self.target_fieldnames)
-            writer.writeheader()
-            for row in self.target_rows:
-                writer.writerow(row)
-        with open(self.decoy_pin_path, 'w') as f:
-            writer = csv.DictWriter(f, delimiter='\t', fieldnames = self.decoy_fieldnames)
-            writer.writeheader()
+    def save(self, combine=True):
+        f = open(self.target_pin_path, 'w')
+        writer = csv.DictWriter(f, delimiter='\t', fieldnames = self.target_fieldnames)
+        writer.writeheader()
+        for row in self.target_rows:
+            writer.writerow(row[1])
+        if combine:
             for row in self.decoy_rows:
-                writer.writerow(row)
+                writer.writerow(row[1])
+            f.close()
+        else:
+            f.close()
+            with open(self.decoy_pin_path, 'w') as f:
+                writer = csv.DictWriter(f, delimiter='\t', fieldnames = self.decoy_fieldnames)
+                writer.writeheader()
+                for row in self.decoy_rows:
+                    writer.writerow(row[1])
         
             
 
@@ -196,7 +200,7 @@ class PINParser:
         peptides = set()
         for t,i,row in self.pin_rw.get_rows():
             if t == row_type:
-                peptides.add(PINParser.parse_peptide(row['Peptide'], int(row(['PepLen']))))
+                peptides.add(PINParser.parse_peptide(row['Peptide'], int(row['PepLen'])))
 
         return peptides
     """
@@ -243,14 +247,14 @@ class PINParser:
             else:
                 return False
     def write(self):        
-        key = 'decoy'
+        key = 'decoys'
         for feature, d in self.ranks.items():
             row_features = []
             for t, i, row in self.pin_rw.get_rows():
                 if t == TargetOrDecoyType.target:
-                    key = 'target'
+                    key = 'targets'
                 else:
-                    key = 'decoy'
+                    key = 'decoys'
                 #t is TargetOrDecoyType, i is the row ID
                 peptide = PINParser.parse_peptide(row['Peptide'], int(row['PepLen']))
                 if len(peptide) < self.min_peptide_length:
@@ -259,9 +263,9 @@ class PINParser:
                     print('Parsers.py:PINParser:write Peptide is too long: ' + peptide, file=sys.stderr)
                 else:
                     if peptide in d[key]:
-                        row_features.append((i, d[key][peptide]))
+                        row_features.append((i, float(d[key][peptide])))
                     else:
-                        print('Parsers.py:PINParser:write is not it d[%s]: %s' % (key,peptide) , file=sys.stderr)
+                        print('Parsers.py:PINParser:write Peptide is not in d[%s]: %s' % (key,peptide) , file=sys.stderr)
             self.pin_rw.add_feature(feature, row_features)
         self.pin_rw.save()
 class PeptideMatch:

@@ -298,8 +298,9 @@ class PercolatorRunner:
         self.crux_binary = crux_binary
         self.param_file_row = param_file_row
         self.project_path = project_path
-    
+
     def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row, partOfIterativeSearch = False):
+        assert(target_path)
         command = [self.crux_binary, 'percolator']
         print('running percolator command from: ' + os.getcwd())
         column_arguments = {}

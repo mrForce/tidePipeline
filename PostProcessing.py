@@ -251,14 +251,17 @@ class PostProcessing(Base):
             output_directory_tide = os.path.join(self.project_path, 'percolator_results', output_directory_name)
             os.mkdir(output_directory_tide)
             output_directory_db = os.path.join('percolator_results', output_directory_name)
+            target_path  = None
             if search_type == 'tide':
                 if netmhc_ranking_information:
                     pin_rw = None
                     if search_row.concat:
                         new_pin_location = shutil.copy(os.path.join(self.project_path, search_row.targetPath), output_directory_tide)
+                        target_path = new_pin_location
                         pin_rw = Parsers.SinglePINRW(new_pin_location, Parsers.PINParser.tide_is_target, skip_defaults_row = False)
                     else:
                         new_target_location = shutil.copy(os.path.join(self.project_path, search_row.targetPath), output_directory_tide)
+                        target_path = new_target_location
                         new_decoy_location = shutil.copy(os.path.join(self.project_path, search_row.decoyPath), output_directory_tide)
                         pin_rw = Parsers.DualPINRW(new_target_location, new_decoy_location, skip_defaults_row = False)
                     assert(pin_rw)                
