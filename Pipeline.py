@@ -159,27 +159,34 @@ class TestRunTree:
 
 class Index:
     def __init__(self, section):
-        required_params=  ['indextype', 'sourcetype', 'sourcename']
-        print('section')
-        print(section)
-        print('type: ' + str(type(section)))
-        for x in required_params:
-            assert(x in section)
-        self.indexType = section['indextype']
-        assert(self.indexType in ['tide', 'msgf'])
-        self.sourceType = section['sourcetype']
-        assert(self.sourceType in ['FilteredNetMHC', 'PeptideList', 'TargetSet'])
-        self.sourceName = section['sourcename']
-        self.section = section
+        self.existingIndex = False
+        if 'indexname' in section:
+            assert('indextype' in section)
+            assert(section['indextype']  in ['msgf', 'tide'])            
+            self.existingIndex = section['indexname']
+            self.indexType = section['indextype']
+        else:                  
+            required_params=  ['indextype', 'sourcetype', 'sourcename']
+            print('section')
+            print(section)
+            print('type: ' + str(type(section)))
+            for x in required_params:
+                assert(x in section)
+                self.indexType = section['indextype']
+                assert(self.indexType in ['tide', 'msgf'])
+                self.sourceType = section['sourcetype']
+                assert(self.sourceType in ['FilteredNetMHC', 'PeptideList', 'TargetSet'])
+                self.sourceName = section['sourcename']
+                self.section = section
 
 
-        if 'paramfile' in section:
-            self.indexParamFile = section['paramfile']
-        else:
-            assert(self.indexType == 'msgf')
-        
-        self.contaminants = section.getList('contaminants', [])
-        self.memory = section.getint('memory', 0)
+            if 'paramfile' in section:
+                self.indexParamFile = section['paramfile']
+            else:
+                assert(self.indexType == 'msgf')
+                
+            self.contaminants = section.getList('contaminants', [])
+            self.memory = section.getint('memory', 0)
             
     """
     Creates an instance of either MSGFPlusEngine or TideEngine, and returns it. It also returns the name of the index.
@@ -187,6 +194,22 @@ class Index:
     Returns a tuple. 
     """
     def create_index(self, project_folder, test_run = False):
+        if self.existingIndex:
+            project = None
+            if self.indexType == 'tide':
+                project = TideEngine.TideEngine(project_folder, '')
+                index_names = project.get_column_values(DB.TideIndex, 'TideIndexName')
+                assert(self.existingIndex in index_names)
+                index_node = IndexNode(self.indexType, self.existingIndex, None)
+                return (project, self.existingIndex, index_node, None)
+            elif self.indexType == 'msgf':
+                project = MSGFPlusEngine.MSGFPlusEngine(project_folder, '')
+                index_names = project.get_column_values(DB.MSGFPlusIndex, 'MSGFPlusIndexName')
+                assert(self.existingIndex in index_names)
+                index_node = IndexNode(self.indexType, self.existingIndex, None)
+                return (project, self.existingIndex, index_node, None)
+            else:
+                assert(False)
         source_node = PeptideSourceNode(self.sourceType, self.sourceName)
         project = None
         index_name = None
@@ -256,24 +279,28 @@ class Index:
 
 class Search:
     def __init__(self, section, searchType):
-        assert('mgfname' in section)
-        print('section')
-        print(section)
-        self.mgfName = section['mgfname']
-        self.searchType = searchType
-        if 'paramfile' in section:
-            self.searchParamFile = section['paramfile']
+        if 'searchname' in section:
+            self.searchNumber = section.getint('searchnumber', -1)
+            assert(self.searchNumber > -1)
         else:
-            assert(searchType == 'msgf')
-        self.options = {}
-        self.searchNumber = section.getint('searchnumber', -1)
-        assert(self.searchNumber > -1)
-        self.memory = section.getint('memory', 0)
-        if searchType == 'msgf':
-            keys = Runners.MSGFPlusSearchRunner.converter.keys()
-            for key in keys:
-                if key in section and section[key]:
-                    self.options[key] = section[key]
+            assert('mgfname' in section)
+            print('section')
+            print(section)
+            self.mgfName = section['mgfname']
+            self.searchType = searchType
+            if 'paramfile' in section:
+                self.searchParamFile = section['paramfile']
+            else:
+                assert(searchType == 'msgf')
+                self.options = {}
+                self.searchNumber = section.getint('searchnumber', -1)
+                assert(self.searchNumber > -1)
+                self.memory = section.getint('memory', 0)
+                if searchType == 'msgf':
+                    keys = Runners.MSGFPlusSearchRunner.converter.keys()
+                    for key in keys:
+                        if key in section and section[key]:
+                            self.options[key] = section[key]
     """
     returns the name of the search, and the search node.
     """ 
@@ -518,46 +545,71 @@ def run_pipeline(ini_file, project_folder, image_location, test_run = False):
     
     print('sections')
     print(type(sections))
-
-    index_section = sections['Index']
     search_sections = []
     postprocess_sections = []
+    index_section = None
     for key, value in sections.items():
         if key.startswith('Search'):
             search_sections.append(value)
         elif key.startswith('PostProcess'):
             postprocess_sections.append(value)
+
+    """
+    If there is no index, then there must be at least one search, and every search must have a search name (that is, a search that has already been done).
+    """
+    if 'Index' not in sections:
+        assert(len(search_sections) > 0)
+        for section in search_sections:
+            assert('searchname' in section)
+    else:        
+        index_section = sections['Index']
     print('index section')
     print(index_section)
-    index_object = Index(index_section)
-    index_type = index_object.indexType
-    """
-    DON'T FORGET TO ADD THE CHILD NODES LATER ON!
-    """
-    project, index_name, index_node, peptide_source_node = index_object.create_index(project_folder, test_run)
+    index_object = None
+    index_type = None
     post_process_nodes = []
     searchNumMap = {}
     searchNumToNodeMap = {}
-    
-    for search_section in search_sections:
-        search_object = Search(search_section, index_type)
-        search_name, search_node = search_object.run_search(project, index_name, test_run)
-        searchNumMap[search_object.searchNumber] = (search_name, index_type)
-        searchNumToNodeMap[search_object.searchNumber] = search_node
 
-    project.end_command_session()
-    
+    if index_section:
+        index_object = Index(index_section)
+        index_type = index_object.indexType
+        project, index_name, index_node, peptide_source_node = index_object.create_index(project_folder, test_run)
+        for search_section in search_sections:
+            search_object = Search(search_section, index_type)
+            search_name, search_node = search_object.run_search(project, index_name, test_run)
+            searchNumMap[search_object.searchNumber] = (search_name, index_type)
+            #searchNumToNodeMap[search_object.searchNumber] = search_node
+        project.end_command_session()
+    else:
+        project = Base.Base(project_folder, '')        
+        for search_section in search_sections:
+            search_row = project.get_search_row(search_section['searchname'])
+            assert(search_row)
+            assert(search_row.searchType.lower() in ['tidesearch', 'msgfplussearch'])
+            search_type = None
+            if search_row.searchType.lower() == 'tidesearch':
+                search_type = 'tide'
+            else:
+                search_type = 'msgf'
+            search_object = Search(search_section, search_type)
+            searchNumMap[search_object.searchNumber] = (search_name, search_type)
+            
     
 
     project = PostProcessing.PostProcessing(project_folder, '')
     for post_process_section in postprocess_sections:
         post_process_object = PostProcess(post_process_section, searchNumMap)
         post_process_node =  post_process_object.run_post_process_and_export(project, test_run)
-        searchNumToNodeMap[post_process_object.searchNumber].add_post_process_node(post_process_node)
+        #searchNumToNodeMap[post_process_object.searchNumber].add_post_process_node(post_process_node)
     project.end_command_session()
-
+    """
     search_nodes = list(searchNumToNodeMap.values())
     index_node.set_search_nodes(search_nodes)
-    peptide_source_node.set_index_nodes([index_node])
-    tree = TestRunTree(peptide_source_node)
-    tree.display_tree(image_location)
+    if peptide_source_node:        
+        peptide_source_node.set_index_nodes([index_node])
+        tree = TestRunTree(peptide_source_node)
+    elif index_node:
+        tree = TestRunTree(index_node)
+       tree.display_tree(image_location)
+    """

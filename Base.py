@@ -172,6 +172,10 @@ class Base:
     def get_tide_index(self, name):
         row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = name).first()
         return row
+    
+    def get_msgf_index(self, name):
+        row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = name).first()
+        return row
     #returns row or None
     def get_maxquant_parameter_file(self, name):
         row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
@@ -235,7 +239,8 @@ class Base:
         return self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first()
     def get_peptide_list_row(self, name):
         return self.db_session.query(DB.PeptideList).filter_by(peptideListName = name).first()
-
+    def get_search_row(self, name):
+        return self.db_session.query(DB.SearchBase).filter_by(SearchName = name).first()
     def list_targetsets(self):
         rows = self.db_session.query(DB.TargetSet).all()
         headers = ['ID', 'Name', 'Sources']
