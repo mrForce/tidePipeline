@@ -52,7 +52,7 @@ class PINRW(ABC):
     def save(self):
         pass
 class SinglePINRW(PINRW):
-    def __init__(self, pin_path, target_checker_fn, *, skip_defaults_row = True, restkey='Proteins'):
+    def __init__(self, pin_path, target_checker_fn, *, skip_defaults_row = True, restkey='Proteins', insert_feature_index = 5):
         self.pin_path = pin_path
         self.rows = []
         with open(pin_path, 'r') as f:
@@ -65,21 +65,7 @@ class SinglePINRW(PINRW):
                 if target_checker_fn(row):
                     row_type = TargetOrDecoyType.target
                 self.rows.append((row_type, row))
-        good_fieldnames  = list(self.fieldnames[:-1])
-        for t, row in self.rows:
-            index_to_remove = len(good_fieldnames)
-            for i,fn in enumerate(good_fieldnames):
-                if row[fn] is None:
-                    if i < index_to_remove:
-                        index_to_remove = i
-            if index_to_remove < len(good_fieldnames):
-                new_good_fieldnames = []
-                for i in range(0, index_to_remove):
-                    new_good_fieldnames.append(good_fieldnames[i])
-                good_fieldnames = new_good_fieldnames
-        assert(len(good_fieldnames) > 0)
-        #insert into fieldnames
-        self.insert_feature_index = self.fieldnames.index(good_fieldnames[-1]) + 1
+        self.insert_feature_index = insert_feature_index
     def get_rows(self):
         return [(t, i, row) for i,(t, row) in enumerate(self.rows)]
     def add_feature(self, name, feature):
@@ -105,7 +91,7 @@ class SinglePINRW(PINRW):
 
 
 class DualPINRW(PINRW):
-    def __init__(self, target_pin_path, decoy_pin_path, *, skip_defaults_row = True, restkey='Proteins'):
+    def __init__(self, target_pin_path, decoy_pin_path, *, skip_defaults_row = True, restkey='Proteins', insert_feature_index = 5):
         self.target_pin_path = target_pin_path
         self.target_rows = []
         self.decoy_pin_path = decoy_pin_path
@@ -128,20 +114,7 @@ class DualPINRW(PINRW):
         assert(len(self.target_fieldnames) == len(self.decoy_fieldnames))
         assert(all([i == j for i, j in zip(self.target_fieldnames, self.decoy_fieldnames)]))
         good_fieldnames = list(self.target_fieldnames[:-1])
-        #Need to figure out which column to put the new feature into
-        for t, row in (self.target_rows + self.decoy_rows):
-            index_to_remove = len(good_fieldnames)
-            for i,fn in enumerate(good_fieldnames):
-                if row[fn] is None:
-                    if i < index_to_remove:
-                        index_to_remove = i
-            if index_to_remove < len(good_fieldnames):
-                new_good_fieldnames = []
-                for i in range(0, index_to_remove):
-                    new_good_fieldnames.append(good_fieldnames[i])
-                good_fieldnames = new_good_fieldnames
-        assert(len(good_fieldnames) > 0)
-        self.insert_feature_index = self.target_fieldnames.index(good_fieldnames[-1]) + 1
+        self.insert_feature_index = insert_feature_index
     def get_rows(self):
         num_target_rows = len(self.target_rows)
         return [(t, i, row) for i,(t,row) in enumerate(self.target_rows)] + [(t, num_target_rows + i, row) for i,(t,row) in enumerate(self.decoy_rows)]
