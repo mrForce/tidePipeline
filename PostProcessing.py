@@ -253,20 +253,22 @@ class PostProcessing(Base):
             output_directory_db = os.path.join('percolator_results', output_directory_name)
             target_path  = None
             if search_type == 'tide':
+                pin_rw = None
+                if search_row.concat:
+                    new_pin_location = shutil.copy(os.path.join(self.project_path, search_row.targetPath), output_directory_tide)
+                    target_path = new_pin_location
+                    pin_rw = Parsers.SinglePINRW(new_pin_location, Parsers.PINParser.tide_is_target, skip_defaults_row = False)
+                else:
+                    new_target_location = shutil.copy(os.path.join(self.project_path, search_row.targetPath), output_directory_tide)
+                    target_path = new_target_location
+                    new_decoy_location = shutil.copy(os.path.join(self.project_path, search_row.decoyPath), output_directory_tide)
+                    pin_rw = Parsers.DualPINRW(new_target_location, new_decoy_location, skip_defaults_row = False)
+                    assert(pin_rw)
                 if netmhc_ranking_information:
-                    pin_rw = None
-                    if search_row.concat:
-                        new_pin_location = shutil.copy(os.path.join(self.project_path, search_row.targetPath), output_directory_tide)
-                        target_path = new_pin_location
-                        pin_rw = Parsers.SinglePINRW(new_pin_location, Parsers.PINParser.tide_is_target, skip_defaults_row = False)
-                    else:
-                        new_target_location = shutil.copy(os.path.join(self.project_path, search_row.targetPath), output_directory_tide)
-                        target_path = new_target_location
-                        new_decoy_location = shutil.copy(os.path.join(self.project_path, search_row.decoyPath), output_directory_tide)
-                        pin_rw = Parsers.DualPINRW(new_target_location, new_decoy_location, skip_defaults_row = False)
-                    assert(pin_rw)                
                     self._netmhc_rank(netmhc_ranking_information, pin_rw, output_directory_tide, MIN_NETMHC_PEPTIDE_LENGTH, MAX_NETMHC_PEPTIDE_LENGTH, use_ic50 = use_ic50, pin_type = pin_type)
-                    
+                else:
+                    parser = Parsers.PINParser(pin_rw, pin_type, 0, 0)
+                    parser.write()
             elif search_type == 'msgfplus':
                 target_path = os.path.join(self.project_path, search_row.resultFilePath + '.pin')
                 if not os.path.exists(target_path):

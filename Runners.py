@@ -53,7 +53,10 @@ class TideSearchRunner:
             if params['concat'] == 'true':
                 search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search..pin'), parameterFile = self.param_file_row, concat = True, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
                 return search_row
-        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.target.pin'), decoyPath=os.path.join(output_directory_db, 'tide-search.decoy.pin'), parameterFile = self.param_file_row, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
+        decoy_pin_path = os.path.join(output_directory_db, 'tide-search.decoy.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.decoy.pin')) else None
+        target_pin_path = os.path.join(output_directory_db, 'tide-search.target.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.target.pin')) else None
+        log_path = os.path.join(output_directory_db, 'tide-search.log.txt') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.log.txt')) else None
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, target_pin_path, decoyPath=decoy_pin_path, parameterFile = self.param_file_row, logPath=log_path, SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
         return search_row
 
 class MaxQuantSearchRunner:
@@ -212,8 +215,12 @@ class TideIndexRunner:
             command.append(os.path.join(self.project_path, self.param_file_row.Path))
         command.append('--output-dir')
         command.append(output_directory_tide)
+        os.mkdir(output_directory_tide)
+        command.append('--overwrite')
+        command.append('T')
         if netmhc_decoys:
             new_fasta_path = os.path.join(output_directory_tide, 'targets_and_decoys.fasta')
+            shutil.copyfile(fasta_path, os.path.abspath(new_fasta_path))
             BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_prefix = 'decoy_')
             command.append('--decoy-format')
             command.append('none')

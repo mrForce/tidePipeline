@@ -156,6 +156,7 @@ class PINParser:
     def __init__(self, pin_rw, pin_type, min_peptide_length, max_peptide_length):
         self.pin_rw = pin_rw
         self.ranks = {}
+        self.include_netmhc_ranks = False
         self.pin_type = pin_type
         self.min_peptide_length = min_peptide_length
         self.max_peptide_length = max_peptide_length
@@ -185,6 +186,7 @@ class PINParser:
         return self._get_peptides(TargetOrDecoyType.decoy)
 
     def insert_netmhc_ranks(self, header, target_ranks, decoy_ranks):
+        self.include_netmhc_ranks = True
         self.ranks[header] = {'targets': target_ranks, 'decoys': decoy_ranks}        
     @staticmethod
     def msgf_is_target(row):
@@ -221,25 +223,26 @@ class PINParser:
                 return False
     def write(self):        
         key = 'decoys'
-        for feature, d in self.ranks.items():
-            row_features = []
-            for t, i, row in self.pin_rw.get_rows():
-                if t == TargetOrDecoyType.target:
-                    key = 'targets'
-                else:
-                    key = 'decoys'
-                #t is TargetOrDecoyType, i is the row ID
-                peptide = PINParser.parse_peptide(row['Peptide'], int(row['PepLen']))
-                if len(peptide) < self.min_peptide_length:
-                    print('Parsers.py:PINParser:write Peptide is too short: ' + peptide, file=sys.stderr)
-                elif len(peptide) > self.max_peptide_length:
-                    print('Parsers.py:PINParser:write Peptide is too long: ' + peptide, file=sys.stderr)
-                else:
-                    if peptide in d[key]:
-                        row_features.append((i, float(d[key][peptide])))
+        if self.include_netmhc_ranks:
+            for feature, d in self.ranks.items():
+                row_features = []
+                for t, i, row in self.pin_rw.get_rows():
+                    if t == TargetOrDecoyType.target:
+                        key = 'targets'
                     else:
-                        print('Parsers.py:PINParser:write Peptide is not in d[%s]: %s' % (key,peptide) , file=sys.stderr)
-            self.pin_rw.add_feature(feature, row_features)
+                        key = 'decoys'
+                    #t is TargetOrDecoyType, i is the row ID
+                    peptide = PINParser.parse_peptide(row['Peptide'], int(row['PepLen']))
+                    if len(peptide) < self.min_peptide_length:
+                        print('Parsers.py:PINParser:write Peptide is too short: ' + peptide, file=sys.stderr)
+                    elif len(peptide) > self.max_peptide_length:
+                        print('Parsers.py:PINParser:write Peptide is too long: ' + peptide, file=sys.stderr)
+                    else:
+                        if peptide in d[key]:
+                            row_features.append((i, float(d[key][peptide])))
+                        else:
+                            print('Parsers.py:PINParser:write Peptide is not in d[%s]: %s' % (key,peptide) , file=sys.stderr)
+                self.pin_rw.add_feature(feature, row_features)
         self.pin_rw.save()
 class PeptideMatch:
     def __init__(self, peptide, q_value, score):

@@ -288,12 +288,12 @@ class Search:
             print(section)
             self.mgfName = section['mgfname']
             self.searchType = searchType
+            self.searchNumber = section.getint('searchnumber', -1)
             if 'paramfile' in section:
                 self.searchParamFile = section['paramfile']
             else:
                 assert(searchType == 'msgf')
                 self.options = {}
-                self.searchNumber = section.getint('searchnumber', -1)
                 assert(self.searchNumber > -1)
                 self.memory = section.getint('memory', 0)
                 if searchType == 'msgf':
@@ -584,7 +584,8 @@ def run_pipeline(ini_file, project_folder, image_location, test_run = False):
     else:
         project = Base.Base(project_folder, '')        
         for search_section in search_sections:
-            search_row = project.get_search_row(search_section['searchname'])
+            search_name = search_section['searchname']
+            search_row = project.get_search_row(search_name)
             assert(search_row)
             assert(search_row.searchType.lower() in ['tidesearch', 'msgfplussearch'])
             search_type = None
