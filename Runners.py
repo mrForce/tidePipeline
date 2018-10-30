@@ -56,7 +56,7 @@ class TideSearchRunner:
         decoy_pin_path = os.path.join(output_directory_db, 'tide-search.decoy.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.decoy.pin')) else None
         target_pin_path = os.path.join(output_directory_db, 'tide-search.target.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.target.pin')) else None
         log_path = os.path.join(output_directory_db, 'tide-search.log.txt') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.log.txt')) else None
-        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, target_pin_path, decoyPath=decoy_pin_path, parameterFile = self.param_file_row, logPath=log_path, SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
+        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=target_pin_path, decoyPath=decoy_pin_path, parameterFile = self.param_file_row, logPath=log_path, SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
         return search_row
 
 class MaxQuantSearchRunner:

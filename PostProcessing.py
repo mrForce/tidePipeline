@@ -254,7 +254,7 @@ class PostProcessing(Base):
             target_path  = None
             if search_type == 'tide':
                 pin_rw = None
-                if search_row.concat:
+                if search_row.concat or not search_row.decoyPath:
                     new_pin_location = shutil.copy(os.path.join(self.project_path, search_row.targetPath), output_directory_tide)
                     target_path = new_pin_location
                     pin_rw = Parsers.SinglePINRW(new_pin_location, Parsers.PINParser.tide_is_target, skip_defaults_row = False)
