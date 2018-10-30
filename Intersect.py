@@ -11,9 +11,9 @@ import subprocess
 
 def extract_peptides_from_fasta(fasta_path, output_path):
     with open(fasta_path, 'rU') as input_handle:
-        with open(output_path, 'wU') as output_handle:
+        with open(output_path, 'w') as output_handle:
             for record in SeqIO.parse(input_handle, 'fasta'):
-                sequence = record.seq
+                sequence = str(record.seq)
                 if len(sequence) > 0:
                     output_handle.write(sequence + '\n')
                 
@@ -56,7 +56,7 @@ for set_type, set_name in collection_one + collection_two:
     elif set_type == 'MaxQuantSearch':
         if not project.verify_maxquant_search(set_name):
             print('There is no MaxQuantSearch entry with the name: ' + set_name)
-            print.end_command_session()
+            project.end_command_session()
             assert(False)
     elif set_type == 'TargetSet':
         if not project.verify_target_set(set_name):

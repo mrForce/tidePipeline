@@ -1,4 +1,6 @@
 import DB
+from sqlalchemy import exists
+import BashScripts
 from create_target_set import *
 import sys
 import tempfile
@@ -26,22 +28,123 @@ from Runners import *
 
 
 class Base:
-    def __init__(self, project_path, command):
-        if os.path.isfile('reminder.txt'):
-            subprocess.call(['cat', 'reminder.txt'])
-        self.project_path = project_path
-        print('project path: ' + project_path)
-        self.db_session = DB.init_session(os.path.join(project_path, 'database.db'))
-        self.command = DB.Command(commandString = command)
-        self.db_session.add(self.command)
+    def __init__(self, project_path, command, parent_base = False):        
+        if parent_base:
+            self.project_path = parent_base.project_path
+            self.db_session = parent_base.db_session
+            self.command = parent_base.command
+            self.executables = parent_base.executables
+        else:
+            self.project_path = project_path
+            if os.path.isfile('reminder.txt'):
+                subprocess.call(['cat', 'reminder.txt'])
+                print('project path: ' + project_path)
+            self.db_session = DB.init_session(os.path.join(project_path, 'database.db'))
+            self.command = DB.Command(commandString = command)
+            self.db_session.add(self.command)
+            self.db_session.commit()
+            config = configparser.ConfigParser()
+            config.read(os.path.join(project_path, 'config.ini'))
+            self.executables = {}
+            self.executables['netmhc'] = config['EXECUTABLES']['netmhc']
+            self.executables['crux'] = config['EXECUTABLES']['crux']
+            self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
+            self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
+            self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
+
+
+    def delete_row(self, row):
+        if '__prepare_deletion__' in dir(row):
+            row.__prepare_deletion__(self.project_path)
+        self.db_session.delete(row)
         self.db_session.commit()
-        config = configparser.ConfigParser()
-        config.read(os.path.join(project_path, 'config.ini'))
-        self.executables = {}
-        self.executables['netmhc'] = config['EXECUTABLES']['netmhc']
-        self.executables['crux'] = config['EXECUTABLES']['crux']
-        self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
-        self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
+    def get_column_values(self, row_class, column_name):
+        rows = self.db_session.query(row_class).all()
+        values = []
+        for x in rows:
+            values.append(getattr(x, column_name))
+        return values
+
+    def verify_row_existence(self, column_object, name):
+        """
+        Basically, pass the ROW.Name object as column_object, and name as the name argument.
+
+        For example, suppose we wanted to check if there was a TargetSet with the name "jordan", we would do:
+
+        base_object.verify_row_existence(DB.TargetSet.TargetSetName, 'jordan')
+        """
+        return self.db_session.query(exists().where(column_object == name)).scalar()
+
+    #search_type is either 'tide', 'msgfplus', 'msgf', or 'maxquant'
+    def verify_search(self, search_type, search_name):
+        searchbase_row = self.db_session.query(DB.SearchBase).filter_by(SearchName = search_name).first()
+        if searchbase_row is None:
+            return False
+        else:
+            if search_type == 'tide':
+                return self.verify_row_existence(DB.TideSearch.idSearch, searchbase_row.idSearch)
+            elif search_type in ['msgfplus', 'msgf']:
+                return self.verify_row_existence(DB.MSGFPlusSearch.idSearch, searchbase_row.idSearch)
+            elif search_type == 'maxquant':
+                return self.verify_row_existence(DB.MaxQuantSearch.idSearch, searchbase_row.idSearch)
+            else:
+                raise InvalidSearchTypeError(search_type)
+
+    def add_contaminant_file(self, path, contaminant_row_name, lengths, protein_format):
+        print('format: ' + protein_format)
+        print(protein_format == 'FASTA')
+        directory = self.create_storage_directory('contaminants')
+        filename = 'contaminants.fasta' if protein_format is 'FASTA' else 'contaminants.txt'
+        shutil.copyfile(path, os.path.join(self.project_path, directory, filename))
+        #the constructor for ContaminantSet extracts the peptides from the FASTA file and puts them in os.path.join(directory, 'contaminant_peptides.txt')
+        if protein_format == 'FASTA':
+            row = DB.ContaminantSet(self.project_path, os.path.join(directory, filename), os.path.join(directory, 'contaminant_set.txt'), lengths, contaminant_row_name, protein_format)
+        elif protein_format == 'peptides':
+            row = DB.ContaminantSet(self.project_path, os.path.join(directory, filename), None, lengths, contaminant_row_name, protein_format)
+        else:
+            assert(False)
+        self.db_session.add(row)
+        
+    def add_param_file(self, program, name, path, comment = None):
+        if '.' in path and (path.rfind('.') > path.rfind('/') if '/' in path else True):
+            path_file_extension = path[(path.rfind('.') + 1)::]
+        else:
+            path_file_extension = False
+
+        if program == 'percolator':
+            if self.verify_row_existence(DB.PercolatorParameterFile.Name, name):
+                raise ParameterFileNameMustBeUniqueError(name)
+            new_path = os.path.join('tide_param_files', 'percolator_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'percolator_param_files'), path_file_extension))
+            row = DB.PercolatorParameterFile(Name = name, Path = new_path, Comment = comment)
+            self.db_session.add(row)
+        elif program == 'assign-confidence':
+            if self.verify_row_existence(DB.AssignConfidenceParameterFile.Name, name):
+                raise ParameterFileNameMustBeUniqueError(name)
+            new_path = os.path.join('tide_param_files', 'assign_confidence_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'assign_confidence_param_files'), path_file_extension))
+            row = DB.AssignConfidenceParameterFile(Name = name, Path = new_path, Comment = comment)
+            self.db_session.add(row)
+        elif program == 'tide-search':
+            if self.verify_row_existence(DB.TideSearchParameterFile.Name, name):
+                raise ParameterFileNameMustBeUniqueError(name)
+            new_path = os.path.join('tide_param_files', 'tide_search_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_search_param_files'), path_file_extension))
+            row = DB.TideSearchParameterFile(Name = name, Path = new_path, Comment = comment)
+            self.db_session.add(row)
+        elif program == 'tide-index':
+            if self.verify_row_existence(DB.TideIndexParameterFile.Name, name):
+                raise ParameterFileNameMustBeUniqueError(name)
+            new_path = os.path.join('tide_param_files', 'tide_index_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'tide_param_files', 'tide_index_param_files'), path_file_extension))
+            row = DB.TideIndexParameterFile(Name = name, Path = new_path, Comment = comment)
+            self.db_session.add(row)
+        elif program == 'maxquant':
+            if self.verify_row_existence(DB.MaxQuantParameterFile.Name, name):
+                raise ParameterFileNameMustBeUniqueError(name)
+            new_path = os.path.join('maxquant_param_files', copy_file_unique_basename(path, os.path.join(self.project_path, 'maxquant_param_files'), path_file_extension))
+            row = DB.TideSearchParameterFile(Name = name, Path = new_path, Comment = comment)
+            self.db_session.add(row)
+        self.db_session.commit()
+
+
+
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
@@ -50,6 +153,33 @@ class Base:
         return self.executables['msgfplus']
     def get_maxquant_executable_path(self):
         return self.executables['maxquant']
+    def get_msgf2pin_executable_path(self):
+        return self.executables['msgf2pin']
+
+
+    def get_percolator_parameter_file(self, name):
+        row = self.db_session.query(DB.PercolatorParameterFile).filter_by(Name = name).first()
+        return row
+    def get_assign_confidence_parameter_file(self, name):
+        row = self.db_session.query(DB.AssignConfidenceParameterFile).filter_by(Name = name).first()
+        return row
+    def get_tide_search_parameter_file(self, name):
+        row = self.db_session.query(DB.TideSearchParameterFile).filter_by(Name = name).first()
+        return row
+    def get_tide_index_parameter_file(self, name):
+        row = self.db_session.query(DB.TideIndexParameterFile).filter_by(Name = name).first()
+        return row
+    def get_tide_index(self, name):
+        row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName = name).first()
+        return row
+    
+    def get_msgf_index(self, name):
+        row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = name).first()
+        return row
+    #returns row or None
+    def get_maxquant_parameter_file(self, name):
+        row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
+        return row
     def add_maxquant_parameter_file(self, path, name, comment = None):
         internal_filename = str(uuid.uuid4()) + '.xml'
         while os.path.exists(os.path.join(self.project_path, 'maxquant_param_files', internal_filename)):
@@ -103,12 +233,14 @@ class Base:
         return (header, results)
     def get_filtered_netmhc_row(self, name):
         return self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
-
+    def get_netmhc_row(self, name):
+        return self.db_session.query(DB.NetMHC).filter_by(Name=name).first()
     def get_target_set_row(self, name):
         return self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first()
     def get_peptide_list_row(self, name):
         return self.db_session.query(DB.PeptideList).filter_by(peptideListName = name).first()
-
+    def get_search_row(self, name):
+        return self.db_session.query(DB.SearchBase).filter_by(SearchName = name).first()
     def list_targetsets(self):
         rows = self.db_session.query(DB.TargetSet).all()
         headers = ['ID', 'Name', 'Sources']
@@ -130,7 +262,7 @@ class Base:
                 row  = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
                 if row:
                     location = os.path.join(self.project_path, row.filtered_path)
-                    netmhc_filter_locations.append((name, location))
+                    netmhc_filter_locations.append((name, location, row))
                 else:
                     raise NoSuchFilteredNetMHCError(name)
         if peptide_list_names:
@@ -152,7 +284,7 @@ class Base:
         output_json_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'sources.json')
 
         source_id_map = create_target_set(netmhc_filter_locations, peptide_list_locations, output_fasta_location, output_json_location)
-        target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name)
+        target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), PeptideSourceMapPath=os.path.join('TargetSet', output_folder, 'sources.json'), SourceIDMap=json.dumps(source_id_map), TargetSetName = target_set_name, filteredNetMHCs=[row for name, location, row in netmhc_filter_locations])
         self.db_session.add(target_set_row)
         self.db_session.commit()
     def verify_filtered_netMHC(self, name):
@@ -166,16 +298,16 @@ class Base:
         else:
             return False
 
-    def add_mgf_file(self, path, name):
+    def add_mgf_file(self, path, name, partOfIterativeSearch = False):
         row = self.db_session.query(DB.MGFfile).filter_by(MGFName = name).first()
         if row:
             raise MGFNameMustBeUniqueError(name)
         else:
             newpath = self.copy_file('MGF', path)
-            mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath)
+            mgf_record = DB.MGFfile(MGFName = name, MGFPath = newpath, partOfIterativeSearch = partOfIterativeSearch)
             self.db_session.add(mgf_record)
             self.db_session.commit()
-            return mgf_record.idMGFfile    
+            return mgf_record
     def add_raw_file(self, path, name):
         row = self.db_session.query(DB.RAWfile).filter_by(RAWName = name).first()
         if row:
@@ -185,17 +317,7 @@ class Base:
             raw_record = DB.RAWfile(RAWName = name, RAWPath = newpath)
             self.db_session.add(raw_record)
             self.db_session.commit()
-            return raw_record.idRAWfile
-    def add_maxquant_param_file(self, path, name, comment = ''):
-        row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
-        if row:
-            raise MaxQuantParamFileNameMustBeUniqueError(name)
-        else:
-            newpath = self.copy_file('maxquant_param_files', path)
-            record = DB.MaxQuantParameterFile(Name = name, Path = newpath, Comment = comment)
-            self.db_session.add(record)
-            self.db_session.commit()
-            return record.idMaxQuantParameterFile
+            return raw_record
     def verify_peptide_list(self, peptide_list_name):
         row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptide_list_name).first()
         if row is None:
@@ -210,39 +332,84 @@ class Base:
         else:
             return True
 
-    def run_netmhc(self, peptide_list_name, hla, rank_cutoff, filtered_name, netmhcpan = False):
-        idNetMHC, pep_score_path = self._run_netmhc(peptide_list_name, hla, netmhcpan)
-        print('idNetMHC: ' + str(idNetMHC))
-        
-        row = self.db_session.query(DB.FilteredNetMHC).filter_by(idNetMHC = idNetMHC, RankCutoff = rank_cutoff).first()
-        #to be clear, this means that 
-        if row is None:
+    def run_netmhc(self, peptide_list_name, hla, rank_cutoff, netmhc_name, filtered_name, netmhcpan = False):
+        netmhc_row, pep_affinity_path, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhc_name, netmhcpan)
+       
+        if is_netmhc_row_new:
+            filtered_netmhc_row = None
+        else:
+            filtered_netmhc_row = self.db_session.query(DB.FilteredNetMHC).filter_by(idNetMHC = netmhc_row.idNetMHC, RankCutoff = rank_cutoff).first()
+        print('hello')
+        if self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = filtered_name).first() is None:
+            print('going to do it')
             file_name = str(uuid.uuid4())
             while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
                 file_name = str(uuid.uuid4())
             print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
-            input_path = os.path.join(self.project_path, pep_score_path)
-            with open(input_path, 'r') as f:
-                with open(output_path, 'w') as g:
-                    for line in f:
-                        parts = line.split(',')
-                        if len(parts) == 2:
-                            peptide = parts[0].strip()
-                            rank = float(parts[1])
-                            if rank <= rank_cutoff:
-                                g.write(peptide + '\n')
+            BashScripts.top_percent_netmhc(os.path.join(self.project_path, pep_affinity_path), rank_cutoff, output_path)
             
-            
-            filtered_row = DB.FilteredNetMHC(idNetMHC = idNetMHC, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+
+            filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
-            self.db_session.commit()
+            #self.db_session.commit()
             
                 
-        
-    
+    def import_netmhc_run(self, hla, location, peptidelist_name, ranks=None):
+        #location is the NetMHC output
+        peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = peptidelist_name).first()
+        if peptide_list_row is None:
+            raise NoSuchPeptideListError(peptidelist_name)
+        hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla).first()
+        if hla_row is None:
+            raise NoSuchHLAError(hla)
+        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
+        if netmhc_row:
+            raise DuplicateNetMHCError(peptidelist_name, hla)
+        else:
+            netmhc_output_filename = str(uuid.uuid4().hex)
+            while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed')):
+                netmhc_output_filename = str(uuid.uuid4().hex)
+            shutil.copy(location, os.path.join(self.project_path, 'NetMHC', netmhc_output_filename))
+            affinity_path = os.path.join('NetMHC', netmhc_output_filename + '-affinity')
+            rank_path =  os.path.join('NetMHC', netmhc_output_filename + '-rank')
+            full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
+            BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
 
+            netmhc_row = DB.NetMHC(peptidelist = peptide_list_row, hla = hla_row, Name = peptidelist_name + '_' + hla, NetMHCOutputPath= os.path.join('NetMHC', netmhc_output_filename), PeptideAffinityPath = affinity_path, PeptideRankPath=None)
+            self.db_session.add(netmhc_row)
+            self.db_session.commit()
+            if ranks:       
+                for rank_cutoff in ranks:
+                    filtered_name = peptidelist_name + '_' + hla + '_' + rank_cutoff
+                    file_name = str(uuid.uuid4())
+                    while os.path.isfile(os.path.join(self.project_path, 'FilteredNetMHC', file_name)) or os.path.isdir(os.path.join(self.project_path, 'FilteredNetMHC', file_name)):
+                        file_name = str(uuid.uuid4())
+                    
+                    output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
+                    print('about to call top_percent_netmhc')
+                    print(os.path.abspath(os.path.join(self.project_path, affinity_path)))
+                    BashScripts.top_percent_netmhc(os.path.abspath(os.path.join(self.project_path, affinity_path)), rank_cutoff, output_path)
+                    filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+                    self.db_session.add(filtered_row)
 
+            
+    def import_peptide_list(self, name, fasta_name, location):
+        fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
+        if fasta_row is None:
+            raise FASTAWithNameDoesNotExistError(fasta_name)
+        line_length_set = list(filter(lambda x: x > 0, BashScripts.line_length_set(location)))
+        assert(len(line_length_set) == 1)
+        length = list(line_length_set)[0]
+        peptide_row = self.db_session.query(DB.PeptideList).filter_by(length = length, fasta = fasta_row).first()
+        if peptide_row is None:
+            fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
+            peptide_filename = fasta_filename + '_' + str(length) + '.txt'
+            peptide_list_path = os.path.join('peptides', peptide_filename)
+            shutil.copyfile(location, os.path.join(self.project_path, peptide_list_path))
+            peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+            self.db_session.add(peptide_list)
+            self.db_session.commit()
     def add_peptide_list(self, name, length, fasta_name):
         fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
         if fasta_row is None:
@@ -260,11 +427,17 @@ class Base:
             peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
             self.db_session.commit()
-    def _run_netmhc(self, peptide_list_name, hla_name, netmhcpan = False):
+
+    
+                    
+            
+            
+            
+    def _run_netmhc(self, peptide_list_name, hla_name, netmhc_name, netmhcpan = False):
         """
-        This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (idNetMHC, PeptideScorePath)
+        This first checks if there's already a in NetMHC for the given peptide list and HLA. If there is, then it just returns a tuple of the form: (netmhc_row, PeptideRankPath)
         
-        If there isn't, then it runs NetMHC, inserts a row into the table, and returns (idNetMHC, PeptideScorePath)               
+        If there isn't, then it runs NetMHC, inserts a row into the table, and returns (netmhc_row, PeptideRankPath)               
         """
         peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
         if peptide_list_row is None:
@@ -272,19 +445,24 @@ class Base:
         hla_row = self.db_session.query(DB.HLA).filter_by(HLAName=hla_name).first()
         if hla_row is None:
             raise NoSuchHLAError(hla_name)
-        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA).first()
+        netmhc_row = self.db_session.query(DB.NetMHC).filter_by(peptidelistID=peptide_list_row.idPeptideList, idHLA=hla_row.idHLA, Name=netmhc_name).first()
         if netmhc_row:
-            return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
+            return (netmhc_row, netmhc_row.PeptideAffinityPath, netmhc_row.PeptideRankPath, False)
         else:
             netmhc_output_filename = str(uuid.uuid4().hex)
-            while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename, '-parsed')):
+            while os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)) or os.path.isfile(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed')):
                 netmhc_output_filename = str(uuid.uuid4().hex)
-            call_netmhc(hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), netmhcpan)
-            parse_netmhc(os.path.join(self.project_path, 'NetMHC', netmhc_output_filename), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename + '-parsed'))
-            netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideScorePath = os.path.join('NetMHC', netmhc_output_filename + '-parsed'))
+            call_netmhc(self.executables['netmhc'], hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListPath), os.path.join(self.project_path, 'NetMHC', netmhc_output_filename))
+            affinity_path = os.path.join('NetMHC', netmhc_output_filename + '-affinity')
+            rank_path =  os.path.join('NetMHC', netmhc_output_filename + '-rank')
+            full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
+            BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
+            BashScripts.netmhc_percentile(os.path.abspath(os.path.join(self.project_path, affinity_path)), os.path.abspath(os.path.join(self.project_path, rank_path)))
+            
+            netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, Name = netmhc_name, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideRankPath = rank_path, PeptideAffinityPath=affinity_path)
             self.db_session.add(netmhc_row)
             self.db_session.commit()
-            return (netmhc_row.idNetMHC, netmhc_row.PeptideScorePath)
+            return (netmhc_row, netmhc_row.PeptideAffinityPath, netmhc_row.PeptideRankPath, True)
 
 
     def list_peptide_lists(self):
@@ -314,13 +492,11 @@ class Base:
         rows = self.db_session.query(DB.MGFfile).all()        
         mgfs = []
         for row in rows:
-            mgf = {'id': row.idMGFfile, 'name': row.MGFName, 'path': row.MGFPath}
+            mgf = {'id': row.idMGFfile, 'name': row.MGFName, 'path': row.MGFPath, 'partOfIterativeSearch': row.partOfIterativeSearch}
             mgfs.append(mgf)
         return mgfs
 
-    def add_species(self, species_name):
-        species = DB.Species(SpeciesName = species_name)
-        self.db_session.add(species)
+
     def validate_project_integrity(self, ignore_operation_lock = False):
         """
         Returns true if the project is valid. Otherwise it raises an error. That is:
@@ -454,43 +630,21 @@ class Base:
         #did step 4
         fasta_record = DB.FASTA(Name = name, FASTAPath = newpath, Comment = comment)
         self.db_session.add(fasta_record)
-        self.db_session.commit()
-        return fasta_record.idFASTA
+        #self.db_session.commit()
+        return fasta_record
     def get_commands(self):
         commands = []
         for row in self.db_session.query(DB.Command):
             commands.append(row)
         return commands
-    def get_species(self):
-        species = []
-        for row in self.db_session.query(DB.Species):
-            hla = []
-            for hla_row in row.hlas:
-                hla.append(hla_row.HLAName)
-            
-            species.append({'id': row.idSpecies, 'name': row.SpeciesName, 'hla':hla  })
-        return species
 
-    def list_hla(self, species_name=None, species_id=None):
-        if species_name:
-            species_row = self.db_session.query(DB.Species).filter_by(SpeciesName=species_name).first()
-            if species_row:
-                species_id = species_row.idSpecies
-            else:
-                raise NoSuchSpeciesError(species_name)
+
+    def list_hla(self):
         query = self.db_session.query(DB.HLA)
-        if species_id:
-            query = query.filter_by(species_id=species_id)
         rows = query.all()
         hlas = []
         for row in rows:
             hla = {'name': row.HLAName, 'id': str(row.idHLA)}
-            if row.species:
-                hla['species_id'] = str(row.species.idSpecies)
-                hla['species_name'] = row.species.SpeciesName
-            else:
-                hla['species_id'] = 'None'
-                hla['species_name'] = 'None'
             hlas.append(hla)
         return hlas
     def add_hla(self, hla_name):
@@ -499,30 +653,36 @@ class Base:
             raise HLAWithNameExistsError(hla_name)
         hla = DB.HLA(HLAName = hla_name)
         self.db_session.add(hla)
-        self.db_session.commit()
-        return hla.idHLA
+        #self.db_session.commit()
+        return hla
 
         
         
         
     @staticmethod
-    def createEmptyProject(project_path, command, config_location):
+    def createEmptyProject(project_path, command, config_location, unimod_xml_location):
         if os.path.exists(project_path):
             raise ProjectPathAlreadyExistsError(project_path)
         else:
+            print('going to get config')
             config = configparser.ConfigParser()
+            print('config location: ' + config_location)
             config.read(config_location)
+            print('config reading')
+            print(config)
             assert('EXECUTABLES' in config.sections())
-            config_keys = ['netmhc', 'crux', 'msgfplus']
+            config_keys = ['netmhc', 'crux', 'msgfplus', 'msgf2pin']
             for key in config_keys:
+                print('key: ' + key)
                 assert(key in config['EXECUTABLES'])
                 value = config['EXECUTABLES'][key]
                 assert(len(value) > 0)
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search']
+            subfolders = ['FASTA', 'contaminants', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search', 'tide_param_files/assign_confidence_param_files', 'tide_param_files/percolator_param_files', 'tide_param_files/tide_search_param_files', 'tide_param_files/tide_index_param_files']
             for subfolder in subfolders:
-                os.mkdir(os.path.join(project_path, subfolder))
+                os.makedirs(os.path.join(project_path, subfolder))
             shutil.copy(config_location, os.path.join(project_path, 'config.ini'))
+            shutil.copy(unimod_xml_location, os.path.join(project_path, 'unimod.xml'))
             return Base(project_path, command)
 
 

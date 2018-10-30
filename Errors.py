@@ -1,6 +1,43 @@
 class Error(Exception):
     pass
 
+class CustomError(Exception):
+    def __init__(self, thing):
+        self.thing = thing
+    def __repr__(self):
+        return self.prefix + self.thing + self.suffix
+    def __str__(self):
+        return self.__repr__()
+    @staticmethod
+    def factory(name, prefix, suffix):
+        return type(name, (Error,), {'prefix': prefix, 'suffix': suffix})
+
+InvalidSearchTypeError = CustomError.factory('InvalidSearchTypeError', '', ' is an invalid search type')
+ParameterFileNameMustBeUniqueError = CustomError.factory('ParameterFileNameMustBeUniqueError', 'There is already a parameter file with the name: ', ' . It must be unique')
+NoSuchPercolatorParameterFileError = CustomError.factory('NoSuchPercolatorParameterFileError', 'There is no percolator parameter file with the name: ', '')
+DidNotFindUniquePercolatorNameError = CustomError.factory('DidNotFindUniquePercolatorNameError', 'Program came up with name for new percolator row: ', ' but it was not actually unique. This is a bug, please report it')
+
+FileMarkedForDeletionDoesNotExistError = CustomError.factory('FileMarkedForDeletionDoesNotExistError', 'File marked for deletion: ', ' does not exist, so it cannot be deleted!')
+DirectoryMarkedForDeletionDoesNotExistError = CustomError.factory('DirectoryMarkedForDeletionDoesNotExistError', 'Directory marked for deletion: ', ' does not exist, so it cannot be deleted!')
+
+TideSearchLinkedToMSGFPlusIterativeError = CustomError.factory('TideSearchLinkedToMSGFPlusIterativeError', 'The TideSearch: ', ' is linked to an MSGF+ iterative search')
+
+MSGFPlusSearchLinkedToTideIterativeError = CustomError.factory('MSGFPlusSearchLinkedToTideIterativeError', 'The MSGF+ Search: ', ' is linked to a Tide Iterative Search')
+
+
+class DuplicateNetMHCError(Error):
+    def __init__(self, peptide_list_name, hla):
+        self.peptide_list_name = peptide_list_name
+        self.hla = hla
+    def __repr__(self):
+        return 'There is already a NetMHC run for PeptideList: ' + self.peptide_list_name + ' and HLA: ' + self.hla
+class MSGF2PinFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'The MSGF2Pin call failed: ' + self.command
+
+
 class RAWFileDoesNotExistError(Error):
     def __init__(self, raw_name):
         self.raw_name = raw_name
@@ -36,6 +73,7 @@ class MSGFPlusSearchFailedError(Error):
         self.command = command
     def __repr__(self):
         return 'Failed to run MSGF+ Search using the command: ' + self.command
+    
 class MaxQuantSearchFailedError(Error):
     def __init__(self, command):
         self.command = command
@@ -68,6 +106,13 @@ class TideSearchRowDoesNotExistError(Error):
     def __repr__(self):
         return 'There is no TideSearch row with the name: ' + str(self.tide_search_name)
 
+
+class MSGFPlusSearchRowDoesNotExistError(Error):
+    def __init__(self, search_name):
+        self.search_name = search_name
+    def __repr__(self):
+        return 'There is no MSGFPlusSearch row with the name: ' + str(self.search_name)
+
 class FilteredSearchResultNameMustBeUniqueError(Error):
     def __init__(self, name):
         self.name = name
@@ -78,6 +123,7 @@ class AssignConfidenceNameMustBeUniqueError(Error):
         self.assign_confidence_name = assign_confidence_name
     def __repr__(self):
         return 'There is already an AssignConfidence row with the name: ' + str(self.assign_confidence_name)
+    
 class PercolatorNameMustBeUniqueError(Error):
     def __init__(self, percolator_name):
         self.percolator_name = percolator_name
@@ -227,6 +273,13 @@ class TideSearchNameMustBeUniqueError(Error):
     def __repr__(self):
         return self.message
 
+class MSGFPlusSearchNameMustBeUniqueError(Error):
+    def __init__(self, name):
+        self.message = 'There is already an MSGF+ Search with the name: ' + name
+    def __repr__(self):
+        return self.message
+
+    
 class InvalidParameterLineError(Error):
     def __init__(self, line):
         self.message = 'The line does not follow the format for a percolator parameter file: ' + line

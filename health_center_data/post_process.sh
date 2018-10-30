@@ -1,0 +1,26 @@
+cd ..
+export HealthCenter=/data1/jordan/PipelineProjects/HealthCenter
+python3 RunPercolator.py $HealthCenter tide CombinedTwoPercentTide_Prep CombinedTwoPercentTide_Prep_percolator_with_param --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedOnePercentTide_Prep CombinedOnePercentTide_Prep_percolator_with_param --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedTide_Prep CombinedTide_Prep_percolator_with_param --param_file default_search_params
+
+
+#python3 RunPercolator.py $HealthCenter tide CombinedTwoPercentTide_Run2 CombinedTwoPercentTide_Run2_percolator
+#python3 RunPercolator.py $HealthCenter tide CombinedOnePercentTide_Run2 CombinedOnePercentTide_Run2_percolator
+#python3 RunPercolator.py $HealthCenter tide CombinedTide_Run2 CombinedTide_Run2_percolator
+
+
+
+#python3 RunPercolator.py $HealthCenter msgfplus CombinedTwoPercentMSGF_Prep CombinedTwoPercentMSGF_Prep_percolator
+#python3 RunPercolator.py $HealthCenter msgfplus CombinedOnePercentMSGF_Prep CombinedOnePercentMSGF_Prep_percolator
+#python3 RunPercolator.py $HealthCenter msgfplus CombinedMSGF_PrepTwo CombinedMSGF_PrepTwo_percolator
+
+
+#python3 RunPercolator.py $HealthCenter msgfplus CombinedTwoPercentMSGF_Run2 CombinedTwoPercentMSGF_Run2_percolator
+#python3 RunPercolator.py $HealthCenter msgfplus CombinedOnePercentMSGF_Run2 CombinedOnePercentMSGF_Run2_percolator
+#python3 RunPercolator.py $HealthCenter msgfplus CombinedMSGF_Run2Two CombinedMSGF_Run2Two_percolator
+
+python3 RunPercolator.py $HealthCenter tide CombinedTwoPercentTide_PrepReverseForDecoys CombinedTwoPercentTide_PrepReverseForDecoys_percolator --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedOnePercentTide_PrepReverseForDecoys CombinedOnePercentTide_PrepReverseForDecoys_percolator --param_file default_search_params
+python3 RunPercolator.py $HealthCenter tide CombinedTide_PrepReverseForDecoys CombinedTide_PrepReverseForDecoys_percolator --param_file default_search_params
+

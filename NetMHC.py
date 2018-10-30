@@ -6,6 +6,10 @@ import shutil
 import uuid
 import threading
 import functools
+
+MIN_NETMHC_PEPTIDE_LENGTH=8
+MAX_NETMHC_PEPTIDE_LENGTH=12
+
 class NetMHCCommand:
     def __init__(self, command, output_location):
         self.command = command
@@ -54,11 +58,9 @@ def get_num_lines(filepath):
     print('filepath: ' + filepath)
     wc_process = subprocess.check_output(['wc', filepath])
     return int(wc_process.decode().split()[0])
-def call_netmhc(hla, peptide_file_path, output_path, netmhc_pan = False):
-    netmhc_location = '/usr/bin/netmhc'
+def call_netmhc(netmhc_location, hla, peptide_file_path, output_path, num_threads=2):
+
     #netmhc_location = '/home/code/IMPORT/netMHC-4.0/netMHC'
-    if netmhc_pan:
-        netmhc_location = '/home/code/IMPORT/netMHCpan-4.0/netMHCpan'
     num_peptides = get_num_lines(peptide_file_path)
     """
     We need to split the file (into 2000 line files), because it seems that NetMHC has a hard time handling large files. It's not open source, so I'm not entirely sure why, and I don't really have a good way to investigate it.
@@ -103,11 +105,10 @@ def call_netmhc(hla, peptide_file_path, output_path, netmhc_pan = False):
         output_file_list.append(output_file_path)
 
     num_runs = len(netmhc_list)
-    num_threads = 2
     threads = []
     list_lock = threading.Lock()
-    def progress(num_runs_total, start_time, num_runs_left):
-        progress = 100.0*(num_runs_total - num_runs)/num_runs_total
+    def _progress(num_runs_total, start_time, num_runs_left):
+        progress = 100.0*(num_runs_total - num_runs_left)/num_runs_total
         time_taken = time.time() - start_time
         if num_runs_left > 0 and num_runs_left < num_runs_total:
             time_per_run = 1.0*time_taken/(num_runs_total - num_runs_left)
@@ -118,7 +119,7 @@ def call_netmhc(hla, peptide_file_path, output_path, netmhc_pan = False):
             return 'Starting'
     start_time = time.time()
     for t in range(0, num_threads):
-        thread = NetMHCRunner(netmhc_list, list_lock, functools.partial(progress, num_runs, start_time))
+        thread = NetMHCRunner(netmhc_list, list_lock, functools.partial(_progress, num_runs, start_time))
         threads.append(thread)
     for t in threads:
         t.start()

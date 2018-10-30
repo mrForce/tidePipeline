@@ -5,6 +5,7 @@ import DB
 import os
 import locale
 import Parsers
+import itertools
 class Error(Exception):
     pass
 
@@ -85,6 +86,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
     PSMs
     """
     def __init__(self, name, threshold, project_path, db_session):
+        print('search name: ' + name)
         self.msgfplus_search_row = db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
         assert(self.msgfplus_search_row)
         q_value_rows = self.msgfplus_search_row.QValueBases
@@ -95,7 +97,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
                 break
         assert(self.q_value_row)
         result_file_path = self.msgfplus_search_row.resultFilePath
-        parser = Parsers.MSGFPlusSearchParser(result_file_path)
+        parser = Parsers.MSGFPlusSearchParser(os.path.join(project_path, result_file_path))
         spectrum_matches_list = parser.get_spectrum_matches()
         self.peptides = set()
         self.psms = set()
@@ -161,12 +163,15 @@ class PercolatorHandler(AbstractQValueHandler):
     Peptides
     PSMs
     """
-    def __init__(self, name, threshold, project_path, db_session, crux_path):
+    def __init__(self, name, threshold, project_path, db_session, crux_path, use_percolator_peptides = False):
         self.percolator_row = db_session.query(DB.Percolator).filter_by(PercolatorName = name).first()
         self.peptides = set()
         self.psms = set()
         #we need to extract scan, peptide and q value
-        rows = extract_columns(crux_path, os.path.join(project_path, self.percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', 'percolator q-value'])
+        if use_percolator_peptides:
+            rows = extract_columns(crux_path, os.path.join(project_path, self.percolator_row.PercolatorOutputPath, 'percolator.target.peptides.txt'), ['scan', 'sequence', 'percolator q-value'])
+        else:
+            rows = extract_columns(crux_path, os.path.join(project_path, self.percolator_row.PercolatorOutputPath, 'percolator.target.psms.txt'), ['scan', 'sequence', 'percolator q-value'])
         for row in rows:
             scan = int(row[0])
             peptide = row[1]
@@ -181,6 +186,7 @@ class PercolatorHandler(AbstractQValueHandler):
         return self.psms
     def get_row(self):
         return self.percolator_row
+
 class Report:
     """
     For a report, we're only working with AssignConfidence for now.
@@ -199,7 +205,7 @@ class Report:
             q_val_col = row.estimation_method + ' q-value'
             handler = AssignConfidenceHandler(row, q_val_col, threshold, project_path)
             self.assign_confidence_handlers.append(handler)
-            summary_rows.append(row.AssignConfidenceName, row.search.mgf.MGFName, row.search.SearchName, str(handler.getNumPSMs()), str(handler.getNumPassingPSMs()), str(len(handler.getPeptides())))
+            summary_rows.append(row.AssignConfidenceName, row.search.mgf.MGFName, row.search.SearchName, str(len(handler.get_psms())), str(handler.getNumPassingPSMs()), str(len(handler.get_peptides())))
         self.latex_objects.append(LatexTable(summary_table_headers, summary_rows))
         num_assign_confidence_runs = len(assign_confidence_runs)
         peptide_overlap_headers = ['Assign Confidence Name'] + ['']*(num_assign_confidence_runs - 1) + ['Peptide Overlap']

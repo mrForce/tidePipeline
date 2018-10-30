@@ -1,0 +1,67 @@
+
+export HealthCenter=/data1/jordan/PipelineProjects/HealthCenter
+cd ..
+#python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentTide_Prep_percolator 0.05 CombinedTwoPercentTide_Prep_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentTide_Prep_percolator 0.05 CombinedOnePercentTide_Prep_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedTide_Prep_percolator 0.05 CombinedTide_Prep_percolator_filtered_five_percent_fdr_three
+
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentTide_Run2_percolator 0.05 CombinedTwoPercentTide_Run2_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentTide_Run2_percolator 0.05 CombinedOnePercentTide_Run2_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedTide_Run2_percolator 0.05 CombinedTide_Run2_percolator_filtered_five_percent_fdr_three
+
+python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentTide_Prep_percolator_with_param 0.05 CombinedTwoPercentTide_Prep_percolator_with_param_five_percent_fdr
+
+python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentTide_Prep_percolator_with_param 0.05 CombinedOnePercentTide_Prep_percolator_with_param_five_percent_fdr
+
+python3 FilterQValue.py $HealthCenter percolator CombinedTide_Prep_percolator_with_param 0.05 CombinedTide_Prep_percolator_with_param_five_percent_fdr
+
+
+
+python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentTide_PrepReverseForDecoys_percolator 0.05 CombinedTwoPercentTide_PrepReverseForDecoys_percolator_five_percent_fdr
+
+python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentTide_PrepReverseForDecoys_percolator 0.05 CombinedOnePercentTide_PrepReverseForDecoys_percolator_five_percent_fdr
+
+python3 FilterQValue.py $HealthCenter percolator CombinedTide_PrepReverseForDecoys_percolator 0.05 CombinedTide_PrepReverseForDecoys_percolator_five_percent_fdr
+
+
+echo "going to do MSGF"
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentMSGF_Prep_percolator 0.05 CombinedTwoPercentMSGF_Prep_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentMSGF_Prep_percolator 0.05 CombinedOnePercentMSGF_Prep_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedMSGF_PrepTwo_percolator 0.05 CombinedMSGF_PrepTwo_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedTwoPercentMSGF_Run2_percolator 0.05 CombinedTwoPercentMSGF_Run2_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedOnePercentMSGF_Run2_percolator 0.05 CombinedOnePercentMSGF_Run2_percolator_filtered_five_percent_fdr_three
+
+
+
+#python3 FilterQValue.py $HealthCenter percolator CombinedMSGF_Run2Two_percolator 0.05 CombinedMSGF_Run2Two_percolator_filtered_five_percent_fdr_three
+
+
+
