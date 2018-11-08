@@ -28,6 +28,14 @@ def write_scores(scores, output_path):
 Since targets and decoys should be the same size, we can simply sort them, pair them up, and plot.
 """
 def qqplot(target_scores, decoy_scores, output_location):
+    if len(target_scores) > len(decoy_scores):
+        quants = list(np.linspace(0, 1, len(decoy_scores) + 2))[1:-1]
+        assert(len(quants) == len(decoy_scores))
+        target_scores = stats.mstats.mquantiles(target_scores, quants)
+    elif len(target_scores) < len(decoy_scores):
+        quants = list(np.linspace(0, 1, len(target_scores) + 2))[1:-1]
+        assert(len(quants) == len(target_scores))
+        decoy_scores = stats.mstats.mquantiles(target_scores, quants)
     assert(len(target_scores) == len(decoy_scores))
     target_scores.sort()
     write_scores(target_scores, 'target_scores.txt')
@@ -58,4 +66,7 @@ print(len(set(target_sequences).intersection(set(decoy_sequences))))
 #assert(len(set(target_sequences).intersection(set(decoy_sequences))) == 0)
 print('decoy scores')
 print(len(decoy_scores))
+
+
+
 qqplot(target_scores, decoy_scores, '10mers-Db.png')
