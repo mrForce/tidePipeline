@@ -110,7 +110,8 @@ def join_peptides_to_fasta(input_locations, output_location, prefix=None):
         print('command: ' + ' '.join(['bash_scripts/join_peptides_to_fasta.sh'] + input_locations + [output_location]))
         subprocess.call(['bash_scripts/join_peptides_to_fasta.sh'] + input_locations + [output_location])
 
-def generateDecoys(target_location, output_location, decoy_type):
+def generateDecoys(target_location, output_location, decoy_type, header_append = '>XXX_'):
+    #header_append is what is used to seperate decoys from targets in the FASTA file
     random.seed()
     shutil.copyfile(target_location, output_location)
     print('target location: ' + target_location)
@@ -118,7 +119,7 @@ def generateDecoys(target_location, output_location, decoy_type):
     with open(output_location, 'a') as f:
         for record in SeqIO.parse(target_location, 'fasta'):
             fasta_header = record.description
-            f.write('>XXX_' + str(fasta_header) + '\n')
+            f.write(header_append + str(fasta_header) + '\n')
             peptide = str(record.seq).strip()
             if len(peptide) == 0:
                 print('peptide zero length!')
@@ -128,6 +129,10 @@ def generateDecoys(target_location, output_location, decoy_type):
                 shuffled_line = shuffle_string(peptide)
             elif decoy_type == 'tide_random':
                 shuffled_line = peptide[0] + shuffle_string(peptide[1:-1]) + peptide[-1]
+            elif decoy_type == 'reverse':
+                shuffled_line = peptide[::-1]
+            elif decoy_type == 'tide_reverse':
+                shuffled_line = peptide[0] + peptide[1:-1][::-1] + peptide[-1]
             f.write(shuffled_line + '\n')
 
             

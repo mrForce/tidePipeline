@@ -166,7 +166,7 @@ class Index:
             self.existingIndex = section['indexname']
             self.indexType = section['indextype']
         else:                  
-            required_params=  ['indextype', 'sourcetype', 'sourcename']
+            required_params=  ['indextype', 'sourcetype', 'sourcename']            
             print('section')
             print(section)
             print('type: ' + str(type(section)))
@@ -187,6 +187,7 @@ class Index:
                 
             self.contaminants = section.getList('contaminants', [])
             self.memory = section.getint('memory', 0)
+
             
     """
     Creates an instance of either MSGFPlusEngine or TideEngine, and returns it. It also returns the name of the index.
