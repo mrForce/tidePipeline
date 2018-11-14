@@ -4,6 +4,7 @@ import csv
 from xml.sax.saxutils import unescape
 import sys
 from enum import Enum
+import os
 from abc import ABC, abstractmethod
 
 def parseTideParamFile(path):
@@ -17,6 +18,40 @@ def parseTideParamFile(path):
                     params[split_up[0].strip()] = split_up[1].strip()
     return params
 
+
+class TideParamFileParser:
+    def __init__(self, path):
+        self.params = {}
+        with open(path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line[0] != '#' and '=' in line:
+                    split_up = line.split('=')
+                    if len(split_up) == 2:
+                        self.params[split_up[0].strip()] = split_up[1].strip()
+    def get_params(self):
+        return self.params
+    def get_parameter(self, key):
+        return self.params[key]
+    def set_parameter(self, key, value):
+        self.params[key] = value
+    def write_parameter_file(self, new_path):
+        with open(new_path, 'w') as f:
+            for key,value in self.params.items():
+                line = str(key) + '=' + str(value) + '\n'
+                f.write(line)
+    """This function tries to write to tide-index.params.txt. If it can't do that it'll try writing to tide-index-1.params.txt
+    then tide-index-2.params.txt, and so on, until it finds something it can write to"""
+    def write_parameter_file_in_folder(self, folder):
+        if os.path.exists(os.path.join(folder, 'tide-index.params.txt')):
+            k = 1
+            while os.path.exists(os.path.join(folder, 'tide-index-' + str(k) + '.params.txt')):
+                k += 1
+            self.write_parameter_file(os.path.join(folder, 'tide-index-' + str(k) + '.params.txt'))
+        else:
+            self.write_parameter_file(os.path.join(folder, 'tide-index.params.txt'))
+            
+        
 
 class PINType(Enum):
     tide=1

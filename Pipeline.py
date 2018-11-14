@@ -242,7 +242,7 @@ class Index:
                 netmhc_decoys.append((netmhc_row, parsed_location))
             netmhc_decoys = dict(netmhc_decoys)
         elif 'decoys' in self.section:
-            assert(self.section['decoys'] in ['random', 'tide_random'])
+            assert(self.section['decoys'] in ['random', 'tide_random', 'reverse', 'tide_reverse'])
             decoy_type = self.section['decoys']
         if self.sourceType == 'FilteredNetMHC':
             assert(project.verify_filtered_netMHC(self.sourceName))
@@ -261,9 +261,9 @@ class Index:
             runner = Runners.TideIndexRunner({}, crux_exec_path, project.project_path, param_file_row)
             if not test_run:
                 if self.contaminants:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys = netmhc_decoys)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, self.contaminants, netmhc_decoys = netmhc_decoys, decoy_type = decoy_type)
                 else:
-                    project.create_index(self.sourceType, self.sourceName, runner, index_name, netmhc_decoys=netmhc_decoys)
+                    project.create_index(self.sourceType, self.sourceName, runner, index_name, netmhc_decoys=netmhc_decoys, decoy_type = decoy_type)
         elif self.indexType == 'msgf':
             runner = Runners.MSGFPlusIndexRunner(msgf_exec_path)
             if self.memory:

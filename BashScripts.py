@@ -110,8 +110,8 @@ def join_peptides_to_fasta(input_locations, output_location, prefix=None):
         print('command: ' + ' '.join(['bash_scripts/join_peptides_to_fasta.sh'] + input_locations + [output_location]))
         subprocess.call(['bash_scripts/join_peptides_to_fasta.sh'] + input_locations + [output_location])
 
-def generateDecoys(target_location, output_location, decoy_type, header_append = '>XXX_'):
-    #header_append is what is used to seperate decoys from targets in the FASTA file
+def generateDecoys(target_location, output_location, decoy_type, decoy_prefix = '>XXX_'):
+    #decoy_prefix is what is used to seperate decoys from targets in the FASTA file
     random.seed()
     shutil.copyfile(target_location, output_location)
     print('target location: ' + target_location)
@@ -119,7 +119,7 @@ def generateDecoys(target_location, output_location, decoy_type, header_append =
     with open(output_location, 'a') as f:
         for record in SeqIO.parse(target_location, 'fasta'):
             fasta_header = record.description
-            f.write(header_append + str(fasta_header) + '\n')
+            f.write(decoy_prefix + str(fasta_header) + '\n')
             peptide = str(record.seq).strip()
             if len(peptide) == 0:
                 print('peptide zero length!')
@@ -143,7 +143,7 @@ def generateDecoys(target_location, output_location, decoy_type, header_append =
 parsed_netmhc_objects must be a list of ParsedNetMHC instances
 
 """
-def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, merge_mode = 0, decoy_prefix = 'XXX_'):
+def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, merge_mode = 0, decoy_prefix = '>XXX_'):
     print('hello')
     merged_decoy_candidates = call_merge_and_sort([x[1] for x in parsed_netmhc_objects.items()])
 
@@ -157,7 +157,7 @@ def netMHCDecoys(parsed_netmhc_objects, target_location, output_location, *, mer
         with open(decoy_location, 'r') as g:
             for record in SeqIO.parse(target_location, 'fasta'):
                 fasta_header = record.description
-                f.write('>'.encode() + str(decoy_prefix).encode() + str(fasta_header).encode() + b'\n')
+                f.write(str(decoy_prefix).encode() + str(fasta_header).encode() + b'\n')
                 peptide = g.readline().strip()
                 if len(peptide) == 0:
                     print('peptide zero length!')

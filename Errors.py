@@ -25,6 +25,19 @@ TideSearchLinkedToMSGFPlusIterativeError = CustomError.factory('TideSearchLinked
 MSGFPlusSearchLinkedToTideIterativeError = CustomError.factory('MSGFPlusSearchLinkedToTideIterativeError', 'The MSGF+ Search: ', ' is linked to a Tide Iterative Search')
 
 
+class BothDecoyTypeAndNetMHCDecoysSpecifiedError(Error):
+    def __init__(self):
+        pass
+    def __repr__(self):
+        return 'Both the decoy_type and netmhc_decoys were specified. They are mutually exclusive options'
+class InvalidDecoyTypeError(Error):
+    def __init__(self, decoy_type, possible_types):
+        self.decoy_type = decoy_type
+        self.possible_types = possible_types
+    def __repr__(self):
+        return 'Decoy type is: ' + str(self.decoy_type) + ', which is invalid. It must be one of: ' + str(self.possible_types)
+
+
 class DuplicateNetMHCError(Error):
     def __init__(self, peptide_list_name, hla):
         self.peptide_list_name = peptide_list_name

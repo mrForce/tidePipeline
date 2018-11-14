@@ -51,7 +51,7 @@ class TideSearchRunner:
         if 'concat' in params:
             assert(params['concat'] in ['true', 'false'])
             if params['concat'] == 'true':
-                search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search..pin'), parameterFile = self.param_file_row, concat = True, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
+                search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.pin'), parameterFile = self.param_file_row, concat = True, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
                 return search_row
         decoy_pin_path = os.path.join(output_directory_db, 'tide-search.decoy.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.decoy.pin')) else None
         target_pin_path = os.path.join(output_directory_db, 'tide-search.target.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.target.pin')) else None
@@ -203,7 +203,7 @@ class TideIndexRunner:
             return cls.converter[option]
         else:
             return None
-    def run_index_create_row(self, fasta_path, output_directory_tide, output_directory_db, index_filename, *, netmhc_decoys = None):
+    def run_index_create_row(self, fasta_path, output_directory_tide, output_directory_db, index_filename, *, netmhc_decoys = None, decoy_type = None):
         #first, need to create the tide-index command
         command = [self.crux_binary, 'tide-index']
         for k,v in self.tide_index_options.items():
@@ -212,19 +212,27 @@ class TideIndexRunner:
                 command.append(v)
         if self.param_file_row:
             command.append('--parameter-file')
-            command.append(os.path.join(self.project_path, self.param_file_row.Path))
+            command.append(os.path.join(self.project_path, self.param_file_row.Path))                                        
+                
         command.append('--output-dir')
         command.append(output_directory_tide)
         os.mkdir(output_directory_tide)
         command.append('--overwrite')
         command.append('T')
-        if netmhc_decoys:
+        if netmhc_decoys or decoy_type:
             new_fasta_path = os.path.join(output_directory_tide, 'targets_and_decoys.fasta')
             shutil.copyfile(fasta_path, os.path.abspath(new_fasta_path))
-            BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_prefix = 'decoy_')
+            if netmhc_decoys:
+                assert(decoy_type is None)
+                BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_prefix = '>decoy_')
+            elif decoy_type:
+                assert(netmhc_decoys is None)
+                BashScripts.generateDecoys(os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_type, decoy_prefix='>decoy_')
             command.append('--decoy-format')
             command.append('none')
             fasta_path= new_fasta_path
+
+            
         command.append(fasta_path)
         command.append(os.path.join(output_directory_tide, index_filename))
         print('command')
