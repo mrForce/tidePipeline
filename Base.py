@@ -248,8 +248,11 @@ class Base:
         for row in rows:
             row_id = str(row.idTargetSet)
             name = str(row.TargetSetName)
-            source_id_map = json.loads(str(row.SourceIDMap))
-            results.append([row_id, name, 'Filtered NetMHC: ' + ', '.join(source_id_map['filtered_netmhc'].values()) + '\n' + 'Peptide Lists: ' + ', '.join(source_id_map['peptide_lists'].values())])
+            if row.sourceIDMap:
+                source_id_map = json.loads(str(row.SourceIDMap))
+                results.append([row_id, name, 'Filtered NetMHC: ' + ', '.join(source_id_map['filtered_netmhc'].values()) + '\n' + 'Peptide Lists: ' + ', '.join(source_id_map['peptide_lists'].values())])
+            else:                
+                results.append([row_id, name, 'Filtered NetMHC: ' + ', '.join(source_id_map['filtered_netmhc'].values()) + '\n'])
         return tabulate(results, headers=headers)
 
 
