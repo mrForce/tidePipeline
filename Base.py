@@ -252,6 +252,26 @@ class Base:
             results.append([row_id, name, 'Filtered NetMHC: ' + ', '.join(source_id_map['filtered_netmhc'].values()) + '\n' + 'Peptide Lists: ' + ', '.join(source_id_map['peptide_lists'].values())])
         return tabulate(results, headers=headers)
 
+
+    def import_targetset(self, peptides_file, target_set_name):
+        """
+        peptides_file is the path to a file containing the peptides we want to directly import into the project as a TargetSet.
+        """
+        output_folder = str(uuid.uuid4())
+        while os.path.isdir(os.path.join(self.project_path, 'TargetSet', output_folder)) or os.path.isfile(os.path.join(self.project_path, 'TargetSet', output_folder)):
+            output_folder = str(uuid.uuid4())
+        os.mkdir(os.path.join(self.project_path, 'TargetSet', output_folder))
+        output_fasta_location = os.path.join(self.project_path, 'TargetSet', output_folder, 'targets.fasta')
+        with open(output_fasta_location, 'w') as output_file:
+            with open(peptides_file, 'r') as input_file:
+                i = 0
+                for peptide in input_file:
+                    if len(peptide.strip()) >= 1:
+                        output_file.write('>%d\n' % i)
+                        output_file.write(peptide.strip() + '\n')
+        target_set_row = DB.TargetSet(TargetSetFASTAPath = os.path.join('TargetSet', output_folder, 'targets.fasta'), TargetSetName = target_set_name)
+        self.db_session.add(target_set_row)
+        self.db_session.commit()
     
     def add_targetset(self, netmhc_filter_names, peptide_list_names, target_set_name):
         #need to create lists of the form [(name, location)...]

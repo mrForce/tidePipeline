@@ -235,6 +235,7 @@ class Index:
         netmhc_decoys = None
         decoy_type = None
         if 'netmhcdecoys' in self.section:
+            assert('decoys' not in self.section)
             netmhc_decoys = []
             for x in [x.strip() for x in self.section['netmhcdecoys'].split(',')]:
                 netmhc_row = project.get_netmhc_row(x)
@@ -242,6 +243,7 @@ class Index:
                 netmhc_decoys.append((netmhc_row, parsed_location))
             netmhc_decoys = dict(netmhc_decoys)
         elif 'decoys' in self.section:
+            assert('netmhcdecoys' not in self.section)
             assert(self.section['decoys'] in ['random', 'tide_random', 'reverse', 'tide_reverse'])
             decoy_type = self.section['decoys']
         if self.sourceType == 'FilteredNetMHC':
