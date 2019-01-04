@@ -218,19 +218,27 @@ class TideIndexRunner:
         command.append(output_directory_tide)
         os.mkdir(output_directory_tide)
         command.append('--overwrite')
-        command.append('T')
+        command.append('T')        
         if netmhc_decoys or decoy_type:
             new_fasta_path = os.path.join(output_directory_tide, 'targets_and_decoys.fasta')
             shutil.copyfile(fasta_path, os.path.abspath(new_fasta_path))
+            decoy_format = 'none'
             if netmhc_decoys:
                 assert(decoy_type is None)
                 BashScripts.netMHCDecoys(netmhc_decoys, os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_prefix = '>decoy_')
+                fasta_path= new_fasta_path
             elif decoy_type:
                 assert(netmhc_decoys is None)
-                BashScripts.generateDecoys(os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_type, decoy_prefix='>decoy_')
+                if decoy_type == 'tide_shuffle':
+                    decoy_format = 'shuffle'
+                elif decoy_type == 'tide_reverse':
+                    decoy_format = 'peptide-reverse'
+                else:                    
+                    BashScripts.generateDecoys(os.path.abspath(fasta_path), os.path.abspath(new_fasta_path), decoy_type, decoy_prefix='>decoy_')
+                    fasta_path= new_fasta_path
             command.append('--decoy-format')
-            command.append('none')
-            fasta_path= new_fasta_path
+            command.append(decoy_format)
+            
 
             
         command.append(fasta_path)
