@@ -175,7 +175,7 @@ class Index:
                 self.indexType = section['indextype']
                 assert(self.indexType in ['tide', 'msgf'])
                 self.sourceType = section['sourcetype']
-                assert(self.sourceType in ['FilteredNetMHC', 'PeptideList', 'TargetSet'])
+                assert(self.sourceType in ['FilteredNetMHC', 'PeptideList', 'TargetSet', 'FASTA'])
                 self.sourceName = section['sourcename']
                 self.section = section
 
