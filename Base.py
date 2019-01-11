@@ -318,6 +318,11 @@ class Base:
             return True
         else:
             return False
+    def verify_fasta(self, name):
+        if self.db_session.query(DB.FASTA).filtered_by(Name = name).first():
+            return True
+        else:
+            return False
     def verify_target_set(self, name):
         if self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first():
             return True
