@@ -82,13 +82,13 @@ class MaxQuantSearchRunner:
         row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory, SearchName = search_row_name, fdr=str(fdr))
         return row
 class MSGFPlusSearchRunner:
-    converter = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm'}
+    converter = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm', 'e': 'EnzymeID'}
     def __init__(self, args, jar_file_location):
         self.jar_file_location = jar_file_location
         self.args = args
     @staticmethod
     def get_search_options():
-        return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}}
+        return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}, '--e': {'type': int, 'help': 'enzymeID'}}
     @classmethod
     def convert_cmdline_option_to_column_name(cls, option):
         if option in cls.converter:
@@ -108,7 +108,12 @@ class MSGFPlusSearchRunner:
             tda = 0
         else:
             tda = 1
-        command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-e', '9', '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
+        enzyme = '9'
+        if index_row.fasta:
+            #then by default use unspecific enzyme
+            print('index comes from FASTA. Using unspecific enzyme')
+            enzyme = '0'
+        command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
             modification_file_location = os.path.join(project_path, modifications_file_row.MSGFPlusModificationFilePath)
@@ -116,7 +121,12 @@ class MSGFPlusSearchRunner:
             command.append(modification_file_location)
             column_args['modificationFile'] = modifications_file_row
         column_args['addFeatures'] = 1
-        for key, value in self.args.items():
+        default_args = {'e': enzyme}
+
+        """
+        To clarify here: because the args are appended to default_args, if there are two conflicting arguments (such as enzyme), the one given by the user will be used when converted to a dictionary.
+        """
+        for key, value in dict(default_args.items() + self.args.items()).items():
             if key and value:
                 command.append('-' + key)
                 command.append(str(value))
