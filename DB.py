@@ -341,7 +341,7 @@ class FASTA(BaseTable):
     FASTAPath = Column('FASTAPath',  String, unique=True)
     Comment = Column('Comment', String)
     peptide_lists = relationship('PeptideList', back_populates='fasta')
-    msgfplusindices = relationship('MSGFPlusIndex', back_populates='fasta')
+    msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_fasta, back_populates='fasta')
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
     def identifier(self):
@@ -589,7 +589,7 @@ class MSGFPlusIndex(IndexBase):
     filteredNetMHCs = relationship('FilteredNetMHC', secondary = msgfplus_index_filteredNetMHC, back_populates = 'msgfplusindices')
     peptidelists = relationship('PeptideList', secondary= msgfplus_index_peptidelists, back_populates = 'msgfplusindices')
     targetsets = relationship('TargetSet', secondary=msgfplus_index_targetset, back_populates='msgfplusindices')
-    fasta = relationship('FASTA', secondary=msgfplus_index_fasta, back_populates=msgfplusindices)
+    fasta = relationship('FASTA', secondary=msgfplus_index_fasta, back_populates='msgfplusindices')
     searches = relationship('MSGFPlusSearch', back_populates='index', cascade='all,delete')
     __mapper_args__ = {
         'polymorphic_identity': 'msgfplusindex',
