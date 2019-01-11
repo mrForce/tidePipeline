@@ -319,7 +319,7 @@ class Base:
         else:
             return False
     def verify_fasta(self, name):
-        if self.db_session.query(DB.FASTA).filtered_by(Name = name).first():
+        if self.db_session.query(DB.FASTA).filter_by(Name = name).first():
             return True
         else:
             return False
