@@ -160,6 +160,9 @@ class Base:
     def get_percolator_parameter_file(self, name):
         row = self.db_session.query(DB.PercolatorParameterFile).filter_by(Name = name).first()
         return row
+    def get_fasta_row(self, name):
+        row = self.db_session.query(DB.FASTA).filter_by(Name = name).first()
+        return row
     def get_assign_confidence_parameter_file(self, name):
         row = self.db_session.query(DB.AssignConfidenceParameterFile).filter_by(Name = name).first()
         return row
