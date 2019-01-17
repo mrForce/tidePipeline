@@ -220,11 +220,13 @@ class MSGFPlusEngine(AbstractEngine):
         print('storage dir: ' + storage_dir)
         fasta_file_location = None
         link_row = None
+        """
         if set_type == 'FASTA':
             link_row = self.get_fasta_row(set_name)
             fasta_file_location = os.path.join(self.project_path, link_row.FASTAPath)
         else:
-            fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name, contaminants)
+"""
+        fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name, contaminants)
         
         row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir), self.project_path, memory, netmhc_decoys=netmhc_decoys, decoy_type=decoy_type)
         if contaminants:

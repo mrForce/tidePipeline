@@ -237,6 +237,13 @@ class NoSuchPeptideListError(Error):
     def __repr__(self):
         return self.message
 
+class NoSuchFASTAError(Error):
+    def __init__(self, fasta_name):
+        self.message = 'There is no row in the FASTA table with the name: ' + fasta_name
+
+    def __repr__(self):
+        return self.message
+
 class NoSuchHLAError(Error):
     def __init__(self, hla_name):
         self.message = 'There is no HLA with the name: ' + hla_name

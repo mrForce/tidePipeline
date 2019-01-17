@@ -24,4 +24,4 @@ numargs=$#
 
 end=$(expr $numargs - $OPTIND)
 
-cat ${@:$OPTIND:end} | sort | uniq  | awk -v prefix="$prefix" '{print ">"prefix NR; print $0}' > "${!numargs}"
+cat ${@:$OPTIND:end} | sort | uniq  | awk -v prefix="$prefix" '{print ">"prefix NR; print $0}' >> "${!numargs}"
