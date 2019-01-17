@@ -207,8 +207,10 @@ class MSGFPlusEngine(AbstractEngine):
 
     def create_index(self, set_type, set_name, index_runner, index_name, contaminant_names = [], memory=None, *, netmhc_decoys = None, decoy_type = None):
         contaminants = []
+        print('contaminants: ' + ', '.join(contaminant_names))
         if contaminant_names:
             for name in contaminant_names:
+                print('contaminant: ' + name)
                 contaminantSet = self.db_session.query(DB.ContaminantSet).filter_by(contaminantSetName = name).first()
                 assert(contaminantSet)
                 contaminants.append(contaminantSet)

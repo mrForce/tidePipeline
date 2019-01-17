@@ -258,6 +258,7 @@ class Index:
             assert(False)
         project.begin_command_session()
         index_node = None
+        print('contaminants in pipeline.py')
         if self.indexType == 'tide':
             index_node = IndexNode(self.indexType, index_name, self.contaminants, param_file = self.indexParamFile)
             param_file_row = project.get_tide_index_parameter_file(self.indexParamFile)

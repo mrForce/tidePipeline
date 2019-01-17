@@ -24,6 +24,8 @@ class AbstractEngine(Base, metaclass=ABCMeta):
         """
         Returns a tuple of the form (fasta_file_location, link_row, temp_files)
         """
+        print('creating fasta for indexing')
+        print('contaminants: ' + str(contaminants))
         fasta_file_location = ''
         temp_files = []
         link_row = None
@@ -50,7 +52,7 @@ class AbstractEngine(Base, metaclass=ABCMeta):
             row = self.db_session.query(DB.FASTA).filter_by(Name = set_name).first()
             if row:
                 link_row = row
-                fasta_files.append(row.FASTAPath)
+                fasta_files.append(os.path.join(self.project_path, row.FASTAPath))
             else:
                 raise NoSuchFASTAError(set_name)
         elif set_type == 'FilteredNetMHC':
@@ -70,7 +72,10 @@ class AbstractEngine(Base, metaclass=ABCMeta):
         else:
             assert(False)
         assert(len(peptide_files) > 0 or len(fasta_files) > 0)
-        
+        print('fasta files')
+        print(fasta_files)
+        print('peptide files')
+        print(peptide_files)
         combined_peptide_file = None
         if len(peptide_files) > 1:
             temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.txt')

@@ -126,7 +126,7 @@ class MSGFPlusSearchRunner:
         """
         To clarify here: because the args are appended to default_args, if there are two conflicting arguments (such as enzyme), the one given by the user will be used when converted to a dictionary.
         """
-        for key, value in dict(default_args.items() + self.args.items()).items():
+        for key, value in dict(list(default_args.items()) + list(self.args.items())).items():
             if key and value:
                 command.append('-' + key)
                 command.append(str(value))
