@@ -252,6 +252,8 @@ class Index:
             assert(project.verify_peptide_list(self.sourceName))
         elif self.sourceType == 'TargetSet':
             assert(project.verify_target_set(self.sourceName))
+        elif self.sourceType == 'FASTA':
+            assert(project.verify_fasta(self.sourceName))
         else:
             assert(False)
         project.begin_command_session()
