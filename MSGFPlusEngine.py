@@ -229,6 +229,8 @@ class MSGFPlusEngine(AbstractEngine):
         fasta_file_location, link_row, temp_files = self.create_fasta_for_indexing(set_type, set_name, contaminants)
         
         row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir), self.project_path, memory, netmhc_decoys=netmhc_decoys, decoy_type=decoy_type)
+        print('fasta name: ' + fasta_name)
+        print('storage dir: ' + storage_dir)
         if contaminants:
             row.contaminants = contaminants
         if set_type == 'TargetSet':
