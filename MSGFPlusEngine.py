@@ -21,6 +21,8 @@ class MSGFPlusEngine(AbstractEngine):
 
     def get_all_msgfplus_search(self):
         return self.db_session.query(DB.MSGFPlusSearch).all()
+
+    
     def multistep_search(self, mgf_name, msgfplus_index_names, msgfplus_search_options, multistep_search_name, fdr, postprocessing_object, percolator_param_file=False, modifications_name = None, memory = None, *, disable_contaminants_check = False):
         """
         percolator_param_file is False if we want to use the Q-values calculated by MSGF+. percolator_param_file should be a string with the name of a Percolator parameter file if we want to use Percolator for calculating Q-values
@@ -164,7 +166,11 @@ class MSGFPlusEngine(AbstractEngine):
             rows = self.db_session.query(DB.MSGFPlusSearch).all()
         return rows
         
-    
+    def run_training(self, mgf_name, search_name, training_name):
+        mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+        search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = search_name).first()
+        
+        
     def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, *, commit=False):
         #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()

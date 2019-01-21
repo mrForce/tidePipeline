@@ -81,6 +81,48 @@ class MaxQuantSearchRunner:
             raise MaxQuantSearchFailedError(' '.join(command))
         row = DB.MaxQuantSearch(raw = raw_row, Path = output_directory, SearchName = search_row_name, fdr=str(fdr))
         return row
+
+class MSGFPlusTrainingRunner:
+    converter = {'m': 'fragmentationMethod', 'inst': 'instrument', 'e': 'enzyme'}
+    def __init__(self, args, jar_file_location):
+        self.jar_file_location = jar_file_location
+        self.args = args
+
+    @classmethod
+    def convert_cmdline_option_to_column_name(cls, option):
+        if option in cls.converter:
+            return cls.converter[option]
+        else:
+            return None
+    def run_training_create_row(mgf_row, search_row, training_name, output_directory, memory = None):
+        mgf_location = os.path.join(project_path, mgf_row.MGFPath)
+        mgf_folder = os.path.dirname(mgf_location)
+        mzid_location = os.path.join(project_path, search_row.resultFilePath)
+        mzid_folder = os.path.dirname(mzid_location)
+        memory_string = '-Xmx3500M'
+        if memory:
+            memory_string = '-Xmx' + str(memory) + 'M'
+        command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.ui.ScoringParamGen', '-i', mzid_folder, '-d', mgf_folder, '-m', str(mgf_row.fragmentationMethod), '-inst', str(mgf_row.instrument), '-e', str(mgf_row.enzyme)]
+
+        """
+        The way MSGF+ specifies the param file is a bit funky, so we're going to have to work around it.
+
+
+        Need to capture stdout, and parse it to extract what's after 'Output file name: '. Then, move that file into the project.
+
+        Then, before doing a search, I need to copy the param file to the params folder in the MSGF+ installation, and specify the fragmentation, instrument and enzyme in the command line. When the search is complete, I need to delete the file. 
+        """
+        try:
+            print('command: ' +  ' '.join([str(x) for x in command]))
+            p = subprocess.call([str(x) for x in command], stdout=sys.stdout, stderr=sys.stderr)
+        except subprocess.CalledProcessError:
+            raise MSGFPlusSearchFailedError(' '.join(command))
+        
+        search_row = DB.MSGFPlusSearch(**column_args)
+        return search_row
+
+
+
 class MSGFPlusSearchRunner:
     converter = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm', 'e': 'EnzymeID'}
     def __init__(self, args, jar_file_location):
@@ -96,7 +138,7 @@ class MSGFPlusSearchRunner:
         else:
             return None
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False):
+    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False):        
         #output directory relative to the project path
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         print('mgf location: ' + mgf_location)
@@ -113,6 +155,10 @@ class MSGFPlusSearchRunner:
             #then by default use unspecific enzyme
             print('index comes from FASTA. Using unspecific enzyme')
             enzyme = '0'
+        else:
+            if mgf_row.enzyme != 8:
+                enzyme = str(mgf_row.enzyme - 1)
+                
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
@@ -121,7 +167,7 @@ class MSGFPlusSearchRunner:
             command.append(modification_file_location)
             column_args['modificationFile'] = modifications_file_row
         column_args['addFeatures'] = 1
-        default_args = {'e': enzyme}
+        default_args = {'e': enzyme, 'm': str(mgf_row.fragmentationMethod + 1), 'inst': str(mgf_row.instrument)}
 
         """
         To clarify here: because the args are appended to default_args, if there are two conflicting arguments (such as enzyme), the one given by the user will be used when converted to a dictionary.

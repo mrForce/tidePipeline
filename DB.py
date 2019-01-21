@@ -306,8 +306,8 @@ class MGFfile(BaseTable):
     fragmentationMethod = Column('fragmentationMethod', Integer, default=0)
     #0 is low-res LCQ/LTQ, 1 is High-Req LTQ, 2 is TOF, 3 is Q-Extractive
     instrument = Column('instrument', Integer, default=0)
-    #0 is unspecific, 1 is trypsin (default), 2 is Chymotrypsin, 3 is Lys-C, 4 is Lys-N, 5 is glutamyl endopeptidase, 6 is Arg-C, 7 is Asp-N, 8 is alphaLP, 9 is no cleavage
-    enzyme = Column('enzyme', Integer, default=1)
+    #0 is trypsin (default), 1 is Chymotrypsin, 2 is Lys-C, 3 is Lys-N, 4 is glutamyl endopeptidase, 5 is Arg-C, 6  is Asp-N, 7 is alphaLP, 8 is no cleavage
+    enzyme = Column('enzyme', Integer, default=0)
     def __repr__(self):
         return self.MGFName
     def identifier(self):
