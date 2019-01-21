@@ -55,6 +55,7 @@ def extract_peptides_from_peptides_format(path):
 
 
 
+
 indexbase_netmhc_decoys = Table('indexbase_netmhc_decoys', BaseTable.metadata, Column('indexbase_id', ForeignKey('IndexBase.idIndex'), primary_key=True), Column('netmhc_id', ForeignKey('NetMHC.idNetMHC'), primary_key=True))
 indexbase_contaminantSet = Table('indexbase_contaminantSet', BaseTable.metadata, Column('indexbase_id', ForeignKey('IndexBase.idIndex'), primary_key=True), Column('contaminantset_id', ForeignKey('ContaminantSet.idContaminantSet'), primary_key=True))
 
@@ -301,6 +302,12 @@ class MGFfile(BaseTable):
     MGFName = Column('MGFName', String, unique=True)
     MGFPath = Column('MGFPath', String)
     partOfIterativeSearch = Column('partOfIterativeSearch', Boolean, default=False)
+    #0 is CID, 1 is ETD, 2 is HCD
+    fragmentationMethod = Column('fragmentationMethod', Integer, default=0)
+    #0 is low-res LCQ/LTQ, 1 is High-Req LTQ, 2 is TOF, 3 is Q-Extractive
+    instrument = Column('instrument', Integer, default=0)
+    #0 is unspecific, 1 is trypsin (default), 2 is Chymotrypsin, 3 is Lys-C, 4 is Lys-N, 5 is glutamyl endopeptidase, 6 is Arg-C, 7 is Asp-N, 8 is alphaLP, 9 is no cleavage
+    enzyme = Column('enzyme', Integer, default=1)
     def __repr__(self):
         return self.MGFName
     def identifier(self):
@@ -574,6 +581,21 @@ class TideIndex(IndexBase):
                 if search.is_valid():
                     return True
             return False
+
+class MSGFPlusTrainingParams(Base):
+    __tablename__ = 'MSGFPlusTrainingParams'
+    idMSGFPlusTrainingParams = Column('idMSGFPlusTrainingParams', Integer, primary_key=True)
+    trainingName = Column('trainingName', String, unique=True, nullable=False)
+    paramFileLocation = Column('paramFileLocation', String, unique=True, nullable=False)
+    idMSGFPlusSearch = Column('idMSGFPlusSearch', Integer, ForeignKey('MSGFPlusSearch.idSearch'))
+    idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
+    #0 is CID, 1 is ETD, 2 is HCD
+    fragmentationMethod = Column('fragmentationMethod', Integer, default=0, nullable=False)
+    #0 is low-res LCQ/LTQ, 1 is High-Req LTQ, 2 is TOF, 3 is Q-Extractive
+    instrument = Column('instrument', Integer, default=0, nullable=False)
+    #0 is unspecific, 1 is trypsin (default), 2 is Chymotrypsin, 3 is Lys-C, 4 is Lys-N, 5 is glutamyl endopeptidase, 6 is Arg-C, 7 is Asp-N, 8 is alphaLP, 9 is no cleavage
+    enzyme = Column('enzyme', Integer, default=1, nullable=False)
+    
 """
 See the BuildSA section of this webpage for more information: https://omics.pnl.gov/software/ms-gf
 
@@ -714,6 +736,7 @@ class MSGFPlusSearch(SearchBase):
     __tablename__ = 'MSGFPlusSearch'
     idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
     idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, ForeignKey('MSGFPlusIndex.idIndex'))
+    idMSGFPlusTraining  = Column('idMSGFPlusSearch', Integer, ForeignKey('MSGFPlusSearch.idSearch'))
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     #Output in mzIdentML format
     resultFilePath = Column('resultFilePath', String)
