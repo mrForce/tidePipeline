@@ -25,6 +25,18 @@ TideSearchLinkedToMSGFPlusIterativeError = CustomError.factory('TideSearchLinked
 MSGFPlusSearchLinkedToTideIterativeError = CustomError.factory('MSGFPlusSearchLinkedToTideIterativeError', 'The MSGF+ Search: ', ' is linked to a Tide Iterative Search')
 
 
+class NoPathInMSGFPlusTrainingOutput(Error):
+    def __init__(self):
+        pass
+    def __repr__(self):
+        return 'No output path found in MSGF+ training output'
+
+class MSGFPlusTrainingFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'Failed to run MSGF+ Training using the command: ' + self.command
+    
 class BothDecoyTypeAndNetMHCDecoysSpecifiedError(Error):
     def __init__(self):
         pass

@@ -588,7 +588,9 @@ class MSGFPlusTrainingParams(Base):
     trainingName = Column('trainingName', String, unique=True, nullable=False)
     paramFileLocation = Column('paramFileLocation', String, unique=True, nullable=False)
     idMSGFPlusSearch = Column('idMSGFPlusSearch', Integer, ForeignKey('MSGFPlusSearch.idSearch'))
+    MSGFPlusSearch = relationship('MSGFPlusSearch')    
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
+    MGF = relationship('MGFfile')
     #0 is CID, 1 is ETD, 2 is HCD
     fragmentationMethod = Column('fragmentationMethod', Integer, default=0, nullable=False)
     #0 is low-res LCQ/LTQ, 1 is High-Req LTQ, 2 is TOF, 3 is Q-Extractive

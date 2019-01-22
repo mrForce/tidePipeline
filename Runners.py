@@ -112,14 +112,31 @@ class MSGFPlusTrainingRunner:
 
         Then, before doing a search, I need to copy the param file to the params folder in the MSGF+ installation, and specify the fragmentation, instrument and enzyme in the command line. When the search is complete, I need to delete the file. 
         """
+        param_path = None
         try:
             print('command: ' +  ' '.join([str(x) for x in command]))
-            p = subprocess.call([str(x) for x in command], stdout=sys.stdout, stderr=sys.stderr)
+            with tempfile.TemporaryFile() as f:                
+                p = subprocess.call([str(x) for x in command], stdout=f, stderr=sys.stderr)
+                f.seek(0)
+                regex = re.compile('Output file name:\s*(?P<path>.*)')
+                for x in f:
+                    line = x.decode('utf-8', 'ignore')
+                    match = regex.match(line)
+                    if match:
+                        param_path = match.group('path')
+                        break
+                if param_path is None:
+                    f.seek(0)
+                    for x in f:
+                        print(x.strip())                        
+                    raise NoPathInMSGFPlusTrainingOutput()            
         except subprocess.CalledProcessError:
-            raise MSGFPlusSearchFailedError(' '.join(command))
-        
-        search_row = DB.MSGFPlusSearch(**column_args)
-        return search_row
+            raise MSGFPlusTrainingFailedError(' '.join(command))
+        storage_directory = self.create_storage_directory('msgf_params')
+        shutil.move(param_path, os.path.join(project_path, storage_directory))
+        column_args = {'trainingName': training_name, 'paramFileLocation': storage_directory, 'MSGFPlusSearch': search_row, 'MGF': mgf_row, 'fragmentationMethod': mgf_row.fragmentationMethod, 'instrument': mgf_row.instrument, 'enzyme': mgf_row.enzyme}
+        training_row = DB.MSGFPlusTrainingParams(**column_args)
+        return training_row
 
 
 
