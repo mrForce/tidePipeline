@@ -17,7 +17,7 @@ depends_on = None
 
 def get_int_input(message, choices):
     while True:
-        i = input(message)
+        i = int(input(message))
         if i in choices:
             return i
 
