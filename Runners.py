@@ -84,7 +84,8 @@ class MaxQuantSearchRunner:
 
 class MSGFPlusTrainingRunner:
     converter = {'m': 'fragmentationMethod', 'inst': 'instrument', 'e': 'enzyme'}
-    def __init__(self, jar_file_location):
+    def __init__(self, project_path, jar_file_location):
+        self.project_path = project_path
         self.jar_file_location = jar_file_location
 
     @classmethod
@@ -94,9 +95,9 @@ class MSGFPlusTrainingRunner:
         else:
             return None
     def run_training_create_row(self, mgf_row, search_row, training_name, output_directory, memory = None):
-        mgf_location = os.path.join(project_path, mgf_row.MGFPath)
+        mgf_location = os.path.join(self.project_path, mgf_row.MGFPath)
         mgf_folder = os.path.dirname(mgf_location)
-        mzid_location = os.path.join(project_path, search_row.resultFilePath)
+        mzid_location = os.path.join(self.project_path, search_row.resultFilePath)
         mzid_folder = os.path.dirname(mzid_location)
         memory_string = '-Xmx3500M'
         if memory:
@@ -131,7 +132,7 @@ class MSGFPlusTrainingRunner:
                     raise NoPathInMSGFPlusTrainingOutput()            
         except subprocess.CalledProcessError:
             raise MSGFPlusTrainingFailedError(' '.join(command))
-        shutil.move(param_path, os.path.join(project_path, output_directory))
+        shutil.move(param_path, os.path.join(self.project_path, output_directory))
         column_args = {'trainingName': training_name, 'paramFileLocation': storage_directory, 'MSGFPlusSearch': search_row, 'MGF': mgf_row, 'fragmentationMethod': mgf_row.fragmentationMethod, 'instrument': mgf_row.instrument, 'enzyme': mgf_row.enzyme}
         training_row = DB.MSGFPlusTrainingParams(**column_args)
         return training_row
