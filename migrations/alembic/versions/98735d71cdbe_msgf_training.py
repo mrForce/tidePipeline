@@ -48,7 +48,7 @@ def upgrade():
 
     with op.batch_alter_table('MSGFPlusSearch', schema=None) as batch_op:
         batch_op.add_column(sa.Column('idMSGFPlusTrainingParams', sa.Integer(), nullable=True))
-        batch_op.create_foreign_key(None, 'MSGFPlusTrainingParams', ['idMSGFPlusTrainingParams'], ['idMSGFPlusTrainingParams'])
+        batch_op.create_foreign_key('idMSGFPlusTrainingParams', 'MSGFPlusTrainingParams', ['idMSGFPlusTrainingParams'], ['idMSGFPlusTrainingParams'])
     metadata = sa.MetaData()
     connection = op.get_bind()
     """
