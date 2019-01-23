@@ -588,7 +588,7 @@ class MSGFPlusTrainingParams(BaseTable):
     trainingName = Column('trainingName', String, unique=True, nullable=False)
     paramFileLocation = Column('paramFileLocation', String, unique=True, nullable=False)
     idMSGFPlusSearch = Column('idMSGFPlusSearch', Integer, ForeignKey('MSGFPlusSearch.idSearch'))
-    MSGFPlusSearch = relationship('MSGFPlusSearch')    
+    MSGFPlusSearch = relationship('MSGFPlusSearch', foreign_keys=[idMSGFPlusSearch])    
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     MGF = relationship('MGFfile')
     #0 is CID, 1 is ETD, 2 is HCD
@@ -738,7 +738,7 @@ class MSGFPlusSearch(SearchBase):
     __tablename__ = 'MSGFPlusSearch'
     idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
     idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, ForeignKey('MSGFPlusIndex.idIndex'))
-    idMSGFPlusTrainingParams  = Column('idMSGFPlusTrainingParams', Integer, ForeignKey('MSGFPlusTraining.idMSGFPlusTrainingParams'))
+    idMSGFPlusTrainingParams  = Column('idMSGFPlusTrainingParams', Integer, ForeignKey('MSGFPlusTrainingParams.idMSGFPlusTrainingParams'))
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     #Output in mzIdentML format
     resultFilePath = Column('resultFilePath', String)
