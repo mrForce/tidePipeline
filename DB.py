@@ -582,7 +582,7 @@ class TideIndex(IndexBase):
                     return True
             return False
 
-class MSGFPlusTrainingParams(Base):
+class MSGFPlusTrainingParams(BaseTable):
     __tablename__ = 'MSGFPlusTrainingParams'
     idMSGFPlusTrainingParams = Column('idMSGFPlusTrainingParams', Integer, primary_key=True)
     trainingName = Column('trainingName', String, unique=True, nullable=False)
