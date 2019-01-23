@@ -155,7 +155,7 @@ class MSGFPlusSearchRunner:
         else:
             return None
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False):        
+    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False, training_param_row = None):        
         #output directory relative to the project path
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         print('mgf location: ' + mgf_location)
@@ -175,7 +175,11 @@ class MSGFPlusSearchRunner:
         else:
             if mgf_row.enzyme != 8:
                 enzyme = str(mgf_row.enzyme - 1)
-                
+        if training_param_row:
+            msgf_folder = os.path.dirname(self.jar_file_location)
+            msgf_param_folder = os.path.join(msgf_folder, 'params')
+            shutil.copy(os.path.join(project_path, training_param_row.paramFileLocation), msgf_param_folder)
+        
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
