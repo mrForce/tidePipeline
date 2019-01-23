@@ -494,7 +494,9 @@ class Base:
             self.db_session.add(netmhc_row)
             self.db_session.commit()
             return (netmhc_row, netmhc_row.PeptideAffinityPath, netmhc_row.PeptideRankPath, True)
+        
 
+        
 
     def list_peptide_lists(self):
         peptide_lists = []

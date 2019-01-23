@@ -84,9 +84,8 @@ class MaxQuantSearchRunner:
 
 class MSGFPlusTrainingRunner:
     converter = {'m': 'fragmentationMethod', 'inst': 'instrument', 'e': 'enzyme'}
-    def __init__(self, args, jar_file_location):
+    def __init__(self, jar_file_location):
         self.jar_file_location = jar_file_location
-        self.args = args
 
     @classmethod
     def convert_cmdline_option_to_column_name(cls, option):
@@ -132,8 +131,7 @@ class MSGFPlusTrainingRunner:
                     raise NoPathInMSGFPlusTrainingOutput()            
         except subprocess.CalledProcessError:
             raise MSGFPlusTrainingFailedError(' '.join(command))
-        storage_directory = self.create_storage_directory('msgf_params')
-        shutil.move(param_path, os.path.join(project_path, storage_directory))
+        shutil.move(param_path, os.path.join(project_path, output_directory))
         column_args = {'trainingName': training_name, 'paramFileLocation': storage_directory, 'MSGFPlusSearch': search_row, 'MGF': mgf_row, 'fragmentationMethod': mgf_row.fragmentationMethod, 'instrument': mgf_row.instrument, 'enzyme': mgf_row.enzyme}
         training_row = DB.MSGFPlusTrainingParams(**column_args)
         return training_row

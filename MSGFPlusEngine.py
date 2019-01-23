@@ -166,11 +166,16 @@ class MSGFPlusEngine(AbstractEngine):
             rows = self.db_session.query(DB.MSGFPlusSearch).all()
         return rows
         
-    def run_training(self, mgf_name, search_name, training_name):
+    def run_training(self, mgf_name, search_name, training_name, training_runner, memory = None, *, commit=False):
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = search_name).first()
-        
-        
+        output_directory = self.create_storage_directory('msgf_params')
+        training_row = training_runner.run_training_create_row(mgf_row, search_row, training_name, output_directory, memory)
+        self.db_session.add(training_row)
+        if commit:
+            self.db_session.commit()
+
+            
     def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, *, commit=False):
         #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
