@@ -738,7 +738,7 @@ class MSGFPlusSearch(SearchBase):
     __tablename__ = 'MSGFPlusSearch'
     idSearch = Column(Integer, ForeignKey('SearchBase.idSearch'), primary_key=True)
     idMSGFPlusIndex = Column('idMSGFPlusIndex', Integer, ForeignKey('MSGFPlusIndex.idIndex'))
-    idMSGFPlusTraining  = Column('idMSGFPlus', Integer, ForeignKey('MSGFPlusSearch.idSearch'))
+    idMSGFPlusTrainingParams  = Column('idMSGFPlusTrainingParams', Integer, ForeignKey('MSGFPlusTraining.idMSGFPlusTrainingParams'))
     idMGF = Column('idMGF', Integer, ForeignKey('MGFfile.idMGFfile'))
     #Output in mzIdentML format
     resultFilePath = Column('resultFilePath', String)
