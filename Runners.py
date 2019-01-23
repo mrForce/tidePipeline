@@ -6,6 +6,7 @@ import BashScripts
 import re
 import shutil
 import uuid
+import tempfile
 from fileFunctions import *
 
 from Errors import *
