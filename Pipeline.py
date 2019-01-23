@@ -295,6 +295,9 @@ class Search:
             self.mgfName = section['mgfname']
             self.searchType = searchType
             self.searchNumber = section.getint('searchnumber', -1)
+            self.msgfParam = None
+            if 'msgf_param_name' in section:
+                self.msgf_param_name = section['msgf_param_name']
             if 'paramfile' in section:
                 self.searchParamFile = section['paramfile']
             else:
@@ -316,7 +319,7 @@ class Search:
         search_node = None
         if self.searchType == 'msgf':
             if not test_run:
-                assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))
+                assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))                
             msgfplus_jar = project.executables['msgfplus']
             runner = Runners.MSGFPlusSearchRunner(self.options, msgfplus_jar)
             search_name = index_name + '_msgf_' + self.mgfName
@@ -328,13 +331,13 @@ class Search:
                 search_name = search_name + str(num)
             if self.memory:
                 if not test_run:
-                    project.run_search(self.mgfName, index_name, None, runner, search_name, self.memory)
+                    project.run_search(self.mgfName, index_name, None, runner, search_name, self.memory, msgf_param_name = self.msgf_param_name)
                 options_copy = dict(self.options)
                 options_copy['memory'] = self.memory
                 search_node = SearchNode(self.searchType, search_name, self.mgfName, options = options_copy)
             else:
                 if not test_run:
-                    project.run_search(self.mgfName, index_name, None, runner, search_name)
+                    project.run_search(self.mgfName, index_name, None, runner, search_name, msgf_param_name = self.msgf_param_name)
                 search_node = SearchNode(self.searchType, search_name, self.mgfName, options = self.options)
         elif self.searchType == 'tide':
             if not test_run:

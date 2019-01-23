@@ -176,9 +176,12 @@ class MSGFPlusEngine(AbstractEngine):
             self.db_session.commit()
 
             
-    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, *, commit=False):
+    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, *, commit=False, msgf_param_name = None):
         #modifications_name can be None if using default
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
+        msgf_param_row = None
+        if msgf_param_name:
+            msgf_param_row = self.db_session.query(DB.MSGFPlusTrainingParams).filter_by(trainingName = msgf_param_name).first()
         assert(mgf_row)
         index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName=index_name).first()
         assert(index_row)
@@ -189,7 +192,7 @@ class MSGFPlusEngine(AbstractEngine):
         search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName=search_name).first()
         assert(not search_row)
         output_directory = self.create_storage_directory('msgfplus_search_results')
-        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch)
+        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativetSearch, msgf_param_row)
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)
