@@ -93,7 +93,7 @@ class MSGFPlusTrainingRunner:
             return cls.converter[option]
         else:
             return None
-    def run_training_create_row(mgf_row, search_row, training_name, output_directory, memory = None):
+    def run_training_create_row(self, mgf_row, search_row, training_name, output_directory, memory = None):
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         mgf_folder = os.path.dirname(mgf_location)
         mzid_location = os.path.join(project_path, search_row.resultFilePath)
