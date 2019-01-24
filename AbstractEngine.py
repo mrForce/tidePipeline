@@ -44,7 +44,7 @@ class AbstractEngine(Base, metaclass=ABCMeta):
             row = self.db_session.query(DB.TargetSet).filter_by(TargetSetName = target_set_name).first()
             if row:
                 link_row = row
-                #fasta_file_location = os.path.join(self.project_path, row.TargetSetFASTAPath)
+                fasta_file_location = os.path.join(self.project_path, row.TargetSetFASTAPath)
                 fasta_files.append(fasta_file_location)
             else:
                 raise NoSuchTargetSetError(set_name)

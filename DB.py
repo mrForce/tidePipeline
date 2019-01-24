@@ -922,8 +922,8 @@ def init_session(db_path):
     session = Session()
     return session
 
-#session = init_session('new_test/database.db')
-#a = session.query(FilteredNetMHC, NetMHC, HLA).join(NetMHC).join(HLA).filter(HLA.HLAName=='HLA-A0101').all()
+#session = init_session('/data1/jordan/PipelineProjects/Bassani/database.db')
+
 
 
 

@@ -134,7 +134,7 @@ class MSGFPlusTrainingRunner:
         except subprocess.CalledProcessError:
             raise MSGFPlusTrainingFailedError(' '.join(command))
         shutil.move(param_path, os.path.join(self.project_path, output_directory))
-        column_args = {'trainingName': training_name, 'paramFileLocation': output_directory, 'MSGFPlusSearch': search_row, 'MGF': mgf_row, 'fragmentationMethod': mgf_row.fragmentationMethod, 'instrument': mgf_row.instrument, 'enzyme': mgf_row.enzyme}
+        column_args = {'trainingName': training_name, 'paramFileLocation': os.path.join(output_directory, os.path.basename(param_path)), 'MSGFPlusSearch': search_row, 'MGF': mgf_row, 'fragmentationMethod': mgf_row.fragmentationMethod, 'instrument': mgf_row.instrument, 'enzyme': mgf_row.enzyme}
         training_row = DB.MSGFPlusTrainingParams(**column_args)
         return training_row
 

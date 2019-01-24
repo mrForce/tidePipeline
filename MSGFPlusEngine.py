@@ -192,7 +192,7 @@ class MSGFPlusEngine(AbstractEngine):
         search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName=search_name).first()
         assert(not search_row)
         output_directory = self.create_storage_directory('msgfplus_search_results')
-        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativetSearch, msgf_param_row)
+        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row)
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)
@@ -247,6 +247,7 @@ class MSGFPlusEngine(AbstractEngine):
         row, fasta_name = index_runner.run_index_create_row(fasta_file_location, os.path.join(self.project_path, storage_dir), self.project_path, memory, netmhc_decoys=netmhc_decoys, decoy_type=decoy_type)
         print('fasta name: ' + fasta_name)
         print('storage dir: ' + storage_dir)
+        print('set type: ' + set_type)
         if contaminants:
             row.contaminants = contaminants
         if set_type == 'TargetSet':
@@ -256,11 +257,17 @@ class MSGFPlusEngine(AbstractEngine):
         elif set_type == 'PeptideList':
             row.peptidelists = [link_row]
         elif set_type == 'FASTA':
+            print('going to link MSGF+ index to fasta: ')
+            print(link_row)
             row.fasta = [link_row]
         else:
             assert(False)
         row.MSGFPlusIndexName = index_name
         row.MSGFPlusIndexPath = os.path.join(storage_dir, fasta_name)
         self.db_session.add(row)
+        print('session state: ')
+        for x in self.db_session:
+            print(x)
+        print('done printing session state')
         #self.db_session.commit()
     

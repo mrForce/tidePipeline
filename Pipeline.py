@@ -195,6 +195,7 @@ class Index:
     Returns a tuple. 
     """
     def create_index(self, project_folder, test_run = False):
+        print('creating index in pipeline')
         if self.existingIndex:
             project = None
             if self.indexType == 'tide':
@@ -204,6 +205,7 @@ class Index:
                 index_node = IndexNode(self.indexType, self.existingIndex, None)
                 return (project, self.existingIndex, index_node, None)
             elif self.indexType == 'msgf':
+                print('existing index. Going to create MSGFPlusEngine')
                 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, '')
                 index_names = project.get_column_values(DB.MSGFPlusIndex, 'MSGFPlusIndexName')
                 assert(self.existingIndex in index_names)
@@ -220,6 +222,7 @@ class Index:
             index_names = project.get_column_values(DB.TideIndex, 'TideIndexName')
             index_name = self.sourceName + '_TideIndex_' + self.indexParamFile
         elif self.indexType == 'msgf':
+            print('new index. Going to create MSGFPlusEngine')
             project = MSGFPlusEngine.MSGFPlusEngine(project_folder, '')
             index_names = project.get_column_values(DB.MSGFPlusIndex, 'MSGFPlusIndexName')
             index_name = self.sourceName + '_MSGFPlusIndex'
@@ -258,6 +261,7 @@ class Index:
             assert(False)
         project.begin_command_session()
         index_node = None
+        print('source type: ' + self.sourceType)
         print('contaminants in pipeline.py')
         if self.indexType == 'tide':
             index_node = IndexNode(self.indexType, index_name, self.contaminants, param_file = self.indexParamFile)
@@ -295,7 +299,7 @@ class Search:
             self.mgfName = section['mgfname']
             self.searchType = searchType
             self.searchNumber = section.getint('searchnumber', -1)
-            self.msgfParam = None
+            self.msgf_param_name = None
             if 'msgf_param_name' in section:
                 self.msgf_param_name = section['msgf_param_name']
             if 'paramfile' in section:
