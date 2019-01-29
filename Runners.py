@@ -6,6 +6,7 @@ import BashScripts
 import re
 import shutil
 import uuid
+import tempfile
 from fileFunctions import *
 
 from Errors import *
@@ -133,7 +134,7 @@ class MSGFPlusTrainingRunner:
         except subprocess.CalledProcessError:
             raise MSGFPlusTrainingFailedError(' '.join(command))
         shutil.move(param_path, os.path.join(self.project_path, output_directory))
-        column_args = {'trainingName': training_name, 'paramFileLocation': storage_directory, 'MSGFPlusSearch': search_row, 'MGF': mgf_row, 'fragmentationMethod': mgf_row.fragmentationMethod, 'instrument': mgf_row.instrument, 'enzyme': mgf_row.enzyme}
+        column_args = {'trainingName': training_name, 'paramFileLocation': os.path.join(output_directory, os.path.basename(param_path)), 'MSGFPlusSearch': search_row, 'MGF': mgf_row, 'fragmentationMethod': mgf_row.fragmentationMethod, 'instrument': mgf_row.instrument, 'enzyme': mgf_row.enzyme}
         training_row = DB.MSGFPlusTrainingParams(**column_args)
         return training_row
 
@@ -172,6 +173,7 @@ class MSGFPlusSearchRunner:
             print('index comes from FASTA. Using unspecific enzyme')
             enzyme = '0'
         else:
+
             if mgf_row.enzyme != 8:
                 enzyme = str(mgf_row.enzyme - 1)
         msgf_param_folder = None

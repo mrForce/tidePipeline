@@ -25,13 +25,13 @@ project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
 
 assert(project.verify_row_existence(DB.MSGFPlusSearch.SearchName, args.search_name))
 assert(project.verify_row_existence(DB.MGFfile.MGFName, args.mgf_name))
-assert(not project.verify_row_existence(DB.MSGFPlusTrainingParams, args.training_name))
+assert(not project.verify_row_existence(DB.MSGFPlusTrainingParams.trainingName, args.training_name))
 project.begin_command_session()
-msgfplus_training_runner = Runners.MSGFPlusTrainingRunner(project.get_msgfplus_executable_path())
+msgfplus_training_runner = Runners.MSGFPlusTrainingRunner(os.path.abspath(args.project_folder), project.get_msgfplus_executable_path())
 
     
 if args.memory:
-    project.run_training(args.mgf_name, args.search_name, args.training_name, msgfplus_training_runner, args.memory):
+    project.run_training(args.mgf_name, args.search_name, args.training_name, msgfplus_training_runner, args.memory)
 else:
     project.run_training(args.mgf_name, args.search_name, args.training_name, msgfplus_training_runner)
 
