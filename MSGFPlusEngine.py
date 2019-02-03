@@ -251,15 +251,15 @@ class MSGFPlusEngine(AbstractEngine):
         if contaminants:
             row.contaminants = contaminants
         if set_type == 'TargetSet':
-            row.targetsets = [link_row]
+            row.targetsets.append(link_row)
         elif set_type == 'FilteredNetMHC':
-            row.filteredNetMHCs = [link_row]
+            row.filteredNetMHCs.append(link_row)
         elif set_type == 'PeptideList':
-            row.peptidelists = [link_row]
+            row.peptidelists.append(link_row)
         elif set_type == 'FASTA':
             print('going to link MSGF+ index to fasta: ')
             print(link_row)
-            row.fasta = [link_row]
+            row.fasta.append(link_row)
         else:
             assert(False)
         row.MSGFPlusIndexName = index_name

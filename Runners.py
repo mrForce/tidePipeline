@@ -173,7 +173,8 @@ class MSGFPlusSearchRunner:
             print('index comes from FASTA. Using unspecific enzyme')
             enzyme = '0'
         else:
-            enzyme = str(mgf_row.enzyme + 1)
+            #enzyme = str(mgf_row.enzyme + 1)
+            enzyme = '9'
         if training_param_row:
             msgf_folder = os.path.dirname(self.jar_file_location)
             msgf_param_folder = os.path.join(msgf_folder, 'params')

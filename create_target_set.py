@@ -41,12 +41,14 @@ def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, out
     source_id_map = {'filtered_netmhc': filtered_map, 'peptide_lists': peptide_lists_map}
     target_set = defaultdict(list)
     for name, location, row in filtered_netmhc:
+        print('going to do filterednetmhc: ' + name)
         source_id = filtered_map_reverse[name]
         with open(location, 'r') as f:
             for line in f:
                 if len(line.strip()) > 0:
                     target_set[line.strip()].append(source_id)
     for name, location in peptide_lists:
+        print('going to do peptide list: ' + name)
         source_id = peptide_lists_map_reverse[name]
         with open(location, 'r') as f:
             for line in f:
