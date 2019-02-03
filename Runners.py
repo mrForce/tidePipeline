@@ -11,6 +11,9 @@ from fileFunctions import *
 
 from Errors import *
 
+
+
+
 class MSGF2PinRunner:
     def __init__(self, msgf2pin_binary, unimodXMLLocation):
         self.msgf2pin_binary = msgf2pin_binary
@@ -173,19 +176,20 @@ class MSGFPlusSearchRunner:
             print('index comes from FASTA. Using unspecific enzyme')
             enzyme = '0'
         else:
-            #enzyme = str(mgf_row.enzyme + 1)
-            enzyme = '9'
-            
-            #if mgf_row.enzyme != 8:
-            #    enzyme = str(mgf_row.enzyme - 1)
-        msgf_param_folder = None
+            enzyme = str(mgf_row.enzyme + 1)
 
+        msgf_param_folder = None
+        instrument_map = {'0': 'LowRes', '1': 'HighRes' , '2': 'QExtractive'}
+        fragment_map = {'1': 'CID', '2': 'ETD', '3': 'HCD' }
+        enzyme_map = {'0': 'UnspecificCleavage', '1': 'Trypsin', '2': 'Chymotrypsin', '3': 'LysC', '4': 'LysN', '5': 'GluC', '6': 'ArgC', '7': 'AspN', '8': 'alphaLP', '9': 'NoCleavage'}
         if training_param_row:
             #params folder is in current working directory
             msgf_param_folder = os.path.join(os.getcwd(), 'params')
             if not os.path.isdir(msgf_param_folder):
                 os.mkdir(msgf_param_folder)
-            shutil.copy(os.path.join(project_path, training_param_row.paramFileLocation), msgf_param_folder)
+            param_file_name = fragment_map[str(mgf_row.fragmentationMethod + 1)] + '_' + instrument_map[str(mgf_row.instrument)] + '_' + enzyme_map[enzyme] + '.param'
+            shutil.copy(os.path.join(project_path, training_param_row.paramFileLocation), os.path.join(msgf_param_folder, param_file_name))
+            
         
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
