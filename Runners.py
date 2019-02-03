@@ -175,9 +175,16 @@ class MSGFPlusSearchRunner:
         else:
             #enzyme = str(mgf_row.enzyme + 1)
             enzyme = '9'
+            
+            #if mgf_row.enzyme != 8:
+            #    enzyme = str(mgf_row.enzyme - 1)
+        msgf_param_folder = None
+
         if training_param_row:
-            msgf_folder = os.path.dirname(self.jar_file_location)
-            msgf_param_folder = os.path.join(msgf_folder, 'params')
+            #params folder is in current working directory
+            msgf_param_folder = os.path.join(os.getcwd(), 'params')
+            if not os.path.isdir(msgf_param_folder):
+                os.mkdir(msgf_param_folder)
             shutil.copy(os.path.join(project_path, training_param_row.paramFileLocation), msgf_param_folder)
         
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
@@ -209,7 +216,8 @@ class MSGFPlusSearchRunner:
             p = subprocess.call([str(x) for x in command], stdout=sys.stdout, stderr=sys.stderr)
         except subprocess.CalledProcessError:
             raise MSGFPlusSearchFailedError(' '.join(command))
-        
+
+
         search_row = DB.MSGFPlusSearch(**column_args)
         return search_row
 
