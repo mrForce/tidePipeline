@@ -17,14 +17,14 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
         def __init__(self, length = None):
             self.peptides = set()
             self.length = length
-        def add(self, sequence):
+        def add(self, sequence, header):
             if self.length:
                 if len(sequence) >= self.length:
                     for i in range(0, len(sequence) - self.length + 1):
                         peptide = sequence[i:(i + self.length)]
-                        self.peptides.add(str(peptide))
+                        self.peptides.add((str(peptide), '|%d' % i))
             else:
-                self.peptides.add(str(sequence))
+                self.peptides.add(str(sequence), header + '|0')
 
         def get_peptides(self):
             return self.peptides
@@ -34,7 +34,8 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
         if file_format == 'FASTA':
             for record in SeqIO.parse(handle, 'fasta'):
                 sequence = record.seq
-                peptide_handler.add(sequence)
+                header = record.id
+                peptide_handler.add(sequence, header)
                 
         elif file_format == 'peptides':
             for line in handle:
@@ -49,7 +50,12 @@ def write_peptides(file_path, peptide_set):
     peptide_list = list(peptide_set)
     with open(file_path, 'w') as f:
         for x in peptide_list:
-            f.write(x + '\n')
+            assert(isinstance(x, str) or isinstance(x, tuple))
+            if isinstance(x, str):                
+                f.write(x + '\n')
+            elif isinstance(x, tuple):
+                #insert the FASTA header here.
+                f.write('>' + x[1] + '\n' + x[0] + '\n')
 
 def find_unique_name(existing_names, proposed_name, regex, extension_index = None):
     if proposed_name in existing_names:
