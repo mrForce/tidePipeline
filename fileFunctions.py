@@ -22,7 +22,7 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
                 if len(sequence) >= self.length:
                     for i in range(0, len(sequence) - self.length + 1):
                         peptide = sequence[i:(i + self.length)]
-                        self.peptides.add((str(peptide), '|%d' % i))
+                        self.peptides.add((str(peptide), '%s|%d' % (header, i)))
             else:
                 self.peptides.add(str(sequence), header + '|0')
 
