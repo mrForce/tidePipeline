@@ -89,7 +89,7 @@ class ContaminantSet(BaseTable, AbstractPeptideCollection):
             self.lengths = lengths
             for length in lengths:
                 peptides_of_length = fileFunctions.extract_peptides(full_path, length, file_format = protein_format)
-                peptides.extend(peptides_of_length[0])
+                peptides.extend(peptides_of_length)
         else:
             peptides = fileFunctions.extract_peptides(full_path, None, file_format = protein_format)
         uniq_peptides = list(set(peptides))
