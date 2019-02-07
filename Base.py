@@ -380,7 +380,7 @@ class Base:
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
             BashScripts.top_percent_netmhc(os.path.join(self.project_path, pep_affinity_path), rank_cutoff, output_path)
 
-            headline_mapper = defaultdict(str)
+            headline_mapper = {}
             peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
             peptide_list_path = os.path.join(self.project_path, peptide_list_row.PeptideListPath)
             output_fasta = os.path.join(self.project_path, 'FilteredNetMHC', file_name + '.fasta')
@@ -391,12 +391,15 @@ class Base:
                     if sequence in mapping:
                         mapping[sequence] += '|' +  header
                     else:
-                        mapping[sequence] = header
+                        mapping[sequence] = header            
             with open(output_path, 'r') as input_handle:
                 with open(output_fasta, 'r') as output_handler:
                     for line in input_handle:
-                        
-                    
+                        peptide = line.strip()
+                        if len(peptide) > 0:
+                            assert(peptide in mapping)
+                            output_handler.write('>%s\n' % mapping[peptide])
+                            output_handler.write('%s\n' % peptide)
             
             filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
