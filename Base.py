@@ -19,7 +19,7 @@ from datetime import datetime
 import json
 import TargetSetSourceCount
 import ReportGeneration
-
+from collections import defaultdict
 from Errors import *
 from Runners import *
 
@@ -379,8 +379,25 @@ class Base:
             print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
             BashScripts.top_percent_netmhc(os.path.join(self.project_path, pep_affinity_path), rank_cutoff, output_path)
-            
 
+            headline_mapper = defaultdict(str)
+            peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
+            peptide_list_path = os.path.join(self.project_path, peptide_list_row.PeptideListPath)
+            output_fasta = os.path.join(self.project_path, 'FilteredNetMHC', file_name + '.fasta')
+            with open(peptide_list_path, 'rU') as handle:
+                for record in SeqIO.parse(handle, 'fasta'):
+                    sequence = record.seq
+                    header = record.id
+                    if sequence in mapping:
+                        mapping[sequence] += '|' +  header
+                    else:
+                        mapping[sequence] = header
+            with open(output_path, 'r') as input_handle:
+                with open(output_fasta, 'r') as output_handler:
+                    for line in input_handle:
+                        
+                    
+            
             filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
             self.db_session.add(filtered_row)
             #self.db_session.commit()
@@ -489,7 +506,6 @@ class Base:
             full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
             BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
             BashScripts.netmhc_percentile(os.path.abspath(os.path.join(self.project_path, affinity_path)), os.path.abspath(os.path.join(self.project_path, rank_path)))
-            
             netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, Name = netmhc_name, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideRankPath = rank_path, PeptideAffinityPath=affinity_path)
             self.db_session.add(netmhc_row)
             self.db_session.commit()
