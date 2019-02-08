@@ -397,8 +397,8 @@ class Base:
                     for line in input_handle:
                         peptide = line.strip()
                         if len(peptide) > 0:
-                            assert(peptide in mapping)
-                            output_handler.write('>%s\n' % mapping[peptide])
+                            assert(peptide in headline_mapper)
+                            output_handler.write('>%s\n' % headline_mapper[peptide])
                             output_handler.write('%s\n' % peptide)
             
             filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name), fasta_path=output_fasta)
