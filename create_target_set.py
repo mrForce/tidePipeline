@@ -2,7 +2,7 @@ from collections import defaultdict
 import os
 import json
 """
-The filtered_netmhc argument is a list of the form [(name, location)...], where name is the name of the FilteredNetMHC entry, and location is the location of filtered peptides (the filtered_path field in the FilteredNetMHC table). 
+The filtered_netmhc argument is a list of the form [(name, location)...], where name is the name of the FilteredNetMHC entry, and location is the location of filtered peptides (the fasta_path field in the FilteredNetMHC table). 
 
 The peptide_lists argument is also a list of the form [(name, location)...], where name is the name of the PeptideList entry, and the location is the location of the peptides (the PeptideListPath field in the PeptideList table).
 
@@ -23,6 +23,9 @@ def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, out
 
     with open(output_fasta_location, 'w') as f:
         pass
+
+    
+    
     with open(output_json_location, 'w') as f:
         pass
     i = 0
@@ -34,6 +37,7 @@ def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, out
         i += 1
     peptide_lists_map = {}
     peptide_lists_map_reverse = {}
+    peptide_to_header = defaultdict(list)
     for name, location in peptide_lists:
         peptide_lists_map[i] = name
         peptide_lists_map_reverse[name] = i
@@ -44,21 +48,28 @@ def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, out
         print('going to do filterednetmhc: ' + name)
         source_id = filtered_map_reverse[name]
         with open(location, 'r') as f:
-            for line in f:
-                if len(line.strip()) > 0:
-                    target_set[line.strip()].append(source_id)
+            for record in SeqIO.parse(f, 'fasta'):
+                peptide = str(record.seq)
+                header = str(record.id)
+                if len(peptide) > 0:
+                    target_set[peptide].append(source_id)
+                    peptide_to_header[peptide].append(header)
     for name, location in peptide_lists:
         print('going to do peptide list: ' + name)
         source_id = peptide_lists_map_reverse[name]
         with open(location, 'r') as f:
-            for line in f:
-                if len(line.strip()) > 0:
-                    target_set[line.strip()].append(source_id)
+            for record in SeqIO.parse(f, 'fasta'):
+                peptide = str(record.seq)
+                header = str(record.id)
+                if len(peptide) > 0:
+                    target_set[peptide].append(source_id)
+                    peptide_to_header[peptide].append(header)
     i = 0
     with open(output_fasta_location, 'w') as f:
         for target_sequence, source_list in target_set.items():
             assert(len(source_list) > 0)
-            f.write('>' + str(i) + '\n')
+            header = ' @@ '.join(peptide_to_header[target_sequence])
+            f.write('>' + header + '\n')
             f.write(target_sequence + '\n')
             if len(source_list) == 1:
                 target_set[target_sequence] = source_list[0]

@@ -287,7 +287,7 @@ class Base:
             for name in netmhc_filter_names:
                 row  = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
                 if row:
-                    location = os.path.join(self.project_path, row.filtered_path)
+                    location = os.path.join(self.project_path, row.fasta_path)
                     netmhc_filter_locations.append((name, location, row))
                 else:
                     raise NoSuchFilteredNetMHCError(name)
@@ -393,7 +393,7 @@ class Base:
                     else:
                         headline_mapper[sequence] = header            
             with open(output_path, 'r') as input_handle:
-                with open(output_fasta, 'r') as output_handler:
+                with open(output_fasta, 'w+') as output_handler:
                     for line in input_handle:
                         peptide = line.strip()
                         if len(peptide) > 0:
