@@ -388,10 +388,10 @@ class Base:
                 for record in SeqIO.parse(handle, 'fasta'):
                     sequence = record.seq
                     header = record.id
-                    if sequence in mapping:
-                        mapping[sequence] += '|' +  header
+                    if sequence in headline_mapper:
+                        headline_mapper[sequence] += '|' +  header
                     else:
-                        mapping[sequence] = header            
+                        headline_mapper[sequence] = header            
             with open(output_path, 'r') as input_handle:
                 with open(output_fasta, 'r') as output_handler:
                     for line in input_handle:
@@ -401,7 +401,7 @@ class Base:
                             output_handler.write('>%s\n' % mapping[peptide])
                             output_handler.write('%s\n' % peptide)
             
-            filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+            filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name), fasta_path=output_fasta)
             self.db_session.add(filtered_row)
             #self.db_session.commit()
             

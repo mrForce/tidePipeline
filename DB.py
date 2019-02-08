@@ -495,6 +495,7 @@ class FilteredNetMHC(BaseTable, AbstractPeptideCollection):
     idFilteredNetMHC = Column('idFilteredNetMHC', Integer, primary_key=True)
     idNetMHC = Column(Integer, ForeignKey('NetMHC.idNetMHC'))
     filtered_path = Column('filtered_path', String)
+    fasta_path = Column('fasta_path', String)
     FilteredNetMHCName = Column('FilteredNetMHCName', String)
     RankCutoff = Column('RankCutoff', Float)
     tideindices = relationship('TideIndex', secondary=tideindex_filteredNetMHC, back_populates='filteredNetMHCs')
