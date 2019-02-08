@@ -40,7 +40,7 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
         elif file_format == 'peptides':
             for line in handle:
                 sequence = line.strip()
-                peptide_handler.add(sequence)
+                peptide_handler.add(sequence, header='')
         else:
             assert(False)
     

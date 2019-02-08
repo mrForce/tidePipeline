@@ -1,5 +1,6 @@
 from collections import defaultdict
 import os
+from Bio import SeqIO
 import json
 """
 The filtered_netmhc argument is a list of the form [(name, location)...], where name is the name of the FilteredNetMHC entry, and location is the location of filtered peptides (the fasta_path field in the FilteredNetMHC table). 
