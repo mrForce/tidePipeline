@@ -391,12 +391,14 @@ class Base:
                     if sequence in headline_mapper:
                         headline_mapper[sequence] += '|' +  header
                     else:
-                        headline_mapper[sequence] = header            
+                        headline_mapper[sequence] = header
+            print('headline mapper size: %d' % len(headline_mapper))
             with open(output_path, 'r') as input_handle:
                 with open(output_fasta, 'w+') as output_handler:
                     for line in input_handle:
                         peptide = line.strip()
                         if len(peptide) > 0:
+                            print('peptide: %s' % peptide)
                             assert(peptide in headline_mapper)
                             output_handler.write('>%s\n' % headline_mapper[peptide])
                             output_handler.write('%s\n' % peptide)
