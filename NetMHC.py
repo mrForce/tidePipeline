@@ -59,7 +59,7 @@ def get_num_lines(filepath):
     wc_process = subprocess.check_output(['wc', filepath])
     return int(wc_process.decode().split()[0])
 def call_netmhc(netmhc_location, hla, peptide_file_path, output_path, num_threads=2):
-
+    
     #netmhc_location = '/home/code/IMPORT/netMHC-4.0/netMHC'
     num_peptides = get_num_lines(peptide_file_path)
     """

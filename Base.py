@@ -383,13 +383,15 @@ class Base:
             headline_mapper = {}
             peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
             peptide_list_path = os.path.join(self.project_path, peptide_list_row.PeptideListPath)
+            peptide_list_fasta_path = os.path.join(self.project_path, peptide_list_row.PeptideListFASTA)
+            
             output_fasta = os.path.join(self.project_path, 'FilteredNetMHC', file_name + '.fasta')
-            with open(peptide_list_path, 'rU') as handle:
+            with open(peptide_list_fasta_path, 'rU') as handle:
                 for record in SeqIO.parse(handle, 'fasta'):
                     sequence = record.seq
                     header = record.id
                     if sequence in headline_mapper:
-                        headline_mapper[sequence] += '|' +  header
+                        headline_mapper[sequence] += ' @@ ' +  header
                     else:
                         headline_mapper[sequence] = header
             print('headline mapper size: %d' % len(headline_mapper))
@@ -474,10 +476,12 @@ class Base:
             fasta_filename = os.path.split(fasta_row.FASTAPath)[1]
             peptide_filename = fasta_filename + '_' + str(length) + '.txt'
             peptide_list_path = os.path.join('peptides', peptide_filename)
+            peptide_list_fasta_path = os.path.join('peptides', peptide_filename + '.fasta')
             if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
                 peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
                 write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
-            peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
+                write_peptides(os.path.join(self.project_path, peptide_list_fasta_path), peptides, True)
+            peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path, PeptideListFASTA = peptide_list_fasta_path)
             self.db_session.add(peptide_list)
             self.db_session.commit()
 
