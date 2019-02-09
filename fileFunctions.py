@@ -46,16 +46,16 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
     
     return peptide_handler.get_peptides()
 
-def write_peptides(file_path, peptide_set):
+def write_peptides(file_path, peptide_set, output_fasta= False):
     peptide_list = list(peptide_set)
     with open(file_path, 'w') as f:
         for x in peptide_list:
-            assert(isinstance(x, str) or isinstance(x, tuple))
-            if isinstance(x, str):                
-                f.write(x + '\n')
-            elif isinstance(x, tuple):
+            assert(isinstance(x, tuple))
+            if output_fasta:
                 #insert the FASTA header here.
                 f.write('>' + x[1] + '\n' + x[0] + '\n')
+            else:
+                f.write(x[0] + '\n')
 
 def find_unique_name(existing_names, proposed_name, regex, extension_index = None):
     if proposed_name in existing_names:

@@ -447,6 +447,7 @@ class PeptideList(BaseTable, AbstractPeptideCollection):
     idFASTA = Column(Integer, ForeignKey('FASTA.idFASTA'))
     fasta = relationship('FASTA', back_populates='peptide_lists')
     PeptideListPath = Column('PeptideListPath', String)
+    PeptideListFASTA = Column('PeptideListFASTA', String)
     #Just a string of integers seperated by spaces. 
     length = Column('length', Integer)
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
