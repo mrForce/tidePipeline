@@ -1,6 +1,7 @@
 import re
 import os
 import subprocess
+import hashlib
 import time
 import shutil
 import uuid
@@ -101,6 +102,11 @@ def call_netmhc(netmhc_location, hla, peptide_file_path, output_path, num_thread
     output_file_list = []
     for filename in files:
         output_file_path = os.path.join(temp_folder_name, filename + '-TEMPOUTPUT')
+        hasher = hashlib.md5()
+        with open(filename, 'rb') as afile:
+            buf = afile.read()
+            hasher.update(buf)
+        print('hash of %s: %s' % (filename, hasher.hexdigest()))
         netmhc_list.append(NetMHCCommand(netmhc_location + ' -a ' + hla + ' -f ' + filename + ' -p ', output_file_path))
         output_file_list.append(output_file_path)
 
