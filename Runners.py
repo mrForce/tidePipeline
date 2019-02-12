@@ -158,14 +158,17 @@ class MSGFPlusSearchRunner:
         else:
             return None
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False, training_param_row = None):        
+    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False, training_param_row = None, tpm_file_row = False, tpm_id_type = False, uniprot_mapper_row = False):        
         #output directory relative to the project path
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         print('mgf location: ' + mgf_location)
         fasta_index_location = os.path.join(project_path, index_row.MSGFPlusIndexPath)
-        memory_string = '-Xmx3500M'
-        if memory:
-            memory_string = '-Xmx' + str(memory) + 'M'
+        if tpm_file or uniprot_mapper:
+            assert(tpm_file)
+            assert(uniprot_mapper)
+            tpm_data = Parsers.parse_tpm(os.path.join(project_path, tpm_file_row.TPMPath))
+            uniprot_mapper = Parsers.parse_uniprot_mapper(os.path.join(project_path, uniprot_mapper_row.uniprotMapperPath), tpm_id_type)
+            
         if index_row.netmhc_decoys or index_row.customDecoys:
             tda = 0
         else:
