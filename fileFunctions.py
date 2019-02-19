@@ -1,4 +1,5 @@
 from Bio import SeqIO
+from Bio.Alphabet import IUPAC
 import re
 import subprocess
 import os
@@ -35,12 +36,14 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
             for record in SeqIO.parse(handle, 'fasta'):
                 sequence = record.seq
                 header = record.id
-                peptide_handler.add(sequence, header)
+                if all([x in IUPAC.IUPACProtein.letters for x in sequence]):
+                    peptide_handler.add(sequence, header)
                 
         elif file_format == 'peptides':
             for line in handle:
                 sequence = line.strip()
-                peptide_handler.add(sequence, header='')
+                if all([x in IUPAC.IUPACProtein.letters for x in sequence]):                    
+                    peptide_handler.add(sequence, header='')
         else:
             assert(False)
     

@@ -184,6 +184,19 @@ class FASTAWithNameAlreadyExistsError(Error):
         self.message = 'There\'s already a FASTA file with the name: ' + name + ' in the database'
     def __repr__(self):
         return self.message
+
+class UniprotMapperWithNameAlreadyExistsError(Error):
+    def __init__(self, name):
+        self.message = 'There\'s already a Uniprot Mapper file with the name: ' + name + ' in the database'
+    def __repr__(self):
+        return self.message
+
+class TPMFileWithNameAlreadyExistsError(Error):
+    def __init__(self, name):
+        self.message = 'There\'s already a TPM file with the name: ' + name + ' in the database'
+    def __repr__(self):
+        return self.message
+    
 class FileDoesNotExistError(Error):
     def __init__(self, filepath):
         self.message = 'File with path: ' + filepath + ' does not exist'

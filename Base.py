@@ -662,6 +662,24 @@ class Base:
             newpath = os.path.join(subfolder, filename + '-' + str(max_version + 1) + extension)
         shutil.copy(path, os.path.join(self.project_path, newpath))
         return newpath
+    def add_uniprot_mapper(path, name, comment):
+        if not os.path.isfile(path):
+            raise FileDoesNotExistError(path)
+        if len(self.db_session.query(DB.UniprotMapper).filter_by(uniprotMapperName=name).all()) > 0:
+            raise UniprotMapperWithNameAlreadyExistsError(name)
+        newpath = self.copy_file('uniprot_mapper', path)
+        record = DB.UniprotMapper(uniprotMapperName = name, uniprotMapperPath = newpath, Comment = comment)
+        self.db_session.add(record)
+        return record
+    def add_tpm(path, name, comment):
+        if not os.path.isfile(path):
+            raise FileDoesNotExistError(path)
+        if len(self.db_session.query(DB.TPMFile).filter_by(TPMName=name).all()) > 0:
+            raise TPMFileWithNameAlreadyExistsError(name)
+        newpath = self.copy_file('tpm', path)
+        record = DB.TPMFile(TPMName = name, TPMPath = newpath, Comment = comment)
+        self.db_session.add(record)
+        return record
     def add_fasta_file(self, path, name, comment):
         """
         Steps:
@@ -736,7 +754,7 @@ class Base:
                 value = config['EXECUTABLES'][key]
                 assert(len(value) > 0)
             os.mkdir(project_path)
-            subfolders = ['FASTA', 'contaminants', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'msgf_params', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search', 'tide_param_files/assign_confidence_param_files', 'tide_param_files/percolator_param_files', 'tide_param_files/tide_search_param_files', 'tide_param_files/tide_index_param_files']
+            subfolders = ['FASTA', 'contaminants', 'peptides', 'NetMHC', 'tide_indices', 'MGF', 'tide_search_results', 'percolator_results', 'misc', 'tide_param_files', 'assign_confidence_results', 'FilteredNetMHC', 'TargetSet', 'msgfplus_indices', 'msgfplus_search_results', 'msgf_params', 'FilteredSearchResult', 'maxquant_param_files', 'RAW', 'maxquant_search', 'uniprot_mapper', 'tpm', 'tide_param_files/assign_confidence_param_files', 'tide_param_files/percolator_param_files', 'tide_param_files/tide_search_param_files', 'tide_param_files/tide_index_param_files']
             for subfolder in subfolders:
                 os.makedirs(os.path.join(project_path, subfolder))
             shutil.copy(config_location, os.path.join(project_path, 'config.ini'))

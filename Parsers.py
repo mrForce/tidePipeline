@@ -19,6 +19,30 @@ def parseTideParamFile(path):
     return params
 
 
+def parse_tpm(path):
+    tpm_data = {}
+    with open(path, 'r') as handler:
+        for line in handler:
+            parts = line.split('\t')
+            if len(parts) == 4:
+                tpm_data[parts[0]] = float(parts[1])
+    return tpm_data
+
+#https://www.uniprot.org/help/api_idmapping
+def parse_uniprot_mapper(path, id_type):
+    mapper = collections.defaultdict(list)
+    with open(path, 'r') as handler:
+        for line in handler:
+            parts = line.split('\t')
+            uniprot_id = parts[0].strip()
+            record_type = parts[1].strip()
+            value = parts[2].strip()
+            if record_type == id_type:
+                mapper[uniprot_id].append(value)
+    return mapper
+    
+
+
 class TideParamFileParser:
     def __init__(self, path):
         self.params = {}

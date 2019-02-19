@@ -287,6 +287,20 @@ class TargetSet(BaseTable, AbstractPeptideCollection):
                 if len(stripped_line) >= 1 and ('>' not in stripped_line):
                     peptides.add(stripped_line)
         return peptides
+
+class UniprotMapper(BaseTable):
+    __tablename__ = 'UniprotMapper'
+    idUniprotMapper = Column('idUniprotMapper', Integer, primary_key = True)
+    uniprotMapperName = Column('uniprotMapperName', String, unique=True)
+    uniprotMapperPath = Column('uniprotMapperPath', String)
+    comment = Column('comment', String)
+class TPMFile(BaseTable):
+    __tablename__ = 'TPMFile'
+    idTPM = Column('idTPM', Integer, primary_key = True)
+    TPMName  = Column('TPMName', String, unique=True)
+    TPMPath = Column('TPMPath', String)
+    comment = Column('comment', String)
+    
 class HLA(BaseTable):
     __tablename__ = 'HLA'
     idHLA = Column('idHLA', Integer, primary_key = True)
