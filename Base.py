@@ -295,7 +295,7 @@ class Base:
             for name in peptide_list_names:
                 row = self.db_session.query(DB.PeptideList).filter_by(peptideListName = name).first()
                 if row:
-                    location = os.path.join(self.project_path, row.PeptideListPath)
+                    location = os.path.join(self.project_path, row.PeptideListFASTA)
                     peptide_list_locations.append((name, location))
                 else:
                     raise NoSuchPeptideListError(name)
