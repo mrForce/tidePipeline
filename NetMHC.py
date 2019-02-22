@@ -48,12 +48,13 @@ class NetMHCRunner(threading.Thread):
         
 
 
-def insert_netmhc_scores_fasta(netmhc_affinity_path, netmhc_rank_path, allele, fasta_file):
+def insert_netmhc_scores_fasta(netmhc_affinity_path, netmhc_rank_path, allele, fasta_file):    
     """
     The point of this is to go into the FASTA file, and add the following to the headers (for peptides that we scored!):
     
     |netmhc_allele_rank=%f|netmhc_allele_affinity=%f
     """
+    print('pwd: ' + os.getcwd())
     #start by reading in the affinity and rank paths
     netmhc_affinity = dict()
     netmhc_rank = dict()
@@ -61,6 +62,8 @@ def insert_netmhc_scores_fasta(netmhc_affinity_path, netmhc_rank_path, allele, f
         for line in f:
             peptide, measure = line.split(',')
             measure = float(measure)
+            if peptide in netmhc_affinity:
+                print(peptide)
             assert(peptide not in netmhc_affinity)
             netmhc_affinity[peptide] = measure
     with open(netmhc_rank_path, 'r') as f:
@@ -75,7 +78,7 @@ def insert_netmhc_scores_fasta(netmhc_affinity_path, netmhc_rank_path, allele, f
     """
     temp_fasta = tempfile.NamedTemporaryFile()
     with open(temp_fasta.name, 'w') as output_fp:
-        with open(fasta_path, 'rU') as input_fp:
+        with open(fasta_file, 'rU') as input_fp:
             records_with_netmhc = []
             for record in SeqIO.parse(input_fp, 'fasta'):
                 sequence = str(record.seq)
@@ -84,7 +87,7 @@ def insert_netmhc_scores_fasta(netmhc_affinity_path, netmhc_rank_path, allele, f
                     affinity = netmhc_affinity[sequence]
                     rank = netmhc_rank[sequence]
                     header += '|netmhc_%s_rank=%f|netmhc_%s_affinity=%f' % (allele, rank, allele, affinity)                    
-                    new_record = SeqRecord(record.seq, id=header)
+                    new_record = SeqRecord(record.seq, id=header, description='', name='')
                     records_with_netmhc.append(new_record)
                 else:
                     assert((sequence not in netmhc_rank) and (sequence not in netmhc_affinity))
@@ -166,15 +169,18 @@ def call_netmhc(netmhc_location, hla, peptide_file_path, output_path, num_thread
     threads = []
     list_lock = threading.Lock()
     def _progress(num_runs_total, start_time, num_runs_left):
-        progress = 100.0*(num_runs_total - num_runs_left)/num_runs_total
-        time_taken = time.time() - start_time
-        if num_runs_left > 0 and num_runs_left < num_runs_total:
-            time_per_run = 1.0*time_taken/(num_runs_total - num_runs_left)
-            return 'progress: ' + str(progress) + '%, eta: ' + str(time_per_run*num_runs_left) + ' seconds'
-        elif num_runs_left == 0:
-            return 'Complete!'
-        elif num_runs_left == num_runs_total:
-            return 'Starting'
+        if num_runs_total > 0:
+            progress = 100.0*(num_runs_total - num_runs_left)/num_runs_total
+            time_taken = time.time() - start_time
+            if num_runs_left > 0 and num_runs_left < num_runs_total:
+                time_per_run = 1.0*time_taken/(num_runs_total - num_runs_left)
+                return 'progress: ' + str(progress) + '%, eta: ' + str(time_per_run*num_runs_left) + ' seconds'
+            elif num_runs_left == 0:
+                return 'Complete!'
+            elif num_runs_left == num_runs_total:
+                return 'Starting'
+        else:
+            return ''
     start_time = time.time()
     for t in range(0, num_threads):
         thread = NetMHCRunner(netmhc_list, list_lock, functools.partial(_progress, num_runs, start_time))

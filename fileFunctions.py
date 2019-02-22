@@ -6,7 +6,7 @@ import os
 import glob
 import re
 import shutil
-
+from collections import defaultdict
 
 """
 A keyword argument is peptides_format = True
@@ -18,20 +18,22 @@ def extract_peptides(path, length = None, *, context = 0, file_format = 'FASTA')
     """Making a class to facilite code re-use"""
     class PeptideHandler:
         def __init__(self, length = None):
-            self.peptides = set()
+            self.peptides = defaultdict(list)
             self.length = length
         def add(self, sequence, header):
+            sequence = str(sequence)
             if self.length:
                 if len(sequence) >= self.length:
                     for i in range(0, len(sequence) - self.length + 1):
-                        peptide = sequence[i:(i + self.length)]
+                        peptide = str(sequence[i:(i + self.length)])
+                        header_copy = str(header) + '|%d' % i
                         if context:
-                            before = sequence[max(0, i - context):i].ljust(context, '-')
-                            after = sequence[(i + length):min(i + length + context + 1, len(sequence) + 1)].rjust(context, '-')
-                            header = '%s|%d|before=%s|after=%s' % (header, i, before, after)
-                        self.peptides.add((str(peptide), '%s|%d' % (header, i)))
+                            before = sequence[max(0, i - context):i].rjust(context, '-')
+                            after = sequence[(i + length):min(i + length + context, len(sequence))].ljust(context, '-')
+                            header_copy = '%s|before=%s|after=%s' % (header_copy, before, after)
+                        self.peptides[str(peptide)].append(header_copy)
             else:
-                self.peptides.add(str(sequence), header + '|0')
+                self.peptides[str(peptide)].append(header + '|0')
 
         def get_peptides(self):
             return self.peptides
@@ -55,16 +57,14 @@ def extract_peptides(path, length = None, *, context = 0, file_format = 'FASTA')
     
     return peptide_handler.get_peptides()
 
-def write_peptides(file_path, peptide_set, output_fasta= False):
-    peptide_list = list(peptide_set)
+def write_peptides(file_path, peptides, output_fasta= False):
     with open(file_path, 'w') as f:
-        for x in peptide_list:
-            assert(isinstance(x, tuple))
+        for peptide, headers in peptides.items():
             if output_fasta:
                 #insert the FASTA header here.
-                f.write('>' + x[1] + '\n' + x[0] + '\n')
+                f.write('>' + '@@'.join(headers)  + '\n' + peptide + '\n')
             else:
-                f.write(x[0] + '\n')
+                f.write(peptide + '\n')
 
 def find_unique_name(existing_names, proposed_name, regex, extension_index = None):
     if proposed_name in existing_names:

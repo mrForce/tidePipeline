@@ -515,7 +515,7 @@ class Base:
             full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
             BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
             BashScripts.netmhc_percentile(os.path.abspath(os.path.join(self.project_path, affinity_path)), os.path.abspath(os.path.join(self.project_path, rank_path)))
-            insert_netmhc_scores_fasta(affinity_path, rank_path, hla_name, peptide_list_row.PeptideListFASTA)
+            insert_netmhc_scores_fasta(os.path.join(self.project_path, affinity_path), os.path.join(self.project_path, rank_path), hla_name, os.path.join(self.project_path, peptide_list_row.PeptideListFASTA))
 
             netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, Name = netmhc_name, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideRankPath = rank_path, PeptideAffinityPath=affinity_path)
             self.db_session.add(netmhc_row)
@@ -639,7 +639,7 @@ class Base:
                 #os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
     def copy_file(self, subfolder, path):
         files = self.list_files(subfolder)
-7        tails = [os.path.split(x)[1] for x in files]
+        tails = [os.path.split(x)[1] for x in files]
         path_tail = os.path.split(path)[1]
         newpath= os.path.join(subfolder, path_tail)
         if path_tail in tails:
