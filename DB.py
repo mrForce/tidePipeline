@@ -464,6 +464,7 @@ class PeptideList(BaseTable, AbstractPeptideCollection):
     PeptideListFASTA = Column('PeptideListFASTA', String)
     #Just a string of integers seperated by spaces. 
     length = Column('length', Integer)
+    contextLength = Column('contextLength', Integer, default=0)
     tideindices = relationship('TideIndex', secondary=tideindex_peptidelists, back_populates='peptidelists')
     targetsets = relationship('TargetSet', secondary=targetset_peptidelists, back_populates='peptidelists')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_peptidelists, back_populates='peptidelists')

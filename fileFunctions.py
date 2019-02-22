@@ -10,8 +10,10 @@ import shutil
 
 """
 A keyword argument is peptides_format = True
+
+For context, pass in the number of amino acids you want to insert into the header before and after the peptide
 """
-def extract_peptides(path, length = None, *, file_format = 'FASTA'):
+def extract_peptides(path, length = None, *, context = 0, file_format = 'FASTA'):
     peptides = set()
     """Making a class to facilite code re-use"""
     class PeptideHandler:
@@ -23,6 +25,12 @@ def extract_peptides(path, length = None, *, file_format = 'FASTA'):
                 if len(sequence) >= self.length:
                     for i in range(0, len(sequence) - self.length + 1):
                         peptide = sequence[i:(i + self.length)]
+                        if context:
+                            before = sequence[max(0, i - context):i].ljust(context, '-')
+                            after = sequence[(i + length):min(i + length + context + 1, len(sequence) + 1)].rjust(context, '-')
+                            header = '%s|%d|before=%s|after=%s' % (header, i, before, after)
+                        else:
+                            header = '%s|%d' % (header, i)
                         self.peptides.add((str(peptide), '%s|%d' % (header, i)))
             else:
                 self.peptides.add(str(sequence), header + '|0')

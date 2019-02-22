@@ -465,7 +465,7 @@ class Base:
             peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path)
             self.db_session.add(peptide_list)
             self.db_session.commit()
-    def add_peptide_list(self, name, length, fasta_name):
+    def add_peptide_list(self, name, length, fasta_name, *, context = 0):
         fasta_row = self.db_session.query(DB.FASTA).filter_by(Name=fasta_name).first()
         if fasta_row is None:
             raise FASTAWithNameDoesNotExistError(fasta_name)
@@ -478,10 +478,10 @@ class Base:
         peptide_list_path = os.path.join('peptides', peptide_filename)
         peptide_list_fasta_path = os.path.join('peptides', peptide_filename + '.fasta')
         if not os.path.isfile(os.path.join(self.project_path, peptide_list_path)):
-            peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length)
+            peptides = extract_peptides(os.path.join(self.project_path, fasta_row.FASTAPath), length, context = context)
             write_peptides(os.path.join(self.project_path, peptide_list_path), peptides)
             write_peptides(os.path.join(self.project_path, peptide_list_fasta_path), peptides, True)
-        peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path, PeptideListFASTA = peptide_list_fasta_path)
+        peptide_list = DB.PeptideList(peptideListName = name, length = length, fasta = fasta_row, PeptideListPath = peptide_list_path, PeptideListFASTA = peptide_list_fasta_path, contextLength = context)
         self.db_session.add(peptide_list)
         self.db_session.commit()
 
