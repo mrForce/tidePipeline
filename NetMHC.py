@@ -7,6 +7,9 @@ import shutil
 import uuid
 import threading
 import functools
+import tempfile
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
 
 MIN_NETMHC_PEPTIDE_LENGTH=8
 MAX_NETMHC_PEPTIDE_LENGTH=12
@@ -44,6 +47,55 @@ class NetMHCRunner(threading.Thread):
 
         
 
+
+def insert_netmhc_scores_fasta(netmhc_affinity_path, netmhc_rank_path, allele, fasta_file):
+    """
+    The point of this is to go into the FASTA file, and add the following to the headers (for peptides that we scored!):
+    
+    |netmhc_allele_rank=%f|netmhc_allele_affinity=%f
+    """
+    #start by reading in the affinity and rank paths
+    netmhc_affinity = dict()
+    netmhc_rank = dict()
+    with open(netmhc_affinity_path, 'r') as f:
+        for line in f:
+            peptide, measure = line.split(',')
+            measure = float(measure)
+            assert(peptide not in netmhc_affinity)
+            netmhc_affinity[peptide] = measure
+    with open(netmhc_rank_path, 'r') as f:
+        for line in f:
+            peptide, measure = line.split(',')
+            measure = float(measure)
+            assert(peptide not in netmhc_rank)
+            netmhc_rank[peptide] = measure
+    
+    """
+    Create a temporary FASTA file to write to, then read in the fasta_file and add to the headers
+    """
+    temp_fasta = tempfile.NamedTemporaryFile()
+    with open(temp_fasta.name, 'w') as output_fp:
+        with open(fasta_path, 'rU') as input_fp:
+            records_with_netmhc = []
+            for record in SeqIO.parse(input_fp, 'fasta'):
+                sequence = str(record.seq)
+                header = str(record.id)
+                if sequence in netmhc_affinity and sequence in netmhc_rank:
+                    affinity = netmhc_affinity[sequence]
+                    rank = netmhc_rank[sequence]
+                    header += '|netmhc_%s_rank=%f|netmhc_%s_affinity=%f' % (allele, rank, allele, affinity)                    
+                    new_record = SeqRecord(record.seq, id=header)
+                    records_with_netmhc.append(new_record)
+                else:
+                    assert((sequence not in netmhc_rank) and (sequence not in netmhc_affinity))
+            SeqIO.write(records_with_netmhc, output_fp, 'fasta')
+    #copy the original FASTA file, just in case the move operation (which could potentially take quite a while) is interrupted
+    shutil.copyfile(fasta_file, fasta_file + '.backup')
+    shutil.move(temp_fasta.name, fasta_file)
+    os.remove(fasta_file + '.backup')
+
+                    
+    
 
 def parse_netmhc(netmhc_output_path, parse_output_path):
     regex = re.compile('^(\s+[^\s]+){2}(\s+(?P<peptide>[A-Z]+))(\s+[^\s]+){10}(\s+(?P<rank>[0-9]{1,2}\.[0-9]+))')

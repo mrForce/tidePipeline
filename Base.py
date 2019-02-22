@@ -515,6 +515,8 @@ class Base:
             full_output_path = os.path.join(self.project_path, 'NetMHC', netmhc_output_filename)
             BashScripts.extract_netmhc_output(full_output_path, os.path.join(self.project_path, affinity_path))
             BashScripts.netmhc_percentile(os.path.abspath(os.path.join(self.project_path, affinity_path)), os.path.abspath(os.path.join(self.project_path, rank_path)))
+            insert_netmhc_scores_fasta(affinity_path, rank_path, hla_name, peptide_list_row.PeptideListFASTA)
+
             netmhc_row = DB.NetMHC(peptidelistID=peptide_list_row.idPeptideList, idHLA = hla_row.idHLA, Name = netmhc_name, NetMHCOutputPath=os.path.join('NetMHC', netmhc_output_filename), PeptideRankPath = rank_path, PeptideAffinityPath=affinity_path)
             self.db_session.add(netmhc_row)
             self.db_session.commit()
@@ -637,7 +639,7 @@ class Base:
                 #os.remove(os.path.join(self.project_path, 'backup.tar.gz'))
     def copy_file(self, subfolder, path):
         files = self.list_files(subfolder)
-        tails = [os.path.split(x)[1] for x in files]
+7        tails = [os.path.split(x)[1] for x in files]
         path_tail = os.path.split(path)[1]
         newpath= os.path.join(subfolder, path_tail)
         if path_tail in tails:
@@ -662,7 +664,7 @@ class Base:
             newpath = os.path.join(subfolder, filename + '-' + str(max_version + 1) + extension)
         shutil.copy(path, os.path.join(self.project_path, newpath))
         return newpath
-    def add_uniprot_mapper(path, name, comment):
+    def add_uniprot_mapper(self, path, name, comment):
         if not os.path.isfile(path):
             raise FileDoesNotExistError(path)
         if len(self.db_session.query(DB.UniprotMapper).filter_by(uniprotMapperName=name).all()) > 0:
@@ -671,7 +673,7 @@ class Base:
         record = DB.UniprotMapper(uniprotMapperName = name, uniprotMapperPath = newpath, Comment = comment)
         self.db_session.add(record)
         return record
-    def add_tpm(path, name, comment):
+    def add_tpm(self ,path, name, comment):
         if not os.path.isfile(path):
             raise FileDoesNotExistError(path)
         if len(self.db_session.query(DB.TPMFile).filter_by(TPMName=name).all()) > 0:

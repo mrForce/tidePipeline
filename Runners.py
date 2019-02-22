@@ -163,9 +163,9 @@ class MSGFPlusSearchRunner:
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         print('mgf location: ' + mgf_location)
         fasta_index_location = os.path.join(project_path, index_row.MSGFPlusIndexPath)
-        if tpm_file or uniprot_mapper:
-            assert(tpm_file)
-            assert(uniprot_mapper)
+        if tpm_file_row and uniprot_mapper_row:
+            assert(tpm_file_row)
+            assert(uniprot_mapper_row)
             tpm_data = Parsers.parse_tpm(os.path.join(project_path, tpm_file_row.TPMPath))
             uniprot_mapper = Parsers.parse_uniprot_mapper(os.path.join(project_path, uniprot_mapper_row.uniprotMapperPath), tpm_id_type)
             
@@ -193,7 +193,9 @@ class MSGFPlusSearchRunner:
             param_file_name = fragment_map[str(mgf_row.fragmentationMethod + 1)] + '_' + instrument_map[str(mgf_row.instrument)] + '_' + enzyme_map[enzyme] + '.param'
             shutil.copy(os.path.join(project_path, training_param_row.paramFileLocation), os.path.join(msgf_param_folder, param_file_name))
             
-        
+        memory_string = '-Xmx3500M'
+        if memory:
+            memory_string = '-Xmx' + str(memory) + 'M'
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
