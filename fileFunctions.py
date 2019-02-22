@@ -29,8 +29,6 @@ def extract_peptides(path, length = None, *, context = 0, file_format = 'FASTA')
                             before = sequence[max(0, i - context):i].ljust(context, '-')
                             after = sequence[(i + length):min(i + length + context + 1, len(sequence) + 1)].rjust(context, '-')
                             header = '%s|%d|before=%s|after=%s' % (header, i, before, after)
-                        else:
-                            header = '%s|%d' % (header, i)
                         self.peptides.add((str(peptide), '%s|%d' % (header, i)))
             else:
                 self.peptides.add(str(sequence), header + '|0')
