@@ -26,14 +26,15 @@ def extract_peptides(path, length = None, *, context = 0, file_format = 'FASTA')
                 if len(sequence) >= self.length:
                     for i in range(0, len(sequence) - self.length + 1):
                         peptide = str(sequence[i:(i + self.length)])
-                        header_copy = str(header) + '|%d' % i
-                        if context:
-                            before = sequence[max(0, i - context):i].rjust(context, '-')
-                            after = sequence[(i + length):min(i + length + context, len(sequence))].ljust(context, '-')
-                            header_copy = '%s|before=%s|after=%s' % (header_copy, before, after)
-                        self.peptides[str(peptide)].append(header_copy)
+                        if all([x in IUPAC.IUPACProtein.letters for x in peptide]):
+                            header_copy = str(header) + '|%d' % i
+                            if context:
+                                before = sequence[max(0, i - context):i].rjust(context, '-')
+                                after = sequence[(i + length):min(i + length + context, len(sequence))].ljust(context, '-')
+                                header_copy = '%s|before=%s|after=%s' % (header_copy, before, after)
+                            self.peptides[str(peptide)].append(header_copy)
             else:
-                self.peptides[str(peptide)].append(header + '|0')
+                self.peptides[sequence].append(header + '|0')
 
         def get_peptides(self):
             return self.peptides
@@ -44,14 +45,12 @@ def extract_peptides(path, length = None, *, context = 0, file_format = 'FASTA')
             for record in SeqIO.parse(handle, 'fasta'):
                 sequence = record.seq
                 header = record.id
-                if all([x in IUPAC.IUPACProtein.letters for x in sequence]):
-                    peptide_handler.add(sequence, header)
+                peptide_handler.add(sequence, header)
                 
         elif file_format == 'peptides':
             for line in handle:
                 sequence = line.strip()
-                if all([x in IUPAC.IUPACProtein.letters for x in sequence]):                    
-                    peptide_handler.add(sequence, header='')
+                peptide_handler.add(sequence, header='')
         else:
             assert(False)
     
