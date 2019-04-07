@@ -22,7 +22,7 @@ filtered_netmhc = []
 for x in results:
     print('result')
     print(x)
-    filtered_netmhc.append(x['ID'])
+    filtered_netmhc.append(x['Filtered NetMHC Name'])
 
 project.add_targetset(filtered_netmhc, [], args.TargetSetName)
 
