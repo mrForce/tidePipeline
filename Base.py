@@ -49,7 +49,10 @@ class Base:
             self.executables['netmhc'] = config['EXECUTABLES']['netmhc']
             self.executables['crux'] = config['EXECUTABLES']['crux']
             self.executables['msgfplus'] = config['EXECUTABLES']['msgfplus']
-            self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
+            if 'maxquant' in config['EXECUTABLES']:
+                self.executables['maxquant'] = config['EXECUTABLES']['maxquant']
+            else:
+                self.executables['maxquant'] = ''
             self.executables['msgf2pin'] = config['EXECUTABLES']['msgf2pin']
 
 
