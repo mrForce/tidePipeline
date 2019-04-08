@@ -146,9 +146,6 @@ class Base:
             self.db_session.add(row)
         self.db_session.commit()
 
-    def export_peptide_q_values(
-
-
     def get_netmhc_executable_path(self):
         return self.executables['netmhc']
     def get_crux_executable_path(self):
