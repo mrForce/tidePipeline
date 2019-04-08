@@ -146,6 +146,7 @@ class Base:
             self.db_session.add(row)
         self.db_session.commit()
 
+    def export_peptide_q_values(
 
 
     def get_netmhc_executable_path(self):
@@ -221,7 +222,9 @@ class Base:
         long_path = os.path.join(full_path, dir_name)
         os.makedirs(long_path)
         return os.path.join(parent_path, dir_name)
-        
+
+
+    
     def get_list_filtered_netmhc(self, peptide_list_name = None, hla=None):
         #joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC).join(DB.NetMHC).join(DB.FilteredNetMHC.netmhc).join(DB.NetMHC.hla).join(DB.NetMHC.peptidelist)
         joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC, DB.PeptideList, DB.HLA).join(DB.NetMHC).join(DB.PeptideList).join(DB.HLA)

@@ -167,6 +167,7 @@ class PercolatorHandler(AbstractQValueHandler):
         self.percolator_row = db_session.query(DB.Percolator).filter_by(PercolatorName = name).first()
         self.peptides = set()
         self.psms = set()
+        self.q_values = []
         #we need to extract scan, peptide and q value
         if use_percolator_peptides:
             rows = extract_columns(crux_path, os.path.join(project_path, self.percolator_row.PercolatorOutputPath, 'percolator.target.peptides.txt'), ['scan', 'sequence', 'percolator q-value'])
@@ -176,12 +177,15 @@ class PercolatorHandler(AbstractQValueHandler):
             scan = int(row[0])
             peptide = row[1]
             q_val = float(row[2])
+            self.q_values.append((peptide, q_val))
             if q_val <= threshold:
                 self.peptides.add(peptide)
                 self.psms.add((scan, peptide))
-        
+            
     def get_peptides(self):
         return self.peptides
+    def get_q_values(self):
+        return self.q_values
     def get_psms(self):
         return self.psms
     def get_row(self):
