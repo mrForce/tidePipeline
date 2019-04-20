@@ -221,6 +221,7 @@ class Base:
         return os.path.join(parent_path, dir_name)
 
 
+
     
     def get_list_filtered_netmhc(self, peptide_list_name = None, hla=None):
         #joined = self.db_session.query(DB.FilteredNetMHC, DB.NetMHC).join(DB.NetMHC).join(DB.FilteredNetMHC.netmhc).join(DB.NetMHC.hla).join(DB.NetMHC.peptidelist)
@@ -728,6 +729,12 @@ class Base:
             hla = {'name': row.HLAName, 'id': str(row.idHLA)}
             hlas.append(hla)
         return hlas
+
+    def list_netmhc(self):
+        query = self.db_session.query(DB.NetMHC)
+        rows = query.all()
+        return rows
+    
     def add_hla(self, hla_name):
         hla_rows = self.db_session.query(DB.HLA).filter_by(HLAName = hla_name).all()
         if len(hla_rows) > 0:
