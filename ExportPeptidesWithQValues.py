@@ -3,7 +3,7 @@ import PostProcessing
 import argparse
 import sys
 import os
-import CSV
+import csv
 
 parser = argparse.ArgumentParser(description='Export the peptides and their Q-Values from Percolator')
 
