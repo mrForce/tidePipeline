@@ -28,7 +28,8 @@ assert(not os.path.isfile(args.export_location))
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-q_values = project.get_percolator_peptide_q_values(args.Name)
+q_values = sorted(project.get_percolator_peptide_q_values(args.Name), key=lambda x: x[1])
+
 with open(args.export_location, 'w') as tsv_output:
     fieldnames = ['Peptide', 'Q-Value']
     writer = csv.DictWriter(tsv_output, fieldnames=fieldnames, delimiter='\t')
