@@ -31,6 +31,7 @@ for row in netmhc_rows:
 print('ignore files')
 print(ignore_files)
 
-shutil.copytree(args.project_folder, args.project_copy, ignore=shutil.ignore_patterns(*ignore_files))
 project.end_command_session()
+shutil.copytree(args.project_folder, args.project_copy, ignore=shutil.ignore_patterns(*ignore_files))
+
 

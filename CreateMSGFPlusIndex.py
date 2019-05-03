@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Generate an MSGF+ index')
 parser.add_argument('project_folder', help='The location of the project folder')
 
 
-parser.add_argument('set_type', choices=['FilteredNetMHC', 'PeptideList', 'TargetSet'], help='Are the target peptides comming from a FilteredNetMHC, PeptideList or TargetSet?')
+parser.add_argument('set_type', choices=['FilteredNetMHC', 'PeptideList', 'TargetSet', 'FASTA'], help='Are the target peptides comming from a FilteredNetMHC, PeptideList, FASTA, or TargetSet?')
 parser.add_argument('set_name', help='The name of the FilteredNetMHC, PeptideList or TargetSet that will be used as targets (depending on the set_type argument)')
 parser.add_argument('index_name', help='The name of the index')
 parser.add_argument('--memory', type=int, help='The number of megabytes of memory to give the jar file. Default is 3500 megabytes')
@@ -31,7 +31,8 @@ elif args.set_type == 'PeptideList':
     assert(project.verify_peptide_list(args.set_name))
 elif args.set_type == 'TargetSet':
     assert(project.verify_target_set(args.set_name))
-
+elif args.set_type == 'FASTA':
+    assert(project.verify_fasta(args.set_name))
 assert(not project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, args.index_name))
 project.begin_command_session()
 msgfplus_index_runner = Runners.MSGFPlusIndexRunner(project.get_msgfplus_executable_path())
