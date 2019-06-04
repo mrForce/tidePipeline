@@ -6,6 +6,8 @@ class RowRemoval:
     def __init__(self, session, parent_row, project_root):
         self.session = session
         self.parent_row = parent_row
+        print('parent row')
+        print(parent_row)
         self.project_root = project_root
         existing_deletions = set(session.deleted)
         session.delete(parent_row)

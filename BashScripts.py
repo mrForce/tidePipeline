@@ -19,7 +19,7 @@ def call_target_netmhc_rank(peptides_location, output_location_ranked, output_lo
 
     print('output location ranked: '+ output_location_ranked)
     print('output location affinity: ' + output_location_affinity)
-    proc = subprocess.Popen(['bash_scripts/target_netmhc_rank.sh', peptides_location, output_location_ranked, output_location_affinity, *parsed_netmhc_runs])
+    proc = subprocess.Popen(['bash_scripts/target_netmhc_rank.sh', peptides_location, output_location_ranked, output_location_affinity] + list(parsed_netmhc_runs))
     try:
         print('about to communicate')
         outs,errors = proc.communicate()
@@ -102,6 +102,8 @@ def call_merge_and_sort(files):
     return output_location
 
 def join_peptides_to_fasta(input_locations, output_location, prefix=None):
+    if isinstance(input_locations, str):
+        input_locations = [input_locations]
     #prefix is what goes between the > and line number in the FASTA headers
     if prefix:
         print('command : ' + ' '.join(['bash_scripts/join_peptides_to_fasta.sh', '-P', prefix] +  input_locations + [output_location]))
@@ -195,8 +197,8 @@ def netmhc_percentile(input_location, output_location):
     subprocess.call(['bash_scripts/netmhc_percentile.sh', input_location, output_location])
 
 def combine_files(input_files, output_file):
-    print('combine files: ' + ' '.join(['bash_scripts/combine_files.sh', *input_files, output_file]))
-    subprocess.call(['bash_scripts/combine_files.sh', *input_files, output_file])
+    #print('combine files: ' + ' '.join(['bash_scripts/combine_files.sh', *input_files, output_file]))
+    subprocess.call(['bash_scripts/combine_files.sh'] + list(input_files)+  [output_file])
 
 
 def top_percent_netmhc(input_location, percent, output_location):

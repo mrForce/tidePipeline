@@ -50,7 +50,11 @@ print(args.HLA)
 print(args.rank)
 print('filtered name: ' + str(name_creator))
 
-project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, str(name_creator), args.netMHCPan)
+#project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, str(name_creator), args.netMHCPan)
+"""
+Changed this on Saturday April 20th, so that we wouldn't do the ran cutoff stuff
+"""
+project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, False, args.netMHCPan)
 
 project.end_command_session()
 

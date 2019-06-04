@@ -291,7 +291,7 @@ class Base:
             for name in netmhc_filter_names:
                 row  = self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
                 if row:
-                    location = os.path.join(self.project_path, row.filtered_path)
+                    location = os.path.join(self.project_path, row.fasta_path)
                     netmhc_filter_locations.append((name, location, row))
                 else:
                     raise NoSuchFilteredNetMHCError(name)
@@ -449,7 +449,8 @@ class Base:
                     print('about to call top_percent_netmhc')
                     print(os.path.abspath(os.path.join(self.project_path, affinity_path)))
                     BashScripts.top_percent_netmhc(os.path.abspath(os.path.join(self.project_path, affinity_path)), rank_cutoff, output_path)
-                    filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name))
+                    BashScripts.join_peptides_to_fasta(os.path.abspath(output_path), os.path.abspath(os.path.join(self.project_path, 'FilteredNetMHC', file_name + '.fasta')))
+                    filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name), fasta_path = os.path.join('FilteredNetMHC', file_name + '.fasta'))
                     self.db_session.add(filtered_row)
 
             

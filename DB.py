@@ -498,7 +498,7 @@ class NetMHC(BaseTable):
     #used to be PeptideScorePath
     PeptideAffinityPath = Column('PeptideAffinityPath', String)
     PeptideRankPath = Column('PeptideRankPath', String)
-    peptidelist = relationship('PeptideList', cascade='all,delete')
+    peptidelist = relationship('PeptideList')
     indexbase_decoys = relationship('IndexBase', secondary=indexbase_netmhc_decoys, back_populates='netmhc_decoys')
     def length(self):
         return self.peptidelist.length
