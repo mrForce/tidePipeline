@@ -23,7 +23,7 @@ project_folder = args.project_folder
 
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-row = project.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
+row = project.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = args.search).first()
 print('row')
 print(row)            
 project.end_command_session()
