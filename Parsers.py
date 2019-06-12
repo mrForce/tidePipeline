@@ -253,6 +253,9 @@ class PINParser:
         assert(isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple) or isinstance(row['Proteins'], str))
         if isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple):            
             summation = sum(['XXX' in x for x in row['Proteins']])
+            print('summation')
+            print(summation)
+            print(row['Proteins'])
             assert(summation == 0 or summation == len(row['Proteins']))
             if summation == 0:
                 return True
