@@ -36,10 +36,18 @@ pin_path = os.path.join(project_folder, row.resultFilePath + '.pin')
 pin_rw = Parsers.SinglePINRW(pin_path, Parsers.PINParser.msgf_is_target)
 pin_parser = Parsers.PINParser(pin_rw, None, 0, 100)
 peptide_affinity_map = {}
-if args.allele: 
-    peptides = pin_parser.get_target_peptides() + pin_parser.get_decoy_peptides()
+if args.allele:
+    #replace selenocysteine with cysteine
+    peptides = []
+    for x in pin_parser.get_target_peptides().union(pin_parser.get_decoy_peptides()):
+        print('x')
+        print(x)
+        peptides.append(x.replace('U', 'C'))
     f = tempfile.NamedTemporaryFile()
-    f.write('\n'.join(peptides))
+    with open(f.name, 'w') as g:
+        g.write('\n'.join(peptides))
+    print('peptides file: %s' % f.name)
+    input()
     for peptide in peptides:
         peptide_affinity_map[peptide] = set()
     for allele in args.allele:
@@ -93,30 +101,39 @@ msgf2pin_runner.runConversion(os.path.join(project.project_path, positives_mzid.
 """
 First clean and add the NetMHC scores to the positives file
 """
-
-positives_reader = csv.DictReader(positives_pin.name, restkey='Proteins', delimiter = '\t')
+print('positives pin')
+print(positives_pin.name)
+input()
+f = open(positives_pin.name, 'r')
+positives_reader = csv.DictReader(f, restkey='Proteins', delimiter = '\t')
 new_rows = []
 for row in positives_reader:
+    print('row')
+    print(row)
     if row['SpecId'] != 'DefaultDirection':
         if isinstance(row['Proteins'], list):
             temp = ','.join(row['Proteins'])
             row['Proteins'] = temp
         if len(peptide_affinity_map.keys()) > 0:
-            peptide = row['Peptide'].replace('U', 'C')
+            peptide = Parsers.PINParser.parse_peptide(row['Peptide'])
             for allele,score in peptide_affinity_map[peptide]:
-                row[allele + ' Score'] = score
+                row[allele] = score
         new_rows.append(row)
 fieldnames = positives_reader.fieldnames
 if len(peptide_affinity_map.keys()) > 0:
-    fieldnames.extend([x[0] for x in peptide_affinity_map.values()[0]])
+    fieldnames.extend([x[0] for x in list(peptide_affinity_map.values())[0]])
+print('fieldnames')
+print(fieldnames)
+input()
 with open(args.positives_pin, 'w') as g:
     writer = csv.DictWriter(g, fieldnames = fieldnames, delimiter='\t')
     writer.writeheader()
     for row in new_rows:
         writer.writerow(row)
+f.close()
 
-
-all_reader = csv.DictReader(pin_path, restkey='Proteins', delimiter = '\t')
+f = open(pin_path, 'r')
+all_reader = csv.DictReader(f, restkey='Proteins', delimiter = '\t')
 new_rows = []
 for row in all_reader:
     if row['SpecId'] != 'DefaultDirection':
@@ -124,10 +141,11 @@ for row in all_reader:
             temp = ','.join(row['Proteins'])
             row['Proteins'] = temp
         if len(peptide_affinity_map.keys()) > 0:
-            peptide = row['Peptide']
+            peptide = Parsers.PINParser.parse_peptide(row['Peptide'])
             for allele,score in peptide_affinity_map[peptide]:
-                row[allele + ' Score'] = score
+                row[allele] = score
         new_rows.append(row)
+f.close()
 with open(args.unknown_pin, 'w') as g:
     writer = csv.DictWriter(g, fieldnames = fieldnames, delimiter='\t')
     writer.writeheader()

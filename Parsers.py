@@ -113,6 +113,8 @@ class PINRW(ABC):
 class SinglePINRW(PINRW):
     def __init__(self, pin_path, target_checker_fn, *, skip_defaults_row = True, restkey='Proteins', insert_feature_index = 5):
         self.pin_path = pin_path
+        print('pin path')
+        print(self.pin_path)
         self.rows = []
         with open(pin_path, 'r') as f:
             reader = csv.DictReader(f, delimiter='\t', restkey=restkey)
@@ -222,11 +224,13 @@ class PINParser:
 
         
     @staticmethod
-    def parse_peptide(peptide, length):
-        #remove anything but the peptide, including PTMs. 
+    def parse_peptide(peptide, length = 0):
+        #remove anything but the peptide, including PTMs.
+        flanking_match = re.match('(?:(?:[A-Za-z])(?:\[[+-\.\d]+\]?)?)\.(?P<middle>(?:(?:[A-Za-z])(?:\[[+-\.\d]+\])?)*)\.(?:(?:[A-Za-z])(?:\[[+-\.\d]+\])?)?', peptide)
+        if flanking_match:
+            peptide = flanking_match.group('middle')
         matches = re.findall('([A-Za-z]+)(?:\[[+-\.\d]+\])?', peptide)
         cleaned_peptide = ''.join(matches)
-        assert(len(cleaned_peptide) == length)
         return cleaned_peptide
 
     def _get_peptides(self, row_type):
@@ -250,7 +254,12 @@ class PINParser:
     @staticmethod
     def msgf_is_target(row):
         #pass this as target_checker_fn if parsing MSGF+ output.
-        assert(isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple) or isinstance(row['Proteins'], str))
+        assert(row['Label'].strip() == '-1' or row['Label'].strip() == '1')
+        if row['Label'].strip() == '-1':
+            return False
+        elif row['Label'].strip() == '1':
+            return True
+        """
         if isinstance(row['Proteins'], list) or isinstance(row['Proteins'], tuple):            
             summation = sum(['XXX' in x for x in row['Proteins']])
             print('summation')
@@ -266,7 +275,7 @@ class PINParser:
                 return True
             else:
                 return False
-    
+        """
     @staticmethod
     def tide_is_target(row):
         #pass this as target_checker_fn if parsing concatted Tide output
