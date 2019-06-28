@@ -102,7 +102,7 @@ for row in positives_reader:
             temp = ','.join(row['Proteins'])
             row['Proteins'] = temp
         if len(peptide_affinity_map.keys()) > 0:
-            peptide = row['Peptide']
+            peptide = row['Peptide'].replace('U', 'C')
             for allele,score in peptide_affinity_map[peptide]:
                 row[allele + ' Score'] = score
         new_rows.append(row)

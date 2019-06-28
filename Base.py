@@ -1,5 +1,6 @@
 import DB
 from sqlalchemy import exists
+import random
 import BashScripts
 from create_target_set import *
 import sys
@@ -8,6 +9,8 @@ from tabulate import tabulate
 import configparser
 import os
 from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 from NetMHC import *
 import glob
 import re
@@ -180,6 +183,7 @@ class Base:
     def get_msgf_index(self, name):
         row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName = name).first()
         return row
+    
     #returns row or None
     def get_maxquant_parameter_file(self, name):
         row = self.db_session.query(DB.MaxQuantParameterFile).filter_by(Name = name).first()
@@ -561,7 +565,25 @@ class Base:
             mgfs.append(mgf)
         return mgfs
 
-
+    def shuffle_fasta(self, fasta_row, new_fasta_name):
+        path = fasta_row.FASTAPath
+        
+        open_handle = open(os.path.join(self.project_path, path), 'r')
+        shuffled_sequences = []
+        random.seed()
+        for record in SeqIO.parse(open_handle, 'fasta'):
+            sequence = str(record.seq)
+            sequence_list = list(sequence)
+            random.shuffle(sequence_list)
+            shuffled_sequence = ''.join(sequence_list)
+            header = 'shuffled_' + record.id
+            shuffled_sequences.append(SeqRecord(Seq(shuffled_sequence), id=header))
+            shuffled_sequences.append(record)
+        temp_handle = tempfile.NamedTemporaryFile()
+        with open(temp_handle.name, 'w') as f:
+            SeqIO.write(shuffled_sequences, f, "fasta")
+        self.add_fasta_file(temp_handle.name, new_fasta_name, 'shuffled')
+        temp_handle.close()
     def validate_project_integrity(self, ignore_operation_lock = False):
         """
         Returns true if the project is valid. Otherwise it raises an error. That is:
