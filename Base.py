@@ -638,7 +638,8 @@ class Base:
         Validate project integrity, create operation lock
         """
         if validate:
-            self.validate_project_integrity()
+            if not os.path.exists(os.path.join(self.project_path, 'copied.txt')):
+                self.validate_project_integrity()
             current_place = os.getcwd()
             os.chdir(self.project_path)
             #shutil.make_archive('backup', 'gztar')
@@ -655,7 +656,7 @@ class Base:
             self.command.executionSuccess = 1
         
         self.db_session.commit()
-        if validate:
+        if validate and not os.path.exists(os.path.join(self.project_path, 'copied.txt')):
             try:
                 self.validate_project_integrity(ignore_operation_lock = True)
             except Error as e:

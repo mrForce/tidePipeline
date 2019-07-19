@@ -50,9 +50,9 @@ print('ignore files')
 print(ignore_files)
 print('keep files')
 print(keep_files)
-input()
 ignore = Ignore(list(ignore_files - keep_files))
 project.end_command_session()
 shutil.copytree(args.project_folder, args.project_copy, ignore=ignore.ignore, copy_function=copy)
-
+with open(os.path.join(args.project_copy, 'copied.txt'), 'w') as f:
+    f.write('1')
 
