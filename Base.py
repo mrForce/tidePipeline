@@ -395,24 +395,30 @@ class Base:
             peptide_list_fasta_path = os.path.join(self.project_path, peptide_list_row.PeptideListFASTA)
             
             output_fasta = os.path.join(self.project_path, 'FilteredNetMHC', file_name + '.fasta')
-            with open(peptide_list_fasta_path, 'rU') as handle:
-                for record in SeqIO.parse(handle, 'fasta'):
-                    sequence = record.seq
-                    header = record.id
-                    if sequence in headline_mapper:
-                        headline_mapper[sequence] += ' @@ ' +  header
-                    else:
-                        headline_mapper[sequence] = header
+            if os.path.exists(peptide_list_fasta_path):
+                with open(peptide_list_fasta_path, 'rU') as handle:
+                    for record in SeqIO.parse(handle, 'fasta'):
+                        sequence = record.seq
+                        header = record.id
+                        if sequence in headline_mapper:
+                            headline_mapper[sequence] += ' @@ ' +  header
+                        else:
+                            headline_mapper[sequence] = header
             print('headline mapper size: %d' % len(headline_mapper))
+            i = 0
             with open(output_path, 'r') as input_handle:
                 with open(output_fasta, 'w+') as output_handler:
                     for line in input_handle:
                         peptide = line.strip()
                         if len(peptide) > 0:
                             print('peptide: %s' % peptide)
-                            assert(peptide in headline_mapper)
-                            output_handler.write('>%s\n' % headline_mapper[peptide])
+                            if len(headline_mapper) > 0:
+                                output_handler.write('>%s\n' % headline_mapper[peptide])
+                            else:
+                                output_handler.write('>%i\n' % i)
+                                i += 1
                             output_handler.write('%s\n' % peptide)
+                                
             
             filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name), fasta_path=output_fasta)
             self.db_session.add(filtered_row)

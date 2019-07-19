@@ -37,7 +37,9 @@ netmhc_rows = project.list_netmhc()
 ignore_files = []
 print('alleles')
 print(args.allele)
-ignore_files = set([pathlib.Path(os.path.join(args.project_folder, 'NetMHC', x)) for x in os.listdir(os.path.join(args.project_folder, 'NetMHC'))] + [pathlib.Path(os.path.join(args.project_folder, 'peptides', x)) for x in os.listdir(os.path.join(args.project_folder, 'peptides'))])
+ignore_files = set([pathlib.Path(os.path.join(args.project_folder, 'NetMHC', x)) for x in os.listdir(os.path.join(args.project_folder, 'NetMHC'))])
+for x in os.listdir(os.path.join(args.project_folder, 'peptides')):
+    ignore_files.add(pathlib.Path(os.path.join(args.project_folder, 'peptides', x)))
 keep_files = set()
 for row in netmhc_rows:
     hla = row.hla.HLAName
