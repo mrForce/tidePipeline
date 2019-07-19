@@ -31,7 +31,8 @@ from Runners import *
 
 
 class Base:
-    def __init__(self, project_path, command, parent_base = False):        
+    def __init__(self, project_path, command, parent_base = False, *, add_command_row = True):
+        self.add_command_row = add_command_row
         if parent_base:
             self.project_path = parent_base.project_path
             self.db_session = parent_base.db_session
@@ -43,9 +44,10 @@ class Base:
                 subprocess.call(['cat', 'reminder.txt'])
                 print('project path: ' + project_path)
             self.db_session = DB.init_session(os.path.join(project_path, 'database.db'))
-            self.command = DB.Command(commandString = command)
-            self.db_session.add(self.command)
-            self.db_session.commit()
+            if add_command_row:
+                self.command = DB.Command(commandString = command)
+                self.db_session.add(self.command)
+                self.db_session.commit()
             config = configparser.ConfigParser()
             config.read(os.path.join(project_path, 'config.ini'))
             self.executables = {}
@@ -635,7 +637,8 @@ class Base:
         Validate project integrity, create operation lock
         """
         if validate:
-            self.validate_project_integrity()
+            if not os.path.exists(os.path.join(self.project_path, 'copied.txt')):
+                self.validate_project_integrity()
             current_place = os.getcwd()
             os.chdir(self.project_path)
             #shutil.make_archive('backup', 'gztar')
@@ -648,11 +651,11 @@ class Base:
         Validate project integrity (ignoring the operation lock). If project does not have integrity, then rollback project.
 
         If it does have integrity, then remove operation lock, and remove backup"""
-        
-        self.command.executionSuccess = 1
+        if self.add_command_row:
+            self.command.executionSuccess = 1
         
         self.db_session.commit()
-        if validate:
+        if validate and not os.path.exists(os.path.join(self.project_path, 'copied.txt')):
             try:
                 self.validate_project_integrity(ignore_operation_lock = True)
             except Error as e:
