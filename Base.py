@@ -373,11 +373,11 @@ class Base:
 
     def run_netmhc(self, peptide_list_name, hla, rank_cutoff, netmhc_name, filtered_name = False, netmhcpan = False):
         netmhc_row, pep_affinity_path, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhc_name, netmhcpan)
-        if is_netmhc_row_new:
-            filtered_netmhc_row = None
-        else:
-            filtered_netmhc_row = self.db_session.query(DB.FilteredNetMHC).filter_by(idNetMHC = netmhc_row.idNetMHC, RankCutoff = rank_cutoff).first()
-        print('hello')
+        if filtered_name:
+            self.filter_netmhc(rank_cutoff, filtered_name, netmhc_row)
+    def filter_netmhc(self, rank_cutoff, filtered_name, netmhc_row):
+        pep_affinity_path = netmhc_row.PeptideAffinityPath
+        peptide_list_row = netmhc_row.peptidelist
         if self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = filtered_name).first() is None and filtered_name:
             print('going to do it')
             file_name = str(uuid.uuid4())
@@ -389,7 +389,6 @@ class Base:
             BashScripts.top_percent_netmhc(os.path.join(self.project_path, pep_affinity_path), rank_cutoff, output_path)
             
             headline_mapper = {}
-            peptide_list_row = self.db_session.query(DB.PeptideList).filter_by(peptideListName=peptide_list_name).first()
             peptide_list_path = os.path.join(self.project_path, peptide_list_row.PeptideListPath)
             peptide_list_fasta_path = os.path.join(self.project_path, peptide_list_row.PeptideListFASTA)
             

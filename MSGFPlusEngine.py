@@ -196,7 +196,7 @@ class MSGFPlusEngine(AbstractEngine):
             tpm_file_row = self.db_session.query(DB.TPMFile).filter_by(TPMName = tpm_file).first()
         uniprot_mapper_row = False
         if uniprot_mapper:
-            uniprot_mapper_row = self.db_session.query(DB.UniprotMapperName).filter_by(UniprotMapperName = uniprot_mapper).first()
+            uniprot_mapper_row = self.db_session.query(DB.UniprotMapper).filter_by(UniprotMapperName = uniprot_mapper).first()
         output_directory = self.create_storage_directory('msgfplus_search_results')
         new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row)
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)

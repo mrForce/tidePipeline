@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import re
 import csv
+import collections
 from xml.sax.saxutils import unescape
 import sys
 from enum import Enum

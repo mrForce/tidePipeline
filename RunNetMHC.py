@@ -21,7 +21,7 @@ parser.add_argument('project_folder', help='The location of the project folder')
 
 parser.add_argument('peptideList', help='Name of the peptidelist to run NetMHC on')
 parser.add_argument('HLA', help='Name of the HLA allele to run with NetMHC')
-parser.add_argument('rank', help='The rank cutoff', type=float)
+parser.add_argument('rank', help='The rank cutoff', type=str)
 
 
 parser.add_argument('--netMHCPan', action='store_true', help='Use netMHCPan')
@@ -33,7 +33,7 @@ print('project folder: ' + project_folder)
 project = Base.Base(project_folder, ' '.join(sys.argv))
 
 netmhc_name = args.peptideList + '_' + args.HLA
-filtered_netmhc_name = netmhc_name + '_' + str(args.rank)
+filtered_netmhc_name = netmhc_name + '_' + args.rank
 project.begin_command_session()
 if not project.verify_peptide_list(args.peptideList):
     print('peptide list: ' + args.peptideList + ' does not exist')
