@@ -49,6 +49,7 @@ print(args.allele)
 ignore_files = set([pathlib.Path(os.path.join(args.project_folder, 'NetMHC', x)) for x in os.listdir(os.path.join(args.project_folder, 'NetMHC'))])
 for x in os.listdir(os.path.join(args.project_folder, 'peptides')):
     ignore_files.add(pathlib.Path(os.path.join(args.project_folder, 'peptides', x)))
+ignore_files.add(pathlib.Path(os.path.join(args.project_folder, 'database.db.backup')))
 keep_files = set()
 for row in netmhc_rows:
     hla = row.hla.HLAName
@@ -63,7 +64,7 @@ print('keep files')
 print(keep_files)
 ignore = Ignore(list(ignore_files - keep_files))
 project.end_command_session()
-really_copy_files = [os.path.join(args.project_folder, 'database.db')]
+really_copy_files = [os.path.join(args.project_folder, 'database.db'), os.path.join(args.project_folder, 'config.ini')]
 
 shutil.copytree(args.project_folder, args.project_copy, ignore=ignore.ignore, copy_function=functools.partial(copy, really_copy_files))
 with open(os.path.join(args.project_copy, 'copied.txt'), 'w') as f:

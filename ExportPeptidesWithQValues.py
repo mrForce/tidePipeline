@@ -22,7 +22,7 @@ project_folder = args.project_folder
 
 
 
-assert(not os.path.isfile(args.export_location))
+#assert(not os.path.isfile(args.export_location))
 
 
 
