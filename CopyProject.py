@@ -2,13 +2,22 @@ import Base
 import pathlib
 import argparse
 import sys
+import functools
 import os
 import shutil
 
-def copy(source, destination):
-    print('source %s, destination: %s' % (source, destination))
-    shutil.copy2(source, destination)
-
+def copy(files_to_really_copy, source, destination):
+    paths_to_copy = [pathlib.Path(x) for x in files_to_really_copy]
+    if pathlib.Path(source) in paths_to_copy:
+        shutil.copy2(source, destination)
+    else:
+        try:
+            os.symlink(source, destination)
+            print("Creating symlink for %s to %s" % (source, destination))
+        except:
+            print("couldn't do symlink. Copying file: %s to %s" % (source, destination))
+            shutil.copy2(source, destination)
+        
 
 class Ignore:
     def __init__(self, files_to_ignore):
@@ -54,7 +63,9 @@ print('keep files')
 print(keep_files)
 ignore = Ignore(list(ignore_files - keep_files))
 project.end_command_session()
-shutil.copytree(args.project_folder, args.project_copy, ignore=ignore.ignore, copy_function=copy)
+really_copy_files = [os.path.join(args.project_folder, 'database.db')]
+
+shutil.copytree(args.project_folder, args.project_copy, ignore=ignore.ignore, copy_function=functools.partial(copy, really_copy_files))
 with open(os.path.join(args.project_copy, 'copied.txt'), 'w') as f:
     f.write('1')
 
