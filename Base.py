@@ -411,7 +411,6 @@ class Base:
                     for line in input_handle:
                         peptide = line.strip()
                         if len(peptide) > 0:
-                            print('peptide: %s' % peptide)
                             if len(headline_mapper) > 0:
                                 output_handler.write('>%s\n' % headline_mapper[peptide])
                             else:

@@ -103,7 +103,7 @@ class MSGFPlusTrainingRunner:
         mgf_folder = os.path.dirname(mgf_location)
         mzid_location = os.path.join(self.project_path, search_row.resultFilePath)
         mzid_folder = os.path.dirname(mzid_location)
-        memory_string = '-Xmx3500M'
+        memory_string = '-Xmx1000M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
         command = ['java', memory_string, '-cp', self.jar_file_location, 'edu.ucsd.msjava.ui.ScoringParamGen', '-i', mzid_folder, '-d', mgf_folder, '-m', str(mgf_row.fragmentationMethod), '-inst', str(mgf_row.instrument), '-e', str(mgf_row.enzyme)]
@@ -193,7 +193,7 @@ class MSGFPlusSearchRunner:
             param_file_name = fragment_map[str(mgf_row.fragmentationMethod + 1)] + '_' + instrument_map[str(mgf_row.instrument)] + '_' + enzyme_map[enzyme] + '.param'
             shutil.copy(os.path.join(project_path, training_param_row.paramFileLocation), os.path.join(msgf_param_folder, param_file_name))
             
-        memory_string = '-Xmx3500M'
+        memory_string = '-Xmx10000M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
@@ -253,7 +253,7 @@ class MSGFPlusIndexRunner:
             tda = 0
         current_path = os.getcwd()
         os.chdir(output_directory_path)
-        memory_string = '-Xmx3500M'
+        memory_string = '-Xmx10000M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
         tda = 2
