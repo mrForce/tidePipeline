@@ -67,7 +67,11 @@ def create_target_set(filtered_netmhc, peptide_lists, output_fasta_location, out
                     peptide_to_header[peptide].append(header)
     i = 0
     with open(output_fasta_location, 'w') as f:
-        for target_sequence, source_list in target_set.items():
+        target_set_items = list(target_set.items())
+        sorted_target_set_items = sorted(target_set_items, key=lambda x: peptide_to_header[x[0]])
+        print('sorted_target_set_items: ')
+        print(sorted_target_set_items[0:10])
+        for target_sequence, source_list in sorted_target_set_items:
             assert(len(source_list) > 0)
             header = ' @@ '.join(peptide_to_header[target_sequence])
             f.write('>' + header + '\n')
