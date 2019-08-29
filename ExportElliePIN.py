@@ -47,12 +47,11 @@ if args.allele:
     with open(f.name, 'w') as g:
         g.write('\n'.join(peptides))
     print('peptides file: %s' % f.name)
-    input()
     for peptide in peptides:
         peptide_affinity_map[peptide] = set()
     for allele in args.allele:
         output_file = tempfile.NamedTemporaryFile()
-        call_netmhc(project.executables['netmhc'], allele, f.name, output_file.name)
+        call_netmhc(project.executables['netmhc'], allele, f.name, output_file.name)        
         affinity_file = tempfile.NamedTemporaryFile()
         BashScripts.extract_netmhc_output(output_file.name, affinity_file.name)
         output_file.close()
@@ -67,7 +66,8 @@ if args.allele:
         affinity_file.close()
     f.close()
 
-positives_mzid = tempfile.NamedTemporaryFile()
+temp_dir = tempfile.mkdtemp()
+positives_mzid = os.path.join(temp_dir, 'search.mzid')
 namespace = '{http://psidev.info/psi/pi/mzIdentML/1.1}'
 args = parser.parse_args()
 m = mzid.MzIdentML(mzid_path)
@@ -88,7 +88,7 @@ for ident in identifications:
             num_removals += 1
             break
 
-tree.write(positives_mzid.name, xml_declaration=True)
+tree.write(positives_mzid, xml_declaration=True)
 
 msgf2pin_runner = Runners.MSGF2PinRunner(project.executables['msgf2pin'], os.path.join(project_folder, 'unimod.xml'))
 positives_pin = tempfile.NamedTemporaryFile()
@@ -96,14 +96,13 @@ head, tail = os.path.split(row.index.MSGFPlusIndexPath)
 fasta_index = tail.rfind('.fasta')
 new_tail = tail[:fasta_index] + '.revCat.fasta'
 fasta_files = [os.path.join(project.project_path, head, new_tail)]
-msgf2pin_runner.runConversion(os.path.join(project.project_path, positives_mzid.name), positives_pin.name, fasta_files, 'XXX_')
+msgf2pin_runner.runConversion(positives_mzid, positives_pin.name, fasta_files, 'XXX_')
 
 """
 First clean and add the NetMHC scores to the positives file
 """
 print('positives pin')
 print(positives_pin.name)
-input()
 f = open(positives_pin.name, 'r')
 positives_reader = csv.DictReader(f, restkey='Proteins', delimiter = '\t')
 new_rows = []
@@ -116,15 +115,19 @@ for row in positives_reader:
             row['Proteins'] = temp
         if len(peptide_affinity_map.keys()) > 0:
             peptide = Parsers.PINParser.parse_peptide(row['Peptide'])
-            for allele,score in peptide_affinity_map[peptide]:
-                row[allele] = score
-        new_rows.append(row)
+            if len(peptide_affinity_map[peptide]) == len(args.allele):
+                for allele,score in peptide_affinity_map[peptide]:
+                    row[allele] = score.strip()
+                new_rows.append(row)
+            else:
+                print('No NetMHC score for positives: %s' % peptide)
+        else:
+            new_rows.append(row)
 fieldnames = positives_reader.fieldnames
-if len(peptide_affinity_map.keys()) > 0:
-    fieldnames.extend([x[0] for x in list(peptide_affinity_map.values())[0]])
+if args.allele:
+    fieldnames.extend(args.allele)
 print('fieldnames')
 print(fieldnames)
-input()
 with open(args.positives_pin, 'w') as g:
     writer = csv.DictWriter(g, fieldnames = fieldnames, delimiter='\t')
     writer.writeheader()
@@ -142,9 +145,14 @@ for row in all_reader:
             row['Proteins'] = temp
         if len(peptide_affinity_map.keys()) > 0:
             peptide = Parsers.PINParser.parse_peptide(row['Peptide'])
-            for allele,score in peptide_affinity_map[peptide]:
-                row[allele] = score
-        new_rows.append(row)
+            if len(peptide_affinity_map[peptide]) == len(args.allele):
+                for allele,score in peptide_affinity_map[peptide]:
+                    row[allele] = score.strip()
+                new_rows.append(row)
+            else:
+                print('No NetMHC score for all: %s' % peptide)
+        else:
+            new_rows.append(row)
 f.close()
 with open(args.unknown_pin, 'w') as g:
     writer = csv.DictWriter(g, fieldnames = fieldnames, delimiter='\t')
