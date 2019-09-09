@@ -53,7 +53,7 @@ ignore_files.add(pathlib.Path(os.path.join(args.project_folder, 'database.db.bac
 keep_files = set()
 for row in netmhc_rows:
     hla = row.hla.HLAName
-    if hla in args.allele:
+    if args.allele and hla in args.allele:
         keep_files.add(pathlib.Path(os.path.join(args.project_folder, row.PeptideAffinityPath)))
         keep_files.add(pathlib.Path(os.path.join(args.project_folder, row.PeptideRankPath)))
         keep_files.add(pathlib.Path(os.path.join(args.project_folder, row.NetMHCOutputPath)))
