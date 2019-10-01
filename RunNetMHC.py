@@ -21,7 +21,7 @@ parser.add_argument('project_folder', help='The location of the project folder')
 
 parser.add_argument('peptideList', help='Name of the peptidelist to run NetMHC on')
 parser.add_argument('HLA', help='Name of the HLA allele to run with NetMHC')
-parser.add_argument('rank', help='The rank cutoff', type=str)
+parser.add_argument('--rank', help='The rank cutoff', type=str)
 
 
 parser.add_argument('--netMHCPan', action='store_true', help='Use netMHCPan')
@@ -33,7 +33,7 @@ print('project folder: ' + project_folder)
 project = Base.Base(project_folder, ' '.join(sys.argv))
 
 netmhc_name = args.peptideList + '_' + args.HLA
-filtered_netmhc_name = netmhc_name + '_' + args.rank
+
 project.begin_command_session()
 if not project.verify_peptide_list(args.peptideList):
     print('peptide list: ' + args.peptideList + ' does not exist')
@@ -41,10 +41,13 @@ if not project.verify_peptide_list(args.peptideList):
 if not project.verify_hla(args.HLA):
     print('HLA: ' + args.HLA + ' does not exist')
     sys.exit()
-name_creator = NameCreator(filtered_netmhc_name)
-while project.verify_filtered_netMHC(str(name_creator)):
-    name_creator.increase_version()
-
+filtered_netmhc_name = False
+if args.rank:
+    filtered_netmhc_name = netmhc_name + '_' + args.rank
+    name_creator = NameCreator(filtered_netmhc_name)
+    while project.verify_filtered_netMHC(str(name_creator)):
+        name_creator.increase_version()
+    filtered_netmhc_name = str(name_creator)
 print(args.peptideList)
 print(args.HLA)
 print(args.rank)
@@ -52,9 +55,9 @@ print('filtered name: ' + str(name_creator))
 
 #project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, str(name_creator), args.netMHCPan)
 """
-Changed this on Saturday April 20th, so that we wouldn't do the ran cutoff stuff
+Make cutoff stuff optional
 """
-project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, False, args.netMHCPan)
+project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, filtered_netmhc_name, args.netMHCPan)
 
 project.end_command_session()
 
