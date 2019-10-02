@@ -89,7 +89,7 @@ class AbstractEngine(Base, metaclass=ABCMeta):
         if len(fasta_files) > 0:
             BashScripts.combine_files(fasta_files, temp_fasta.name)
         if combined_peptide_file:
-            BashScripts.join_peptides_to_fasta(combined_peptide_file, temp_fasta.name)
+            BashScripts.join_peptides_to_fasta(os.path.join(self.project_path, combined_peptide_file), temp_fasta.name)
 
 
         return (temp_fasta.name, link_row, temp_files)

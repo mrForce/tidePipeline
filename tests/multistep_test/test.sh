@@ -2,32 +2,15 @@
 
 cd ..
 cd ..
-ls
-#python Initialize.py multistep_project tests/multistep_test/config.ini
-#python AddHLA.py multistep_project H-2-Kb
-#python AddFASTA.py multistep_project tests/multistep_test/all_mouse_proteins.fasta MouseProteins
-#python KChop.py multistep_project MouseProteins 9 MouseProteinNineMers
-#python CreateTideIndex.py multistep_project PeptideList MouseProteinNineMers NineMerIndexTwo --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
-#python AddMGF.py multistep_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
-#python RunNetMHC.py multistep_project MouseProteinNineMers H-2-Kb 2 MouseProteinNineMersH2KbTwoPercent
-#python CreateTideIndex.py multistep_project FilteredNetMHC MouseProteinNineMersH2KbTwoPercent TwoPercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
-#python RunNetMHC.py multistep_project MouseProteinNineMers H-2-Kb 1 MouseProteinNineMersH2KbOnePercent
-#python CreateTideIndex.py multistep_project FilteredNetMHC MouseProteinNineMersH2KbOnePercent OnePercentIndex --custom-enzyme '[Z]|[Z]' --enzyme custom-enzyme
-#zip -r multistep_project.zip multistep_project
-python RunIterativeTideSearch.py multistep_project Y3_mgf 0.01 percolator mouseIterThirteen OnePercentIndex TwoPercentIndex --peptide_identifier_param_file tests/multistep_test/percolator.params --tidesearch_param_file tests/multistep_test/tide_search.params
-
-#zip -r Y3_test_project.zip Y3_test_project
-#python RunMSGFPlusSearch.py Y3_test_project Y3_mgf MouseProteinNineMersIndex MouseMSGFSearch --memory 6000
-#python KChop.py Y3_test_project MouseProteins 10 MouseProteinTenMers
-#python RunNetMHC.py Y3_test_project MouseProteinNineMers H-2-Kb 2 MouseProteinNineMersH2Kb
-#python RunNetMHC.py Y3_test_project MouseProteinTenMers H-2-Kb 2 MouseProteinTenMersH2Kb
-#python CreateTargetSet.py Y3_test_project --FilteredNetMHC MouseProteinNineMersH2Kb --FilteredNetMHC MouseProteinTenMersH2Kb H2KbPeptideSet
-#python CreateTideIndex.py Y3_test_project TargetSet H2KbPeptideSet H2KbTideIndex
-#python AddMGF.py Y3_test_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf
-#python RunTideSearch.py Y3_test_project Y3_mgf H2KbTideIndex H2KbTideSearch
-#python RunAssignConfidence.py Y3_test_project H2KbTideSearch H2KbTideSearchConfidence
-#python RunPercolator.py Y3_test_project H2KbTideSearch H2KbPercolator
-#python FilterQValue.py Y3_test_project assign_confidence H2KbTideSearchConfidence 0.05 H2KbTideSearchConfidenceFiltered
-#python FilterQValue.py Y3_test_project percolator H2KbPercolator 0.05 H2KbPercolatorFiltered
-#python ExportPeptides.py Y3_test_project FilteredSearchResult H2KbTideSearchConfidenceFiltered tests/Y3Test/assignconfidence.txt
-#python ExportPeptides.py Y3_test_project FilteredSearchResult H2KbPercolatorFiltered tests/Y3Test/percolator.txt
+python3 Initialize.py multistep_project tests/multistep_test/config.ini unimod.xml
+python3 AddHLA.py multistep_project H-2-Kb
+python3 AddFASTA.py multistep_project tests/multistep_test/short.fasta MouseProteins
+python3 KChop.py multistep_project MouseProteins 9 MouseProteinNineMers
+python3 AddMGF.py multistep_project  tests/Y3Test/160127_609_015_EL4_Y3.mgf Y3_mgf 0 2 3
+python3 RunNetMHC.py multistep_project MouseProteinNineMers H-2-Kb --rank 2
+python3 CreateMSGFPlusIndex.py multistep_project FilteredNetMHC MouseProteinNineMers_H-2-Kb_2 NineMerH2KbTwoPercentIndex
+python3 CreateMSGFPlusIndex.py multistep_project FASTA MouseProteins MouseProteinsIndex
+zip -r MultistepSearch.zip multistep_project
+python3 AddParamFile.py multistep_project percolator tests/multistep_test/percolator.params percolator
+python3 RunIterativeMSGFPlusSearch.py multistep_project Y3_mgf 0.01 IterativeTestSearch MouseProteinsIndex NineMerH2KbTwoPercentIndex --use_percolator percolator
+python3 ExportPeptides.py multistep_project MSGFPlusIterativeSearch IterativeTestSearch msgf_iterative_peptides.txt

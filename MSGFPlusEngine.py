@@ -114,7 +114,7 @@ class MSGFPlusEngine(AbstractEngine):
                     mgf_parser.remove_scans(list(set([x[0] for x in psms])))
                     temp_file = tempfile.NamedTemporaryFile(suffix='.mgf')
                     mgf_parser.write_modified_mgf(temp_file.name)
-                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf', True)
+                    self.add_mgf_file(temp_file.name, multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf', mgf_row.enzyme, mgf_row.fragmentationMethod, mgf_row.instrument, True)
                     created_mgf_names.append(multistep_search_name + '_' + msgfplus_index_names[i + 1] + '_mgf')
                     self.db_session.commit()
                     temp_file.close()

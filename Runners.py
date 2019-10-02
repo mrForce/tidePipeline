@@ -19,7 +19,7 @@ class MSGF2PinRunner:
         self.msgf2pin_binary = msgf2pin_binary
         self.unimodXMLLocation = unimodXMLLocation
     def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern):
-        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme', '-r', '-u', self.unimodXMLLocation, '-P', decoy_pattern]
+        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme',  '-P', decoy_pattern]
         print('going to run MSGF2pin conversion')
         print(command)
         try:
@@ -410,14 +410,14 @@ class AssignConfidenceRunner:
 
 
 class PercolatorRunner:
-    def __init__(self, crux_binary, project_path, param_file_row = None):
-        self.crux_binary = crux_binary
+    def __init__(self, percolator_binary, project_path, param_file_row = None):
+        self.percolator_binary = percolator_binary
         self.param_file_row = param_file_row
         self.project_path = project_path
 
     def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row, partOfIterativeSearch = False):
         assert(target_path)
-        command = [self.crux_binary, 'percolator']
+        command = [self.percolator_binary]
         print('running percolator command from: ' + os.getcwd())
         column_arguments = {}
         if self.param_file_row:

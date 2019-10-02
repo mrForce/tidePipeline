@@ -15,9 +15,6 @@ parser.add_argument('search_name', help='The name of the search to percolator on
 parser.add_argument('percolator_name', help='The name of the percolator run')
 
 
-parser.add_argument('--param_file', help='The Name of a parameter file to use')
-
-
 args = parser.parse_args()
 project_folder = args.project_folder
 print('project folder: ' + project_folder)

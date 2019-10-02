@@ -16,6 +16,5 @@ try:
     Base.Base.createEmptyProject(project_folder, ' '.join(sys.argv), args.config, args.unimodXML)
 except ProjectPathAlreadyExistsError as e:
     print('A file or directory already exists at that location. Exiting')
-    sys.exit()
-except Exception as e:
+    print(e)
     sys.exit()
