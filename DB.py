@@ -130,12 +130,17 @@ class IterativeRunMGFAssociation(BaseTable):
     mgf_id = Column('mgf_id', ForeignKey('MGFfile.idMGFfile'), primary_key=True)
     mgf = relationship('MGFfile', cascade='all,delete')
     iterativerun = relationship('IterativeSearchRun')
+    
 class IterativeRunSearchAssociation(BaseTable):
     __tablename__ = 'IterativeRunSearchAssociation'
     iterativerun_id = Column('iterativerun_id', ForeignKey('IterativeSearchRun.idIterativeSearchRun'), primary_key=True)
     search_id = Column('search_id', ForeignKey('SearchBase.idSearch'), primary_key=True)
     search = relationship('SearchBase', cascade='all,delete')
     iterativerun = relationship('IterativeSearchRun')
+
+    def get_contaminant_sets(self):
+        print(self)
+        return self.search.get_contaminant_sets()
 
 
 
@@ -224,7 +229,7 @@ class MSGFPlusIterativeRun(IterativeSearchRun, AbstractPeptideCollection):
     }
 
     def get_peptides(self, project_path):
-        associations = self.MSGFPlusIterativeFilteredSearchAssociations
+        associations = self.IterativeFilteredSearchAssociations
         assert(len(associations) == self.num_steps)
         peptide_set_list = []
         for row in associations:

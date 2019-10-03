@@ -410,14 +410,14 @@ class AssignConfidenceRunner:
 
 
 class PercolatorRunner:
-    def __init__(self, percolator_binary, project_path, param_file_row = None):
-        self.percolator_binary = percolator_binary
+    def __init__(self, crux_binary, project_path, param_file_row = None):
+        self.crux_binary = crux_binary
         self.param_file_row = param_file_row
         self.project_path = project_path
 
     def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row, partOfIterativeSearch = False):
         assert(target_path)
-        command = [self.percolator_binary]
+        command = [self.crux_binary, 'percolator']
         print('running percolator command from: ' + os.getcwd())
         column_arguments = {}
         if self.param_file_row:
