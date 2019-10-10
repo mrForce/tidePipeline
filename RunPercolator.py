@@ -13,8 +13,7 @@ parser.add_argument('search_type', help='What search engine was used?', choices=
 parser.add_argument('search_name', help='The name of the search to percolator on')
 
 parser.add_argument('percolator_name', help='The name of the percolator run')
-
-
+parser.add_argument('--param_file', help='Parameter file for percolator')
 args = parser.parse_args()
 project_folder = args.project_folder
 print('project folder: ' + project_folder)
