@@ -20,7 +20,7 @@ args = parser.parse_args()
 project_folder = args.project_folder
 
 project = Base.Base(project_folder, ' '.join(sys.argv), add_command_row=False)
-project.begin_command_session()
+project.begin_command_session(False)
 
 netmhc_rows = project.list_netmhc()
 
