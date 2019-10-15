@@ -26,6 +26,6 @@ netmhc_rows = project.list_netmhc()
 
 for row in netmhc_rows:
     hla = row.hla.HLAName
-    if hla == args.allele and length == row.length():
+    if hla == args.allele and args.length == row.length():
         copyfile(os.path.join(project_folder, row.PeptideAffinityPath), args.export_location)
         break
