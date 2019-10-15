@@ -21,6 +21,7 @@ parser.add_argument('--contaminants', help='If this is of type FilteredSearchRes
 
 args = parser.parse_args()
 
+
 project_folder = args.project_folder
 
 

@@ -248,6 +248,8 @@ class Base:
         return self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = name).first()
     def get_netmhc_row(self, name):
         return self.db_session.query(DB.NetMHC).filter_by(Name=name).first()
+    def get_netmhc_row(self, allele, length):
+        
     def get_target_set_row(self, name):
         return self.db_session.query(DB.TargetSet).filter_by(TargetSetName = name).first()
     def get_peptide_list_row(self, name):

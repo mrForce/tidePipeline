@@ -500,7 +500,7 @@ class NetMHC(BaseTable):
     #Raw output of NetMHC
     NetMHCOutputPath = Column('NetMHCOutputPath', String)
     #a TXT file, each line is a peptide, then a comma, then the rank
-    #used to be PeptideScorePath
+    #used to be PeptideScorePath 
     PeptideAffinityPath = Column('PeptideAffinityPath', String)
     PeptideRankPath = Column('PeptideRankPath', String)
     peptidelist = relationship('PeptideList')

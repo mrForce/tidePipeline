@@ -35,7 +35,7 @@ def qqplot(target_scores, decoy_scores, output_location):
     elif len(target_scores) < len(decoy_scores):
         quants = list(np.linspace(0, 1, len(target_scores) + 2))[1:-1]
         assert(len(quants) == len(target_scores))
-        decoy_scores = stats.mstats.mquantiles(target_scores, quants)
+        decoy_scores = stats.mstats.mquantiles(decoy_scores, quants)
     assert(len(target_scores) == len(decoy_scores))
     target_scores.sort()
     write_scores(target_scores, 'target_scores.txt')
