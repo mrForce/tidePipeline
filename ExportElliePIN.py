@@ -27,7 +27,7 @@ args = parser.parse_args()
 project_folder = args.project_folder
 
 
-
+print('project folder: %s' % project_folder)
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 row = project.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = args.search).first()
@@ -95,7 +95,10 @@ positives_pin = tempfile.NamedTemporaryFile()
 head, tail = os.path.split(row.index.MSGFPlusIndexPath)
 fasta_index = tail.rfind('.fasta')
 new_tail = tail[:fasta_index] + '.revCat.fasta'
+print('project path: %s' % project.project_path)
 fasta_files = [os.path.join(project.project_path, head, new_tail)]
+print('fasta files')
+print(fasta_files)
 msgf2pin_runner.runConversion(positives_mzid, positives_pin.name, fasta_files, 'XXX_')
 
 """
@@ -154,6 +157,11 @@ for row in all_reader:
         else:
             new_rows.append(row)
 f.close()
+fieldnames = list(set(fieldnames + all_reader.fieldnames))
+print('all reader fieldnames')
+print(all_reader.fieldnames)
+print('fieldnames')
+print(fieldnames)
 with open(args.unknown_pin, 'w') as g:
     writer = csv.DictWriter(g, fieldnames = fieldnames, delimiter='\t')
     writer.writeheader()
