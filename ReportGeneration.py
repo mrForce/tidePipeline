@@ -85,7 +85,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
     Peptides
     PSMs
     """
-    def __init__(self, name, threshold, project_path, db_session):
+    def __init__(self, name, threshold, project_path, db_session, peptide_q_value = False):
         print('search name: ' + name)
         self.msgfplus_search_row = db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = name).first()
         assert(self.msgfplus_search_row)
@@ -97,7 +97,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
                 break
         assert(self.q_value_row)
         result_file_path = self.msgfplus_search_row.resultFilePath
-        parser = Parsers.MSGFPlusSearchParser(os.path.join(project_path, result_file_path))
+        parser = Parsers.MSGFPlusSearchParser(os.path.join(project_path, result_file_path), peptide_q_value)
         spectrum_matches_list = parser.get_spectrum_matches()
         self.peptides = set()
         self.psms = set()

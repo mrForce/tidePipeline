@@ -340,7 +340,7 @@ class SpectrumMatches:
 
 
 class MSGFPlusSearchParser:
-    def __init__(self, mzid_location):
+    def __init__(self, mzid_location, peptide_q_value = False):
         print('mzid location: ' + mzid_location)
         tree = ET.parse(mzid_location)
         root = tree.getroot()
@@ -371,7 +371,11 @@ class MSGFPlusSearchParser:
             for item in spectrum_identification_items:
                 peptide_ref = item.attrib['peptide_ref']
                 peptide = self.peptide_map[peptide_ref]
-                q_value_item = item.find("./mz:cvParam[@name='MS-GF:QValue']", ns)
+                if peptide_q_value:
+                    q_value_item = item.find("./mz:cvParam[@name='MS-GF:PepQValue']", ns)
+                else:
+                    q_value_item = item.find("./mz:cvParam[@name='MS-GF:QValue']", ns)
+                
                 assert(q_value_item is not None)
                 q_value = float(q_value_item.attrib['value'])
                 score_item = item.find("./mz:cvParam[@name='MS-GF:RawScore']", ns)

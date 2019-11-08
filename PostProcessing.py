@@ -81,8 +81,8 @@ class PostProcessing(Base):
         peptides = assign_confidence_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, assign_confidence_handler.get_row() , q_value_threshold, partOfIterativeSearch)
 
-    def filter_q_value_msgfplus(self, msgfplus_search_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False, *, commit=False):
-        msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(msgfplus_search_name, q_value_threshold, self.project_path, self.db_session)
+    def filter_q_value_msgfplus(self, msgfplus_search_name, q_value_threshold, filtered_search_result_name, partOfIterativeSearch = False, *, commit=False, peptide_q_value = False):
+        msgfplus_handler = ReportGeneration.MSGFPlusQValueHandler(msgfplus_search_name, q_value_threshold, self.project_path, self.db_session, peptide_q_value)
         row = msgfplus_handler.get_row()
         peptides = msgfplus_handler.get_peptides()
         self.create_filtered_search_result(filtered_search_result_name, peptides, row, q_value_threshold, partOfIterativeSearch, commit=commit)

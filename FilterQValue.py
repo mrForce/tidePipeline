@@ -12,6 +12,7 @@ parser.add_argument('type', help='Is this an MSGF+, assign-confidence, or percol
 parser.add_argument('name', help='The name of the MSGF+, assign-confidence or percolator run (depending on type)')
 parser.add_argument('threshold', help='The q-value threshold', type=float)
 parser.add_argument('FilteredSearchResultName')
+parser.add_argument('--peptide_q_value', default=False, action='store_true', help='Use peptide level Q-values rather than PSM level Q values')
 parser.add_argument('--use_percolator_peptides', default=False, action='store_true', help='If using percolator, turn this option on to use percolator.target.peptides.txt instead of percolator.target.psms.txt')
 
 
