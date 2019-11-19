@@ -21,13 +21,14 @@ parser.add_argument('project_folder', help='The location of the project folder')
 
 parser.add_argument('peptideList', help='Name of the peptidelist to run NetMHC on')
 parser.add_argument('HLA', help='Name of the HLA allele to run with NetMHC')
-parser.add_argument('--rank', help='The rank cutoff', type=str)
+parser.add_argument('--rank', help='The rank cutoff', type=float)
 
 
 parser.add_argument('--netMHCPan', action='store_true', help='Use netMHCPan')
 
 args = parser.parse_args()
-assert(float(args.rank) <= 100.0 and float(args.rank) >= 0.0)
+if args.rank:
+    assert(args.rank <= 100.0 and args.rank > 0)
 project_folder = args.project_folder
 print('project folder: ' + project_folder)
 project = Base.Base(project_folder, ' '.join(sys.argv))
@@ -51,11 +52,12 @@ if args.rank:
 print(args.peptideList)
 print(args.HLA)
 print(args.rank)
-print('filtered name: ' + str(name_creator))
+if filtered_netmhc_name:
+    print('filtered name: ' + str(name_creator))
 
 #project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, str(name_creator), args.netMHCPan)
 """
-Make cutoff stuff optional
+Note: if filtered_netmhc_name is False, then it doesn't generate a FilteredNetMHC.
 """
 project.run_netmhc(args.peptideList, args.HLA, args.rank, netmhc_name, filtered_netmhc_name, args.netMHCPan)
 
