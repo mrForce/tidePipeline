@@ -24,7 +24,19 @@ TideSearchLinkedToMSGFPlusIterativeError = CustomError.factory('TideSearchLinked
 
 MSGFPlusSearchLinkedToTideIterativeError = CustomError.factory('MSGFPlusSearchLinkedToTideIterativeError', 'The MSGF+ Search: ', ' is linked to a Tide Iterative Search')
 
+class AWKFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'awk command: ' + ' '.join(self.command) + ' failed'
 
+
+class NonZeroReturnCodeError(Error):
+    def __init__(self, command, code):
+        self.command = command
+        self.code = code
+    def __repr__(self):
+        return 'command: %s returned non-zero code: %d' % (' '.join(self.command), self.code)
 class NoPathInMSGFPlusTrainingOutput(Error):
     def __init__(self):
         pass

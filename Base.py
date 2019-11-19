@@ -102,7 +102,7 @@ class Base:
         print('format: ' + protein_format)
         print(protein_format == 'FASTA')
         directory = self.create_storage_directory('contaminants')
-        filename = 'contaminants.fasta' if protein_format is 'FASTA' else 'contaminants.txt'
+        filename = 'contaminants.fasta' if protein_format == 'FASTA' else 'contaminants.txt'
         shutil.copyfile(path, os.path.join(self.project_path, directory, filename))
         #the constructor for ContaminantSet extracts the peptides from the FASTA file and puts them in os.path.join(directory, 'contaminant_peptides.txt')
         if protein_format == 'FASTA':
@@ -162,6 +162,26 @@ class Base:
     def get_msgf2pin_executable_path(self):
         return self.executables['msgf2pin']
 
+    def concat_fasta_files(self, concat_name, input_names, comment):
+        if self.get_fasta_row(concat_name):
+            raise FASTAWithNameAlreadyExistsError(concat_name)
+        rows = []
+        for x in input_names:
+            row = self.get_fasta_row(x)
+            if row:
+                rows.append(row)
+            else:
+                raise NoSuchFASTAError(x)
+        fasta_file_name = str(uuid.uuid4()) + '.fasta'
+        while os.path.exists(os.path.join(self.project_path, 'FASTA', fasta_file_name)):
+            fasta_file_name = str(uuid.uuid4()) + '.fasta'                    
+        BashScripts.concat_files_with_newline([os.path.join(self.project_path, x.FASTAPath) for x in rows], os.path.join(self.project_path, 'FASTA', fasta_file_name))
+        assert(os.path.exists(os.path.join(self.project_path, 'FASTA', fasta_file_name)))
+        
+        
+        fasta_record = DB.FASTA(Name = concat_name, FASTAPath = os.path.join('FASTA', fasta_file_name), Comment = comment, parent_fastas = rows)
+        self.db_session.add(fasta_record)
+        return fasta_record
 
     def get_percolator_parameter_file(self, name):
         row = self.db_session.query(DB.PercolatorParameterFile).filter_by(Name = name).first()

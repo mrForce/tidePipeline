@@ -119,7 +119,8 @@ class ContaminantSet(BaseTable, AbstractPeptideCollection):
                 if len(line) in lengths:
                     peptides.append(line)
         return peptides
-                    
+
+
 """
 This links an iterative search with the MGF files it created
 """        
@@ -141,7 +142,6 @@ class IterativeRunSearchAssociation(BaseTable):
     def get_contaminant_sets(self):
         print(self)
         return self.search.get_contaminant_sets()
-
 
 
 
@@ -178,6 +178,7 @@ msgfplus_index_fasta = Table('msgfplus_index_fasta', BaseTable.metadata, Column(
 
 targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
+
 
 
  
@@ -360,6 +361,12 @@ class RAWfile(BaseTable):
     def remove_files(self, project_root):
         delete_objects(project_root, [self.RAWPath])
 
+concatfasta_to_parents = Table('concatfasta_to_parents',
+                         BaseTable.metadata,
+                         Column('fasta_id', Integer, ForeignKey('FASTA.idFASTA'), primary_key=True),
+                         Column('parent_id', Integer, ForeignKey('FASTA.idFASTA'), primary_key=True)
+)
+    
 class FASTA(BaseTable):
     __tablename__ = 'FASTA'
     idFASTA = Column('idFASTA', Integer, primary_key=True)
@@ -368,6 +375,11 @@ class FASTA(BaseTable):
     Comment = Column('Comment', String)
     peptide_lists = relationship('PeptideList', back_populates='fasta')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_fasta, back_populates='fasta')
+    #the parents are FASTA files that got concated to form this file (if that is what happened)
+    parent_fastas = relationship('FASTA',
+                                 secondary=concatfasta_to_parents,
+                                 primaryjoin=idFASTA==concatfasta_to_parents.c.fasta_id,
+                                 secondaryjoin=idFASTA==concatfasta_to_parents.c.parent_id)
     def __repr__(self):
         return 'FASTA File found at: ' + self.FASTAPath + ' with comment: ' + self.Comment
     def identifier(self):
