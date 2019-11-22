@@ -12,7 +12,19 @@ def shuffle_string(string):
     random.shuffle(l)
     return ''.join(string)
 
-
+def prepend_fasta_name(input_path, output_path, name):
+    command = ['awk', '{if($1 ~ /^>/) print(">' + name + '|"substr($0, 2)); else print($0)}']
+    if not os.path.isfile(input_path):
+        raise FileDoesNotExistError(input_path)
+    with open(input_path, 'r') as f:
+        with open(output_path, 'w') as g:
+            proc = subprocess.Popen(command, stdin=f, stdout=g)
+            try:
+                outs, errors = proc.communicate()
+            except:
+                raise AWKFailedError(command)
+            if proc.returncode != 0:
+                raise NonZeroReturnCodeError(command, proc.returncode)
 """
 This function uses awk, and ensures that there's a newline between each file.
 """

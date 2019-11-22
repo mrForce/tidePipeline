@@ -14,10 +14,12 @@ parser.add_argument('search_name', help='The name of the search to percolator on
 
 parser.add_argument('percolator_name', help='The name of the percolator run')
 parser.add_argument('--param_file', help='Parameter file for percolator')
+parser.add_argument('--num_matches_per_spectrum', type=int, help='Number of matches per spectrum')
+
 args = parser.parse_args()
 project_folder = args.project_folder
 print('project folder: ' + project_folder)
-
+assert(args.num_matches_per_spectrum > 0)
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 crux_exec_path = project.get_crux_executable_path()
@@ -35,6 +37,6 @@ if args.param_file:
 else:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
 percolator_name = args.percolator_name
-project.percolator(args.search_name, args.search_type, percolator_runner, percolator_name)
+project.percolator(args.search_name, args.search_type, percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
 project.end_command_session()
 

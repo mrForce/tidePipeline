@@ -758,6 +758,7 @@ class Base:
                 a = record.seq
         except:
             raise NotProperFASTAFileError(path)
+        
         #step 3 done
         newpath = self.copy_file('FASTA', path)
         #did step 4

@@ -36,10 +36,10 @@ def file_to_dict(path):
 
 class PostProcessing(Base):
 
-    def call_msgf2pin(self, msgf_search_name, percolator_location, msgf2pin_runner, fasta_files, decoy_pattern):
+    def call_msgf2pin(self, msgf_search_name, percolator_location, msgf2pin_runner, fasta_files, decoy_pattern, *, num_matches_per_spectrum = 1):
         msgf_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName = msgf_search_name).first()
         assert(msgf_row is not None)
-        msgf2pin_runner.runConversion(os.path.join(self.project_path, msgf_row.resultFilePath), percolator_location, fasta_files, decoy_pattern)
+        msgf2pin_runner.runConversion(os.path.join(self.project_path, msgf_row.resultFilePath), percolator_location, fasta_files, decoy_pattern, num_matches_per_spectrum = num_matches_per_spectrum)
     def list_filtered_search_results(self, showIterative):
         headers = ['Name', 'Path', 'Q Value threshold', 'Search Name']
         rows = []
@@ -228,7 +228,7 @@ class PostProcessing(Base):
                 targets_dict = file_to_dict(target_rank_path)
                 parser.insert_netmhc_ranks(hla + '-rank', targets_dict, decoys_dict)
         parser.write()
-    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False, *, commit=False, netmhc_ranking_information = False, use_ic50 = False):
+    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False, *, commit=False, netmhc_ranking_information = False, use_ic50 = False, num_matches_per_spectrum = 1):
         """
         If netmhc_ranking_information is used, it should be a list of tuples of the form [(allele, (group1, group2...))]
         """
@@ -279,69 +279,7 @@ class PostProcessing(Base):
                     fasta_index = tail.rfind('.fasta')
                     new_tail = tail[:fasta_index] + '.revCat.fasta'
                     fasta_files = [os.path.join(self.project_path, head, new_tail)]
-                    self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_')
-                    if netmhc_ranking_information:
-                        new_pin_location = shutil.copy(target_path, output_directory_tide)
-                        pin_rw = Parsers.SinglePINRW(new_pin_location, Parsers.PINParser.msgf_is_target)
-                        self._netmhc_rank(netmhc_ranking_information, pin_rw, output_directory_tide, MIN_NETMHC_PEPTIDE_LENGTH, MAX_NETMHC_PEPTIDE_LENGTH, use_ic50=use_ic50, pin_type = pin_type)
-            new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch)
-            self.db_session.add(new_row)
-            if commit:
-                self.db_session.commit()
-        else:
-            if search_row is None:
-                if search_type == 'tide':
-                    raise TideSearchRowDoesNotExistError(search_name)
-                elif search_type == 'msgfplus':
-                    raise MSGFPlusSearchRowDoesNotExistError(search_name)
-            if percolator_row:
-                raise PercolatorNameMustBeUniqueError(percolator_name)
-    """
-    Returns a list of NetMHC ranks.
-    """
-    def netmhc_rank_distribution(self, peptide_set_type, peptide_set_name, hla_names, netmhcpan = False):
-        peptide_score_paths = []
-        #add any tempfiles that will need to be cleaned up at end to this
-        tempfiles = []
-        if peptide_set_type == 'PeptideList':
-            for hla in hla_names:
-                netmhc_row, peptide_affinity_path, peptide_score_path, is_netmhc_row_new = self._run_netmhc(peptide_set_name, hla, netmhcpan)
-                peptide_score_paths.append(peptide_score_path)
-        else:
-            row = None
-            if peptide_set_type == 'FilteredNetMHC':
-                row = self.get_filtered_netmhc_row(peptide_set_name)
-            if peptide_set_type == 'TargetSet':
-                row = self.get_target_set_row(peptide_set_name)
-            elif peptide_set_type == 'FilteredSearchResult':
-                row = self.get_filtered_search_result_row(peptide_set_name)
-            elif peptide_set_type == 'MaxQuantSearch':
-                row = self.get_maxquant_search_row(peptide_set_name)
-            elif peptide_set_type == 'TideIterativeSearch':
-                row = self.get_tideiterativerun_row(peptide_set_name)
-            elif peptide_set_type == 'MSGFPlusIterativeSearch':
-                row = self.get_msgfplusiterativesearch_row(peptide_set_name)
-            assert(row)
-            peptides = row.get_peptides(self.project_path)
-            for hla_name in hla_names:
-                parsed_scores = tempfile.NamedTemporaryFile()
-                peptide_score_path=  parsed_scores.name
-                tempfiles.append(parsed_scores)
-                peptide_score_paths.append((hla_name, peptide_score_path))
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    peptide_file_path = os.path.join(temp_dir, 'peptides')
-                    with open(os.path.join(temp_dir, 'peptides'), 'w') as f:
-                        for peptide in peptides:
-                            f.write(peptide + '\n')
-                    netmhc_output_filepath = os.path.join(temp_dir, 'netmhcOutput')
-                    call_netmhc(self.executables['netmhc'], hla_name, peptide_file_path, netmhc_output_filepath)
-                    parse_netmhc(netmhc_output_filepath, peptide_score_path)
-
-        """
-        THIS IS WHERE I STOPPED! NEED TO FINISH HAVING MULTIPLE MHC alleles!
-        """
-        assert(len(peptide_score_paths) == len(hla_names))        
-        #peptide_scores maps each peptide to a list of size len(hla_names), which by default contains 'NULL'.
+                    self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_', num_matches_per_spectrum = num_matches_per_spectrum)
         peptide_scores = collections.defaultdict(lambda: ['NULL']*len(hla_names))
         for hla, peptide_score_path in peptide_score_paths:
             hla_index = hla_names.index(hla)
