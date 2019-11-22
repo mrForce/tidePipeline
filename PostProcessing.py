@@ -280,6 +280,12 @@ class PostProcessing(Base):
                     new_tail = tail[:fasta_index] + '.revCat.fasta'
                     fasta_files = [os.path.join(self.project_path, head, new_tail)]
                     self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_', num_matches_per_spectrum = num_matches_per_spectrum)
+            new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch, num_matches_per_spectrum = num_matches_per_spectrum)
+            self.db_session.add(new_row)
+            if commit:
+                self.db_session.commit()
+            
+        """
         peptide_scores = collections.defaultdict(lambda: ['NULL']*len(hla_names))
         for hla, peptide_score_path in peptide_score_paths:
             hla_index = hla_names.index(hla)
@@ -294,3 +300,4 @@ class PostProcessing(Base):
         for t in tempfiles:
             t.close()
         return peptide_scores
+        """

@@ -18,8 +18,8 @@ class MSGF2PinRunner:
     def __init__(self, msgf2pin_binary, unimodXMLLocation):
         self.msgf2pin_binary = msgf2pin_binary
         self.unimodXMLLocation = unimodXMLLocation
-    def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern):
-        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme',  '-P', decoy_pattern]
+    def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern, *, num_matches_per_spectrum = 1):
+        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme',  '-P', decoy_pattern, '-m', str(num_matches_per_spectrum)]
         print('going to run MSGF2pin conversion')
         print(command)
         try:
@@ -150,7 +150,7 @@ class MSGFPlusSearchRunner:
         self.args = args
     @staticmethod
     def get_search_options():
-        return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}, '--e': {'type': int, 'help': 'enzymeID'}}
+        return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}, '--e': {'type': int, 'help': 'enzymeID'}, '--n': {'type':int, 'help': 'Number of matches per spectrum'}}
     @classmethod
     def convert_cmdline_option_to_column_name(cls, option):
         if option in cls.converter:
@@ -218,7 +218,7 @@ class MSGFPlusSearchRunner:
                     column_args[column_name] = str(value)
                 else:
                     print('key: ' + key)
-                    assert(column_name)
+                    #assert(column_name)
 
         try:
             print('command: ' +  ' '.join([str(x) for x in command]))
@@ -415,7 +415,7 @@ class PercolatorRunner:
         self.param_file_row = param_file_row
         self.project_path = project_path
 
-    def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row, partOfIterativeSearch = False):
+    def run_percolator_create_row(self, target_path, output_directory_tide, output_directory_db, percolator_name, tide_search_row, partOfIterativeSearch = False, *, num_matches_per_spectrum = 1):
         assert(target_path)
         command = [self.crux_binary, 'percolator']
         print('running percolator command from: ' + os.getcwd())
@@ -424,6 +424,8 @@ class PercolatorRunner:
             command.append('--parameter-file')
             command.append(os.path.join(self.project_path, self.param_file_row.Path))
             column_arguments['parameterFile'] = self.param_file_row
+        command.append('--top-match')
+        command.append(str(num_matches_per_spectrum))
         command.append('--output-dir')
         command.append(output_directory_tide)
         command.append(target_path)
