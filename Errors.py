@@ -31,6 +31,12 @@ class AWKFailedError(Error):
         return 'awk command: ' + ' '.join(self.command) + ' failed'
 
 
+
+class DifferentScoresForSamePeptidesError(Error):
+    def __init__(self, peptide_to_score_map):
+        self.peptide_to_score_map = peptide_to_score_map
+    def __repr__(self):
+        return 'The following peptides were given the following (different) scores: \n%s ' % '\n'.join([k + ', '.join(v) for k,v in self.peptide_to_score_map.items()])
 class NonZeroReturnCodeError(Error):
     def __init__(self, command, code):
         self.command = command

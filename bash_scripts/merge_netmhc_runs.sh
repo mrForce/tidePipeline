@@ -1,7 +1,6 @@
 #!/bin/bash
 (>&2 echo "In merge_netmhc_runs.sh")
 chainJoin(){
-
     if [ "$#" -eq 1 ]; then
 	sort -t, -k1 $1
     else
@@ -15,10 +14,12 @@ if [ $# -lt 4 ]; then
 else
     fileArgs=${@:2: $#-1}
     joined=$(mktemp)
+
     chainJoin $fileArgs > $joined
-    
     output=$(mktemp)
-    echo $(pwd) 1&>&2
+    
+    echo $(pwd) 1&>2
+    
     awk -F "," -f bash_scripts/select_netmhc_rank.awk $joined $1 > $output
     echo $output
     rm $joined

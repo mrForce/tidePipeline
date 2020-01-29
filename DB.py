@@ -153,6 +153,7 @@ tideindex_filteredNetMHC = Table('tideindex_filteredNetMHC', BaseTable.metadata,
 
 msgfplus_index_filteredNetMHC = Table('msgfplus_index_filteredNetMHC', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
+
 maxquant_search_filteredNetMHC = Table('maxquant_search_filteredNetMHC', BaseTable.metadata, Column('maxquant_search_id', ForeignKey('MaxQuantSearch.idSearch'), primary_key=True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 
 tideindex_peptidelists = Table('tideindex_peptidelists', BaseTable.metadata, Column('tideindex_id', ForeignKey('TideIndex.idIndex'), primary_key=True), Column('peptidelist_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
@@ -175,6 +176,8 @@ msgfplus_index_targetset = Table('msgfplus_index_targetset', BaseTable.metadata,
 msgfplus_index_fasta = Table('msgfplus_index_fasta', BaseTable.metadata, Column('msgfplus_index_id', ForeignKey('MSGFPlusIndex.idIndex'), primary_key = True), Column('fasta_id', ForeignKey('FASTA.idFASTA'), primary_key=True))
 
 
+
+filteredNetMHC_netMHC = Table('filteredNetMHC_netMHC', BaseTable.metadata, Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True), Column('netMHC_id', ForeignKey('NetMHC.idNetMHC'), primary_key=True))
 
 targetset_filteredNetMHC = Table('targetset_filteredNetMHC', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('filteredNetMHC_id', ForeignKey('FilteredNetMHC.idFilteredNetMHC'), primary_key=True))
 targetset_peptidelists = Table('targetset_peptidelists', BaseTable.metadata, Column('targetset_id', ForeignKey('TargetSet.idTargetSet'), primary_key = True), Column('peptideList_id', ForeignKey('PeptideList.idPeptideList'), primary_key=True))
@@ -535,7 +538,7 @@ class FilteredNetMHC(BaseTable, AbstractPeptideCollection):
     targetsets = relationship('TargetSet', secondary=targetset_filteredNetMHC, back_populates='filteredNetMHCs')
     msgfplusindices = relationship('MSGFPlusIndex', secondary=msgfplus_index_filteredNetMHC, back_populates='filteredNetMHCs')
     maxquantsearches = relationship('MaxQuantSearch', secondary=maxquant_search_filteredNetMHC, back_populates='filteredNetMHCs')
-    netmhc = relationship('NetMHC')
+    netmhc = relationship('NetMHC', secondary=filteredNetMHC_netMHC)
     def remove_files(self, project_root):
         delete_objects(project_root, [self.filtered_path])
     def get_peptides(self, project_path):

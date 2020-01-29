@@ -6,6 +6,9 @@ from Errors import *
 from Bio import SeqIO
 import shutil
 import random
+import csv
+
+
 
 def shuffle_string(string):
     l = list(string)
@@ -129,6 +132,64 @@ def call_netmhc_decoys(input_location, target, num_decoys):
     print(output_location)
     assert(os.path.isfile(output_location))
     return output_location
+
+def combine_netmhc_runs_on_files(files):
+    """
+    Here's the deal: We have a list of files. Each line is "peptide,IC50", and we want to:
+    
+    1) Concat them, and uniquify by peptide
+    2) Ensure that if the peptide is found in two files, that both are given the same score
+
+    For #2, DifferentScoresForSamePeptideError should be thrown if a peptide is given two different scores.
+
+    Here's an easy way to detect this: concat the files, then uniq by line. Then uniq by peptide. If the unique by peptide removes any lines, then we know that a peptide was given two different scores.
+    """
+    print('files')
+    print(files)
+    with tempfile.NamedTemporaryFile(encoding='utf8', mode='r+') as f:
+        concat_files_with_newline(files, f.name)
+        with tempfile.NamedTemporaryFile(encoding='utf8', mode='r+') as g:
+            command = ['sort', '-u', f.name]
+            proc = subprocess.Popen(command, stdout=g)
+            try:
+                outs, errors = proc.communicate()
+            except:
+                assert(False)
+            if proc.returncode != 0:
+                raise NonZeroReturnCodeError(command, proc.returncode)
+            n_lines = num_lines(g.name)
+            final_file = tempfile.NamedTemporaryFile(delete=False)
+            command = ['sort', '-u', '-t,', '-k1,1', g.name]
+            proc = subprocess.Popen(command, stdout=final_file)
+            try:
+                outs, errors = proc.communicate()
+            except:
+                assert(False)
+            if proc.returncode != 0:
+                raise NonZeroReturnCodeError(command, proc.returncode)
+            n_lines_final = num_lines(final_file.name)
+            if n_lines == n_lines_final:
+                return final_file.name
+            else:
+                #this gives us the lines that are in file 1 (g), and not in file 2.
+                command = ['comm', '-23', g.name, final_file.name]
+                comm_output_file = tempfile.NamedTemporaryFile(encoding='utf8', mode='r+')
+                proc = subprocess.Popen(command, stdout=comm_output_file)
+                try:
+                    outs, errors = proc.communicate()
+                except:
+                    assert(False)
+                if proc.returncode != 0:
+                    raise NonZeroReturnCodeError(command, proc.returncode)
+                print('comm output file')
+                print(comm_output_file.name)
+                comm_output_file.seek(0)
+                
+                reader = csv.reader(comm_output_file, delimiter=',')
+                peptide_to_score_map = collections.defaultdict(set)
+                for row in reader:
+                    peptide_to_score_map[row[0]].add(row[1])                                 
+                raise DifferentScoresForSamePeptidesError(peptide_to_score_map)
 
 def call_merge_and_sort(files):
     #files should be a list of file paths
@@ -275,3 +336,5 @@ def top_percent_netmhc(input_location, percent, output_location):
     if rc != 0:
         raise NonZeroReturnCodeError(command, rc)
     assert(os.path.isfile(output_location))
+#t = combine_netmhc_runs_on_files(['bash_scripts/one.txt', 'bash_scripts/two.txt', 'bash_scripts/three.txt'])
+

@@ -398,9 +398,11 @@ class Base:
         netmhc_row, pep_affinity_path, pep_score_path, is_netmhc_row_new = self._run_netmhc(peptide_list_name, hla, netmhc_name, netmhcpan)
         if filtered_name:
             self.filter_netmhc(rank_cutoff, filtered_name, netmhc_row)
-    def filter_netmhc(self, rank_cutoff, filtered_name, netmhc_row):
-        pep_affinity_path = netmhc_row.PeptideAffinityPath
-        peptide_list_row = netmhc_row.peptidelist
+    def filter_netmhc(self, rank_cutoff, filtered_name, netmhc_rows):
+        #1/29/20: start with handling peptide affinity paths
+        pep_affinity_paths = [os.path.join(self.project_path, x.PeptideAffinityPath) for  x in netmhc_rows]
+        #The netmhc was done on a peptide list, and that peptide list has a FASTA file that holds its peptides. We will use the headers from it in constructing 
+        peptide_list_rows = [netmhc_row.peptidelist for netmhc_row in netmhc_rows]
         if self.db_session.query(DB.FilteredNetMHC).filter_by(FilteredNetMHCName = filtered_name).first() is None and filtered_name:
             print('going to do it')
             file_name = str(uuid.uuid4())
@@ -409,22 +411,23 @@ class Base:
             print('current place: ' + os.getcwd())
             output_path = os.path.join(self.project_path, 'FilteredNetMHC', file_name)
 
-            BashScripts.top_percent_netmhc(os.path.join(self.project_path, pep_affinity_path), rank_cutoff, output_path)
-            
+            pep_affinity_path = BashScripts.combine_netmhc_runs_on_files(pep_affinity_paths)
+            BashScripts.top_percent_netmhc(pep_affinity_path, rank_cutoff, output_path)
+            os.remove(pep_affinity_path)
             headline_mapper = {}
-            peptide_list_path = os.path.join(self.project_path, peptide_list_row.PeptideListPath)
-            peptide_list_fasta_path = os.path.join(self.project_path, peptide_list_row.PeptideListFASTA)
+            peptide_list_fasta_paths = [os.path.join(self.project_path, x.PeptideListFASTA) for x in peptide_list_rows]
             
             output_fasta = os.path.join(self.project_path, 'FilteredNetMHC', file_name + '.fasta')
-            if os.path.exists(peptide_list_fasta_path):
-                with open(peptide_list_fasta_path, 'rU') as handle:
-                    for record in SeqIO.parse(handle, 'fasta'):
-                        sequence = record.seq
-                        header = record.id
-                        if sequence in headline_mapper:
-                            headline_mapper[sequence] += ' @@ ' +  header
-                        else:
-                            headline_mapper[sequence] = header
+            for peptide_list_fasta_path in peptide_list_fasta_paths:
+                if os.path.exists(peptide_list_fasta_path):
+                    with open(peptide_list_fasta_path, 'rU') as handle:
+                        for record in SeqIO.parse(handle, 'fasta'):
+                            sequence = record.seq
+                            header = record.id
+                            if sequence in headline_mapper:
+                                headline_mapper[sequence] += ' @@ ' +  header
+                            else:
+                                headline_mapper[sequence] = header
             print('headline mapper size: %d' % len(headline_mapper))
             i = 0
             with open(output_path, 'r') as input_handle:
@@ -440,7 +443,7 @@ class Base:
                             output_handler.write('%s\n' % peptide)
                                 
             
-            filtered_row = DB.FilteredNetMHC(netmhc=netmhc_row, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name), fasta_path=output_fasta)
+            filtered_row = DB.FilteredNetMHC(netmhc=netmhc_rows, RankCutoff = rank_cutoff, FilteredNetMHCName = filtered_name, filtered_path = os.path.join('FilteredNetMHC', file_name), fasta_path=output_fasta)
             self.db_session.add(filtered_row)
             #self.db_session.commit()
             
