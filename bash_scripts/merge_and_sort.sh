@@ -13,8 +13,6 @@ do
 done
 (>&2 echo "Done")
 final_merged=$(mktemp)
-echo "merged"
-cat $merged
 awk -f bash_scripts/select_netmhc_rank.awk -F, $merged 1 > $final_merged
 rm $merged
 sorted=$(mktemp)
