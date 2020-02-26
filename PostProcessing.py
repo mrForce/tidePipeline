@@ -141,6 +141,10 @@ class PostProcessing(Base):
     def get_percolator_peptide_q_values(self, percolator_name):
         percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, 1.0, self.project_path, self.db_session, self.get_crux_executable_path(), True)
         return percolator_handler.get_q_values()
+
+    def get_percolator_psms(self, percolator_name):
+        percolator_handler = ReportGeneration.PercolatorHandler(percolator_name, 1.0, self.project_path, self.db_session, self.get_crux_executable_path(), False)
+        return percolator_handler.get_psms()
     def list_percolator(self, tide_search_name = None):
         filter_args = {}
         if tide_search_name:

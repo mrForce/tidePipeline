@@ -110,7 +110,7 @@ class MSGFPlusQValueHandler(AbstractQValueHandler):
                 score = peptide_match.get_score()
                 if q_value <= threshold:
                     self.peptides.add(peptide)
-                    self.psms.add((scan, peptide))
+                    self.psms.add((scan, peptide, q_value))
         
 
     def get_peptides(self):
@@ -144,7 +144,7 @@ class AssignConfidenceHandler(AbstractQValueHandler):
             q_val = float(row[2])
             if q_val <= threshold:
                 self.peptides.add(peptide)
-                self.psms.add((scan, peptide))
+                self.psms.add((scan, peptide, q_val))
         
 
     def get_peptides(self):
@@ -154,15 +154,6 @@ class AssignConfidenceHandler(AbstractQValueHandler):
     def get_row(self):
         return self.assign_confidence_row
 class PercolatorHandler(AbstractQValueHandler):
-
-    """
-    This needs to get several things:
-    The name of the row
-    The MGF name
-    The Tide Search Name
-    Peptides
-    PSMs
-    """
     def __init__(self, name, threshold, project_path, db_session, crux_path, use_percolator_peptides = False):
         self.percolator_row = db_session.query(DB.Percolator).filter_by(PercolatorName = name).first()
         self.peptides = set()
@@ -180,7 +171,7 @@ class PercolatorHandler(AbstractQValueHandler):
             self.q_values.append((peptide, q_val))
             if q_val <= threshold:
                 self.peptides.add(peptide)
-                self.psms.add((scan, peptide))
+                self.psms.add((scan, peptide, q_val))
             
     def get_peptides(self):
         return self.peptides
@@ -198,6 +189,9 @@ class Report:
     Input: a list of tuples of the form (AssignConfidence, threshold). 
 
     AssignConfidence is a row in the AssignConfidence table
+
+
+    This no longer works!
     """
     def __init__(self, assign_confidence_runs, project_path):
         self.latex_objects = []
