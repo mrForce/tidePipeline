@@ -28,7 +28,7 @@ project_folder = args.project_folder
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-q_values = sorted(project.get_percolator_psms(args.Name), key=lambda x: x[1])
+q_values = sorted(project.get_percolator_psms(args.Name), key=lambda x: x[2])
 
 with open(args.export_location, 'w') as tsv_output:
     fieldnames = ['Scan', 'Peptide', 'Q-Value']
