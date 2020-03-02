@@ -4,17 +4,7 @@ import argparse
 import sys
 import os
 import DB
-class NameCreator:
-    def __init__(self, start_string):
-        self.start_string = start_string
-        self.version = 0
-    def increase_version(self):
-        self.version += 1
-    def __str__(self):
-        if self.version == 0:
-            return self.start_string
-        else:
-            return self.start_string + '_' + str(self.version)
+
 parser = argparse.ArgumentParser(description='This looks at all the HLA alleles, and runs NetMHC on the peptide list for any alleles that do not already have a NetMHC run for that peptide list')
 
 parser.add_argument('project_folder', help='The location of the project folder')
@@ -23,8 +13,7 @@ parser.add_argument('peptideList', help='Name of the peptidelist to run NetMHC o
 
 
 args = parser.parse_args()
-if args.rank:
-    assert(args.rank <= 100.0 and args.rank > 0)
+
 project_folder = args.project_folder
 print('project folder: ' + project_folder)
 project = Base.Base(project_folder, ' '.join(sys.argv))
