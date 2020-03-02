@@ -34,7 +34,7 @@ rows = query.all()
 #hold {'hla': hla, 'netmhc_name': netmhc_name} in here
 netmhc_runs_to_make = []
 for hla in rows:
-    query = project.db_session.query(DB.NetMHC).filter(DB.NetMHC.idHLA == hla.idHLA, DB.NetMHC.peptidelistID = peptide_list_row.idPeptideList)
+    query = project.db_session.query(DB.NetMHC).filter(DB.NetMHC.idHLA == hla.idHLA, DB.NetMHC.peptidelistID == peptide_list_row.idPeptideList)
     netmhc_rows = query.all()
     if len(netmhc_rows) == 0:
         print('Need to call NetMHC on ' + hla.HLAName)
