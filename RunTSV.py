@@ -7,6 +7,9 @@ import re
 import itertools
 import DB
 import Runners
+import MSGFPlusEngine
+import PostProcessing
+
 parser = argparse.ArgumentParser(description='Run the pipeline. Use a TSV to specify which MGF files to run, and meta information associated with them. This will import the MGF files into the project, search them against an index, and run Percolator.')
 parser.add_argument('project_folder', help='The location of the project folder')
 
@@ -119,10 +122,10 @@ def fill_missing(format_strings, rows, fields, mgf_columns):
 for x in mgf_columns:
     column = x[0]
     assert(column in headers)
-    for row in rows:
+    for row in data:
         if column in row and len(row[column].strip()) > 0:
             assert(os.path.isfile(os.path.join(mgf_directory, row[column].strip() + '.mgf')))
-filled_rows = fill_missing(list(itertools.chain.from_iterable([x[1::] for x in mgf_columns])), rows, headers, [x[0] for x in mgf_columns])
+filled_rows = fill_missing(list(itertools.chain.from_iterable([x[1::] for x in mgf_columns])), data, headers, [x[0] for x in mgf_columns])
 
 mgf_rows = []
 for x in mgf_columns:
