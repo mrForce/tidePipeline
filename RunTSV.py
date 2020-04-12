@@ -29,10 +29,26 @@ parser.add_argument('--MGFColumn', nargs=4, action='append', help='Need four thi
 parser.add_argument('--memory', help='The amount of memory to give the jar file when searching. Default is 3500 megabytes', type=int)
 parser.add_argument('--modifications_name', help='Name of the modifications file to use. Optional')
 
+parser.add_argument('--min_length', type=int, help='min peptide length')
+parser.add_argument('--max_length', type=int, help='max peptide length')
+
+
 parser.add_argument('--percolator_param_file', help='Parameter file for percolator')
 parser.add_argument('--num_matches_per_spectrum', type=int, help='Number of matches per spectrum')
 
+
 args = parser.parse_args()
+
+
+search_arguments = {}
+
+if args.min_length:
+    search_arguments['min-length'] = args.min_length
+
+if args.max_length:
+    search_arguments['max-length'] = args.max_length
+
+    
 
 project_folder = args.project_folder
 
@@ -166,7 +182,7 @@ print('Going to run searches')
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 msgfplus_jar = project.executables['msgfplus']
-search_runner = Runners.MSGFPlusSearchRunner({}, msgfplus_jar)
+search_runner = Runners.MSGFPlusSearchRunner(search_arguments, msgfplus_jar)
 
 modifications_name = None
 if args.modifications_name:
