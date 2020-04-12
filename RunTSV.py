@@ -202,6 +202,7 @@ else:
 for row in mgf_rows:
     percolator_name = row.get_percolator_name()
     print('going to run percolator: ' + percolator_name)
+    print(project)
     project.percolator(row.get_search_name(), 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
 project.end_command_session()
 
