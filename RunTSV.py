@@ -41,7 +41,7 @@ print('project folder: ' + project_folder)
 tsv_path = args.TSVPath
 mgf_directory = args.MGFDirectory
 
-index = args.index
+index = args.Index
 
 enzyme = args.enzyme
 
@@ -55,9 +55,9 @@ data = []
 headers = None
 with open(tsv_path, 'r') as f:
     reader = csv.DictReader(f, delimiter='\t')
-    headers = reader.fieldnames
+    headers = [x.strip() for x in reader.fieldnames]
     for x in reader:
-        data.append(x)
+        data.append({k.strip(): v.strip() for k,v in x.items()})
 
 class MGFRow:
     def __init__(self, column, mgf_name_format_string, search_format_string, percolator_format_string, row):
@@ -86,11 +86,14 @@ class MGFRow:
     @staticmethod
     def substitute(format_string, row):
         fields = MGFRow.extract_format_string_fields(format_string)
+        print('row')
+        print(row)
         for x in fields:
+            print('field: ' + x)
             assert(x in row)
         name = format_string
         for x in fields:
-            name = name.replace('{' + x + '}', row[x])
+            name = name.replace('{' + x + '}', row[x].replace(' ', '_'))
         assert('{' not in name)
         assert('}' not in name)
         return name
@@ -119,11 +122,15 @@ def fill_missing(format_strings, rows, fields, mgf_columns):
         data.append(filled_row)
     return data
 
+print('headers')
+print(headers)
 for x in mgf_columns:
     column = x[0]
+    print('column: ' + column)
     assert(column in headers)
     for row in data:
         if column in row and len(row[column].strip()) > 0:
+            print('MGF location: ' + os.path.join(mgf_directory, row[column].strip() + '.mgf'))
             assert(os.path.isfile(os.path.join(mgf_directory, row[column].strip() + '.mgf')))
 filled_rows = fill_missing(list(itertools.chain.from_iterable([x[1::] for x in mgf_columns])), data, headers, [x[0] for x in mgf_columns])
 
@@ -137,42 +144,49 @@ for x in mgf_columns:
         if column in row and len(row[column].strip()) > 0:
             mgf_row = MGFRow(column, mgf_name_format, search_name_format, percolator_name_format, row)
             mgf_rows.append(mgf_row)
-
+"""
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
+"""
 print('adding MGF files')
 for row in mgf_rows:
     print('Adding mgf file: ' + row.get_mgf_file() + '.mgf')
     path = os.path.join(mgf_directory, row.get_mgf_file() + '.mgf')
+    print('mgf path: ' + row.get_mgf_file())
     name = row.get_mgf_name()
-    project.add_mgf_file(path, name, enzyme, fragmentation, instrument)
+    #project.add_mgf_file(path, name, enzyme, fragmentation, instrument)
 print('added MGF files')
         
 
 
-project.end_command_session()
+#project.end_command_session()
 
 print('Going to run searches')
+"""
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 msgfplus_jar = project.executables['msgfplus']
 search_runner = Runners.MSGFPlusSearchRunner({}, msgfplus_jar)
+"""
 modifications_name = None
 if args.modifications_name:
     modifications_name = args.modifications_name
+
 for row in mgf_rows:
     print('runing search: ' + row.get_search_name())
+    """
     if args.memory:
         project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name(), args.memory)
     else:
         project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name())
-
-project.end_command_session()
-
+    """
+#project.end_command_session()
 print('Going to run percolator')
+"""
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
 crux_exec_path = project.get_crux_executable_path()
 project.begin_command_session()
+
 percolator_runner = None
 
 for row in mgf_rows:
@@ -184,7 +198,7 @@ if args.percolator_param_file:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, param_file_row)
 else:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
-
+"""
 for row in mgf_rows:
     percolator_name = row.get_percolator_name()
     print('going to run percolator: ' + percolator_name)
