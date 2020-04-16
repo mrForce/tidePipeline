@@ -163,7 +163,7 @@ for x in mgf_columns:
         if column in row and len(row[column].strip()) > 0:
             mgf_row = MGFRow(column, mgf_name_format, search_name_format, percolator_name_format, row)
             mgf_rows.append(mgf_row)
-
+"""
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 
@@ -179,7 +179,7 @@ print('added MGF files')
 
 
 project.end_command_session()
-
+"""
 print('Going to run searches')
 
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
@@ -204,7 +204,7 @@ def search_run_thread(sem, lock, project, row, index, modifications_name, search
 
 search_semaphore = threading.Semaphore(concurrent_searches)
 #we use a mutex lock to make sure the DB modifications aren't ran concurrently
-search_lock = threading.lock()
+search_lock = threading.Lock()
 if __name__ == '__main__':
     threads = []
     for row in mgf_rows:
