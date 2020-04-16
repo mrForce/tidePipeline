@@ -1,0 +1,2 @@
+C2H2O,     *,  opt, Prot-N-term, Acetyl            # Acetylation Protein N-term
+O1,M,opt,any,Oxidation                  # Oxidation M

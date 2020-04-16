@@ -19,7 +19,8 @@ class MSGF2PinRunner:
         self.msgf2pin_binary = msgf2pin_binary
         self.unimodXMLLocation = unimodXMLLocation
     def runConversion(self, mzid_location, output_pin_location, fasta_files, decoy_pattern, *, num_matches_per_spectrum = 1):
-        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme',  '-P', decoy_pattern, '-m', str(num_matches_per_spectrum)]
+        #-z tells msgf2pin to output the 
+        command = [self.msgf2pin_binary, mzid_location, '-o', output_pin_location, '-F', ','.join(fasta_files), '-e', 'no_enzyme',  '-P', decoy_pattern, '-m', str(num_matches_per_spectrum), '-z']
         print('going to run MSGF2pin conversion')
         print(command)
         try:
