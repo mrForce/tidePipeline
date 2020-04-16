@@ -206,10 +206,14 @@ search_semaphore = threading.Semaphore(concurrent_searches)
 #we use a mutex lock to make sure the DB modifications aren't ran concurrently
 search_lock = threading.lock()
 if __name__ == '__main__':
+    threads = []
     for row in mgf_rows:
+        print('starting thread')
         t = threading.Thread(target=search_run_thread, args=(search_semaphore, search_lock, project, row, index, modifications_name, search_runner, args.memory))
+        threads.append(t)
         t.start()
-
+    for t in threads:
+        t.join()
 project.end_command_session()
 
 print('Going to run percolator')
