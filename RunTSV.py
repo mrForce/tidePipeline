@@ -30,7 +30,7 @@ parser.add_argument('--memory', help='The amount of memory to give the jar file 
 parser.add_argument('--modifications_name', help='Name of the modifications file to use. Optional')
 
 parser.add_argument('--percolator_param_file', help='Parameter file for percolator')
-parser.add_argument('--num_matches_per_spectrum', type=int, help='Number of matches per spectrum')
+parser.add_argument('--num_matches_per_spectrum', type=int, help='Number of matches per spectrum', default=1)
 
 args = parser.parse_args()
 
@@ -180,6 +180,7 @@ for row in mgf_rows:
         project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name())
 
 project.end_command_session()
+
 print('Going to run percolator')
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
@@ -198,6 +199,8 @@ if args.percolator_param_file:
 else:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
 
+
+    
 for row in mgf_rows:
     percolator_name = row.get_percolator_name()
     print('going to run percolator: ' + percolator_name)
