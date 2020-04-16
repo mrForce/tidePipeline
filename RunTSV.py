@@ -1,6 +1,7 @@
 import Base
 import argparse
 import sys
+import threading
 import os
 import csv
 import re
@@ -9,6 +10,8 @@ import DB
 import Runners
 import MSGFPlusEngine
 import PostProcessing
+
+concurrent_searches = 7
 
 parser = argparse.ArgumentParser(description='Run the pipeline. Use a TSV to specify which MGF files to run, and meta information associated with them. This will import the MGF files into the project, search them against an index, and run Percolator.')
 parser.add_argument('project_folder', help='The location of the project folder')
@@ -188,12 +191,24 @@ modifications_name = None
 if args.modifications_name:
     modifications_name = args.modifications_name
 
-for row in mgf_rows:
-    print('runing search: ' + row.get_search_name())
-    if args.memory:
-        project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name(), args.memory)
+def search_run_thread(sem, lock, project, row, index, modifications_name, search_runner, memory):
+    #semaphore to limit number of threads
+    sem.acquire()
+    print('going to run search ' + row.get_search_name() + ' against MGF: ' + row.get_mgf_name() + ' and index: ' + index)
+    if memory:
+        project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name(), memory, lock = lock)
     else:
-        project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name())
+        project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name(), lock = lock)
+    sem.release()
+
+
+search_semaphore = threading.Semaphore(concurrent_searches)
+#we use a mutex lock to make sure the DB modifications aren't ran concurrently
+search_lock = threading.lock()
+if __name__ == '__main__':
+    for row in mgf_rows:
+        t = threading.Thread(target=search_run_thread, args=(search_semaphore, search_lock, project, row, index, modifications_name, search_runner, args.memory))
+        t.start()
 
 project.end_command_session()
 

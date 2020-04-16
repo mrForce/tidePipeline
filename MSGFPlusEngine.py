@@ -176,7 +176,10 @@ class MSGFPlusEngine(AbstractEngine):
             self.db_session.commit()
 
             
-    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, tpm_file = False, tpm_id_type = False, uniprot_mapper = False,  *, commit=False, msgf_param_name = None):
+    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, tpm_file = False, tpm_id_type = False, uniprot_mapper = False,  *, commit=False, msgf_param_name = None, lock = None):
+        if lock:
+            while not lock.locked():
+                lock.acquire()
         #modifications_name can be None if using default        
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         msgf_param_row = None
@@ -198,13 +201,19 @@ class MSGFPlusEngine(AbstractEngine):
         if uniprot_mapper:
             uniprot_mapper_row = self.db_session.query(DB.UniprotMapper).filter_by(UniprotMapperName = uniprot_mapper).first()
         output_directory = self.create_storage_directory('msgfplus_search_results')
-        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row)
+        if lock:
+            lock.release()
+        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row, lock = lock)
+        if lock:
+            while not lock.locked():
+                lock.acquire()
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)
         if commit:
             self.db_session.commit()
-        
+        if lock:
+            lock.release()
             
     def list_indices(self):
         rows = self.db_session.query(DB.MSGFPlusIndex).all()
