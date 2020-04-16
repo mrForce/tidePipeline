@@ -43,10 +43,10 @@ args = parser.parse_args()
 search_arguments = {}
 
 if args.min_length:
-    search_arguments['min-length'] = args.min_length
+    search_arguments['minLength'] = args.min_length
 
 if args.max_length:
-    search_arguments['max-length'] = args.max_length
+    search_arguments['maxLength'] = args.max_length
 
     
 
