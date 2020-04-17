@@ -184,23 +184,15 @@ class MSGFPlusEngine(AbstractEngine):
         msgf_param_row = None
         if msgf_param_name:
             msgf_param_row = self.db_session.query(DB.MSGFPlusTrainingParams).filter_by(trainingName = msgf_param_name).first()
-        if not mgf_row:
-            session.close()
-            assert(mgf_row)
+        assert(mgf_row)
         index_row = self.db_session.query(DB.MSGFPlusIndex).filter_by(MSGFPlusIndexName=index_name).first()
-        if not index_row:
-            session.close()
-            assert(index_row)
+        assert(index_row)
         modifications_row = None
         if modifications_name:
             modifications_row = self.db_session.query(DB.MSGFPlusModificationFile).filter_by(MSGFPlusModificationFileName=modifications_name).first()
-            if not modifications_row:
-                session.close()
-                assert(modifications_row)
+            assert(modifications_row)
         search_row = self.db_session.query(DB.MSGFPlusSearch).filter_by(SearchName=search_name).first()
-        if search_row:
-            session.close()
-            assert(not search_row)
+        assert(not search_row)
         tpm_file_row = False
         if tpm_file:
             tpm_file_row = self.db_session.query(DB.TPMFile).filter_by(TPMName = tpm_file).first()
@@ -208,7 +200,7 @@ class MSGFPlusEngine(AbstractEngine):
         if uniprot_mapper:
             uniprot_mapper_row = self.db_session.query(DB.UniprotMapper).filter_by(UniprotMapperName = uniprot_mapper).first()
         output_directory = self.create_storage_directory('msgfplus_search_results')
-        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row, lock = lock)
+        new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row, lock = lock)    
         q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
         self.db_session.add(new_search_row)
         self.db_session.add(q_value_row)

@@ -690,6 +690,8 @@ class Base:
             self.command.executionSuccess = 1
         
         self.db_session.commit()
+        #Why didn't I close the DB connection before?
+        self.db_session.close()
         if validate and not os.path.exists(os.path.join(self.project_path, 'copied.txt')):
             try:
                 self.validate_project_integrity(ignore_operation_lock = True)

@@ -156,9 +156,11 @@ class MSGFPlusTrainingRunner:
 
 class MSGFPlusSearchRunner:
     converter = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm', 'e': 'EnzymeID'}
-    def __init__(self, args, jar_file_location):
+    #output_file is a file object to send the output of MS-GF+ to. 
+    def __init__(self, args, jar_file_location, *, output_file = None):
         self.jar_file_location = jar_file_location
         self.args = args
+        self.output_file = output_file
     @staticmethod
     def get_search_options():
         return {'--t': {'type':str, 'help': 'ParentMassTolerance'}, '--ti': {'type': str, 'help': 'IsotopeErrorRange'}, '--thread': {'type': str, 'help': 'NumThreads'}, '--m': {'type': str, 'help':'FragmentMethodID'}, '--inst': {'type': str, 'help': 'MS2DetectorID'}, '--minLength': {'type': int, 'help': 'MinPepLength'}, '--maxLength': {'type': int, 'help': 'MaxPepLength'}, '--minCharge': {'type': int, 'help': 'MinCharge'}, '--maxCharge': {'type': int, 'help': 'MaxCharge'}, '--ccm': {'type': str, 'help': 'ChargeCarrierMass'}, '--e': {'type': int, 'help': 'enzymeID'}, '--n': {'type':int, 'help': 'Number of matches per spectrum'}}
@@ -234,8 +236,14 @@ class MSGFPlusSearchRunner:
         if lock:
             lock.release()
         try:
-            print('command: ' +  ' '.join([str(x) for x in command]), flush=True)
-            p = subprocess.call([str(x) for x in command], stdout=sys.stdout, stderr=sys.stderr, bufsize=0, universal_newlines=True)
+            stdout = sys.stdout
+            stderr = sys.stderr
+            if self.output_file:
+                stdout = self.output_file
+                stderr = self.output_file
+            stdout.write('command: ' +  ' '.join([str(x) for x in command]) + '\n')
+            stdout.flush()
+            p = subprocess.call([str(x) for x in command], stdout=stdout, stderr=stderr, bufsize=0, universal_newlines=True)
         except subprocess.CalledProcessError:
             raise MSGFPlusSearchFailedError(' '.join(command))
         if lock:
