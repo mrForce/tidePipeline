@@ -169,7 +169,9 @@ class MSGFPlusSearchRunner:
         else:
             return None
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False, training_param_row = None, tpm_file_row = False, tpm_id_type = False, uniprot_mapper_row = False):        
+    def run_search_create_row(self, mgf_row, index_row, modifications_file_row, output_directory, project_path, search_row_name, memory=None, partOfIterativeSearch = False, training_param_row = None, tpm_file_row = False, tpm_id_type = False, uniprot_mapper_row = False,*, lock= None):
+        if lock:
+            lock.acquire()
         #output directory relative to the project path
         mgf_location = os.path.join(project_path, mgf_row.MGFPath)
         print('mgf location: ' + mgf_location)
@@ -203,7 +205,6 @@ class MSGFPlusSearchRunner:
                 os.mkdir(msgf_param_folder)
             param_file_name = fragment_map[str(mgf_row.fragmentationMethod + 1)] + '_' + instrument_map[str(mgf_row.instrument)] + '_' + enzyme_map[enzyme] + '.param'
             shutil.copy(os.path.join(project_path, training_param_row.paramFileLocation), os.path.join(msgf_param_folder, param_file_name))
-            
         memory_string = '-Xmx10000M'
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
@@ -230,13 +231,15 @@ class MSGFPlusSearchRunner:
                 else:
                     print('key: ' + key)
                     #assert(column_name)
-
+        if lock:
+            lock.release()
         try:
-            print('command: ' +  ' '.join([str(x) for x in command]))
-            p = subprocess.call([str(x) for x in command], stdout=sys.stdout, stderr=sys.stderr)
+            print('command: ' +  ' '.join([str(x) for x in command]), flush=True)
+            p = subprocess.call([str(x) for x in command], stdout=sys.stdout, stderr=sys.stderr, bufsize=0, universal_newlines=True)
         except subprocess.CalledProcessError:
             raise MSGFPlusSearchFailedError(' '.join(command))
-
+        if lock:
+            lock.acquire()
 
         search_row = DB.MSGFPlusSearch(**column_args)
         return search_row

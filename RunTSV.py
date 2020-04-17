@@ -185,20 +185,24 @@ print('Going to run searches')
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 msgfplus_jar = project.executables['msgfplus']
-search_runner = Runners.MSGFPlusSearchRunner(search_arguments, msgfplus_jar)
 
 modifications_name = None
 if args.modifications_name:
     modifications_name = args.modifications_name
 
-def search_run_thread(sem, lock, project, row, index, modifications_name, search_runner, memory):
+def search_run_thread(sem, lock, search_arguments, msgfplus_jar, project_folder, mgf_name, search_name, index, modifications_name,  memory):
     #semaphore to limit number of threads
+    sys.stderr.write("Going to acquire semaphore\n")
     sem.acquire()
-    print('going to run search ' + row.get_search_name() + ' against MGF: ' + row.get_mgf_name() + ' and index: ' + index)
+    project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
+    project.begin_command_session()
+    search_runner = Runners.MSGFPlusSearchRunner(search_arguments, msgfplus_jar)
+    sys.stderr.write('going to run search ' + search_name + ' against MGF: ' + mgf_name + ' and index: ' + index + '\n')
     if memory:
-        project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name(), memory, lock = lock)
+        project.run_search(mgf_name, index, modifications_name, search_runner, search_name, memory, lock = lock, commit = True)
     else:
-        project.run_search(row.get_mgf_name(), index, modifications_name, search_runner, row.get_search_name(), lock = lock)
+        project.run_search(mgf_name, index, modifications_name, search_runner, search_name, lock = lock,  commit=True)
+    project.end_command_session()
     sem.release()
 
 
@@ -208,8 +212,8 @@ search_lock = threading.Lock()
 if __name__ == '__main__':
     threads = []
     for row in mgf_rows:
-        print('starting thread')
-        t = threading.Thread(target=search_run_thread, args=(search_semaphore, search_lock, project, row, index, modifications_name, search_runner, args.memory))
+        sys.stderr.write("Starting thread\n")
+        t = threading.Thread(target=search_run_thread, args=(search_semaphore, search_lock, search_arguments, msgfplus_jar, project_folder, row.get_mgf_name(), row.get_search_name(), index, modifications_name,  args.memory))
         threads.append(t)
         t.start()
     for t in threads:
