@@ -246,8 +246,7 @@ class MSGFPlusSearchRunner:
             p = subprocess.call([str(x) for x in command], stdout=stdout, stderr=stderr, bufsize=0, universal_newlines=True)
         except subprocess.CalledProcessError:
             raise MSGFPlusSearchFailedError(' '.join(command))
-        if lock:
-            lock.acquire()
+
 
         search_row = DB.MSGFPlusSearch(**column_args)
         return search_row
