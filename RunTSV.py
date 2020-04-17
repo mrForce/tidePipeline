@@ -235,6 +235,7 @@ if __name__ == '__main__':
         t = threading.Thread(target=search_run_thread, args=(search_semaphore, search_lock, search_arguments, msgfplus_jar, project_folder, row.get_mgf_name(), row.get_search_name(), index, modifications_name,  args.memory, log_path))
         threads.append(t)
         t.start()
+        i += 1
     for t in threads:
         t.join()
 project.end_command_session()
