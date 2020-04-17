@@ -193,52 +193,37 @@ modifications_name = None
 if args.modifications_name:
     modifications_name = args.modifications_name
 
-def search_run_thread(sem, lock, search_arguments, msgfplus_jar, project_folder, mgf_name, search_name, index, modifications_name,  memory, log_path):
-    #semaphore to limit number of threads
-    sys.stderr.write("Going to acquire semaphore\n")
-    sem.acquire()
-    with open(log_path, mode='w', buffering=1) as f:
-        lock.acquire()
-        project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
-        project.begin_command_session()
-        search_runner = Runners.MSGFPlusSearchRunner(search_arguments, msgfplus_jar, output_file = f)
-        f.write('going to run search ' + search_name + ' against MGF: ' + mgf_name + ' and index: ' + index + '\n')
-        lock.release()
-        try:
-            if memory:
-                project.run_search(mgf_name, index, modifications_name, search_runner, search_name, memory, lock = lock, commit = True)
-            else:
-                project.run_search(mgf_name, index, modifications_name, search_runner, search_name, lock = lock,  commit=True)
-        except:
-            lock.acquire()
-            sys.stderr.write('Exception while trying to run search: ' + search_name + '\n')
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            sys.stderr.write('type: ' + str(exc_type) + '\n')
-            sys.stderr.write('value: ' + str(exc_value) + '\n')
-            sys.stderr.write('traceback: ' + str(exc_traceback) + '\n')
-            lock.release()
-        lock.acquire()    
-        project.end_command_session()
-        lock.release()
-    sem.release()
 
 #semaphore is used to limit the number of concurrent searches.
 search_semaphore = threading.Semaphore(concurrent_searches)
-#we use a mutex lock to make sure the only thing that is run concurrently is the MS-GF+ search. 
-search_lock = threading.Lock()
 if __name__ == '__main__':
-    threads = []
     i = 1
+    threads_and_rows = []
+    project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
+    project.begin_command_session()
     for row in mgf_rows:
-        sys.stderr.write("Starting thread\n")
         log_path = os.path.join(log_dir, str(i) + '.txt')
-        t = threading.Thread(target=search_run_thread, args=(search_semaphore, search_lock, search_arguments, msgfplus_jar, project_folder, row.get_mgf_name(), row.get_search_name(), index, modifications_name,  args.memory, log_path))
-        threads.append(t)
-        t.start()
+        search_runner = Runners.MSGFPlusSearchRunner(search_arguments, msgfplus_jar, log_path, search_semaphore)
+        rows = []
+        thread = None
+        mgf_name = row.get_mgf_name()
+        search_name = row.get_search_name()
+        if args.memory:
+            rows, thread = project.run_search(mgf_name, index, modifications_name, search_runner, search_name, args.memory)
+        else:
+            rows, thread = project.run_search(mgf_name, index, modifications_name, search_runner, search_name)
+        assert(rows)
+        assert(thread)
+        threads_and_rows.append((rows, thread))
         i += 1
-    for t in threads:
-        t.join()
-project.end_command_session()
+    for rows, thread in threads_and_rows:
+        thread.start()
+    for rows, thread in threads_and_rows:
+        thread.join()
+        for row in rows:
+            project.db_session.add(row)
+        project.db_session.commit()
+    project.end_command_session()
 
 print('Going to run percolator')
 
