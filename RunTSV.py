@@ -197,7 +197,7 @@ def search_run_thread(sem, lock, search_arguments, msgfplus_jar, project_folder,
     #semaphore to limit number of threads
     sys.stderr.write("Going to acquire semaphore\n")
     sem.acquire()
-    with open(log_path, mode='w', buffering=0) as f:
+    with open(log_path, mode='w', buffering=1) as f:
         lock.acquire()
         project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
         project.begin_command_session()
