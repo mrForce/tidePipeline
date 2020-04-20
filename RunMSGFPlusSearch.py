@@ -47,10 +47,14 @@ if args.modifications_name:
 msgf_param_name = None
 if args.msgf_param_name:
     msgf_param_name = args.msgf_param_name
-    
+
+rows = []
 if args.memory:
-    project.run_search(args.mgf_name, args.index_name, modifications_name, search_runner, args.search_name, args.memory, msgf_param_name = msgf_param_name)
+    rows = project.run_search(args.mgf_name, args.index_name, modifications_name, search_runner, args.search_name, args.memory, msgf_param_name = msgf_param_name)
 else:
-    project.run_search(args.mgf_name, args.index_name, modifications_name, search_runner, args.search_name, msgf_param_name = msgf_param_name)
+    rows = project.run_search(args.mgf_name, args.index_name, modifications_name, search_runner, args.search_name, msgf_param_name = msgf_param_name)
+for row in rows:
+    project.db_session.add(row)
+project.db_session.commit()
 project.end_command_session()
 

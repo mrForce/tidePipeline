@@ -216,9 +216,13 @@ class TideEngine(AbstractEngine):
             self.db_session.add_all(rows)
             #self.db_session.commit()
             
-    def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options=None, partOfIterativeSearch = False):
+    def run_search(self, mgf_name, tide_index_name, tide_search_runner, tide_search_name, options=None, partOfIterativeSearch = False, *, threaded = None):
         #options doesn't do anything
         print('in tide search function')
+        if threaded:
+            assert(tide_search_runner.semaphore)
+        else:
+            assert(tide_search_runner.semaphore is None)
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         tide_index_row = self.db_session.query(DB.TideIndex).filter_by(TideIndexName=tide_index_name).first()
         tide_search_row = self.db_session.query(DB.TideSearch).filter_by(SearchName=tide_search_name).first()
@@ -228,16 +232,12 @@ class TideEngine(AbstractEngine):
             while os.path.isfile(full_directory_path) or os.path.isdir(full_directory_path):
                 directory_name = str(uuid.uuid4().hex)
                 full_directory_path= os.path.join(self.project_path, 'tide_search_results', directory_name)
-            row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name, partOfIterativeSearch)
-            print('about to add new row to db')
-            print(row)
-            print('name: ' + tide_search_name)
-            self.db_session.add(row)
-            self.db_session.merge(row)
-            temp_row = self.db_session.query(DB.TideSearch).filter_by(SearchName = tide_search_name).first()
-            print('temp row')
-            print(temp_row)
-            #self.db_session.commit()
+            if threaded:
+                search_row, thread = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name, partOfIterativeSearch)
+                return ([search_row], thread)
+            else:
+                search_row = tide_search_runner.run_search_create_row(mgf_row, tide_index_row, full_directory_path, os.path.join('tide_search_results', directory_name), tide_search_name, partOfIterativeSearch)
+                return [search_row]
         else:
             if mgf_row is None:
                 raise MGFRowDoesNotExistError(mgf_name)
