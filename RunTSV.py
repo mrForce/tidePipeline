@@ -251,5 +251,6 @@ for row in mgf_rows:
     print(project)
     project.percolator(row.get_search_name(), 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
     
+    
 project.end_command_session()
 

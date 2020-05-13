@@ -152,8 +152,8 @@ class MSGFPlusTrainingRunner:
         return training_row
 
 def run_process(command, log_file_path = None, semaphore = None):
-    f = sys.STDOUT
-    g = sys.STDERR
+    f = sys.stdout
+    g = sys.stderr
     if log_file_path:
         f = open(log_file_path, mode='w', buffering=1)
         g = f

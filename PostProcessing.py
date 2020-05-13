@@ -288,7 +288,6 @@ class PostProcessing(Base):
             self.db_session.add(new_row)
             if commit:
                 self.db_session.commit()
-            
         """
         peptide_scores = collections.defaultdict(lambda: ['NULL']*len(hla_names))
         for hla, peptide_score_path in peptide_score_paths:
