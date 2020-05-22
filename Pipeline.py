@@ -335,13 +335,19 @@ class Search:
                 search_name = search_name + str(num)
             if self.memory:
                 if not test_run:
-                    project.run_search(self.mgfName, index_name, None, runner, search_name, self.memory, msgf_param_name = self.msgf_param_name)
+                    rows = project.run_search(self.mgfName, index_name, None, runner, search_name, self.memory, msgf_param_name = self.msgf_param_name)
+                    for row in rows:
+                        project.db_session.add(row)
+                    project.db_session.commit()
                 options_copy = dict(self.options)
                 options_copy['memory'] = self.memory
                 search_node = SearchNode(self.searchType, search_name, self.mgfName, options = options_copy)
             else:
                 if not test_run:
-                    project.run_search(self.mgfName, index_name, None, runner, search_name, msgf_param_name = self.msgf_param_name)
+                    rows = project.run_search(self.mgfName, index_name, None, runner, search_name, msgf_param_name = self.msgf_param_name)
+                    for row in rows:
+                        project.db_session.add(row)
+                    project.db_session.commit()
                 search_node = SearchNode(self.searchType, search_name, self.mgfName, options = self.options)
         elif self.searchType == 'tide':
             if not test_run:
@@ -357,7 +363,10 @@ class Search:
             param_file_row = project.get_tide_search_parameter_file(self.searchParamFile)
             runner = Runners.TideSearchRunner(crux_exec_path, project.project_path, param_file_row)
             if not test_run:
-                project.run_search(self.mgfName, index_name, runner, search_name)
+                rows = project.run_search(self.mgfName, index_name, runner, search_name)
+                for row in rows:
+                    project.db_session.add(row)
+                project.db_session.commit()
             search_node = SearchNode(self.searchType, search_name, self.mgfName, param_file = self.searchParamFile)
         else:
             assert(False)

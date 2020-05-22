@@ -30,50 +30,48 @@ class MSGF2PinRunner:
             raise MSGF2PinFailedError(' '.join(command))
 
 class TideSearchRunner:
-    def __init__(self, crux_binary, project_path, param_file_row = None):
+    def __init__(self, crux_binary, project_path, param_file_row = None, *, log_file_path = None, semaphore = None):
         self.project_path = project_path
         self.param_file_row = param_file_row
         self.crux_binary = crux_binary
+        self.log_file_path = log_file_path
+        self.semaphore = semaphore
     @staticmethod
     def get_tide_search_options():
         return {'--mod-precision': {'type':int}, '--auto-precursor-window': {'choices': ['false', 'warn', 'fail']}, '--max-precursor-charge': {'type': int}, '--precursor-window': {'type': float}, '--precursor-window-type': {'choices': ['mass', 'mz', 'ppm']}, '--auto-mz-bin-width': {'choices': ['false', 'warn', 'fail']}, '--compute-sp': {'choices': ['T', 'F']}, '--deisotope': {'type': float}, '--exact-p-value': {'choices':['T', 'F']}, '--isotope-error': {'type': str}, '--min-peaks': {'type': int}, '--mz-bin-offset': {'type': float}, '--mz-bin-width': {'type': float}, '--peptide-centric-search': {'choices': ['T', 'F']}, '--score-function': {'choices': ['xcorr', 'residue-evidence', 'both']}, '--fragment-tolerance': {'type': float}, '--evidence-granularity': {'type': int}, '--remove-precursor-peak': {'choices': ['T', 'F']}, '--remove-precursor-tolerance': {'type': float}, '--scan-number': {'type': str}, '--skip-processing': {'choices': ['T', 'F']}, '--spectrum-charge': {'choices': ['1', '2', '3', 'all']}, '--spectrum-max-mz': {'type': float}, '--spectrum-min-mz': {'type': float}, '--use-flanking-peaks': {'choices': ['T', 'F']}, '--use-neutral-loss-peaks': {'choices': ['T', 'F']}, '--num-threads': {'type': int}, '--pm-charge': {'type': int}, '--pm-max-frag-mz': {'type': float}, '--pm-max-precursor-delta-ppm': {'type': float}, '--pm-max-precursor-mz': {'type': float}, '--pm-max-scan-seperation': {'type': int}, '--pm-min-common-frag-peaks': {'type': int}, '--pm-min-frag-mz': {'type': float}, '--pm-min-peak-pairs': {'type': int}, '--pm-min-precursor-mz': {'type': float}, '--pm-min-scan-frag-peaks': {'type': int}, '--pm-pair-top-n-frag-peaks': {'type': int}, '--pm-top-n-frag-peaks': {'type': int}, '--concat': {'choices': ['T', 'F']}, '--file-column': {'choices': ['T', 'F']}, '--fileroot': {'type': str}, '--mass-precision': {'type': int}, '--mzid-output': {'choices': ['T', 'F']}, '--precision': {'type': int}, '--spectrum-parser': {'choices': ['pwiz', 'mstoolkit']}, '--store-spectra': {'type': str}, '--top-match': {'type': int}, '--use-z-line': {'choices': ['T', 'F']}}
 
     #change the options here
-    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, tide_search_row_name, partOfIterativeSearch = False, *, lock = None):
-        if lock:
-            while not lock.locked():
-                lock.acquire()
+    def run_search_create_row(self, mgf_row, index_row, output_directory_tide, output_directory_db, tide_search_row_name, partOfIterativeSearch = False):
         spectra_file = os.path.join(self.project_path, mgf_row.MGFPath)
         index_filename = os.path.join(self.project_path, index_row.TideIndexPath)
         print('current working directory: ' + os.getcwd())
         params = {}
+        command = None
         if self.param_file_row:
             param_file_path = os.path.join(self.project_path, self.param_file_row.Path)
             params = Parsers.parseTideParamFile(param_file_path)
             command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, '--parameter-file', param_file_path, spectra_file, index_filename, '--pin-output', 'T']
         else:        
             command = [self.crux_binary, 'tide-search', '--output-dir', output_directory_tide, spectra_file, index_filename, '--pin-output', 'T']
-        if lock:
-            lock.release()
-        try:
-            p = subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)
-        except subprocess.CalledProcessError:
-            raise TideSearchFailedError(' '.join(command))
-        if lock:
-            while not lock.locked():
-                lock.acquire()
+        search_row = None
         if 'concat' in params:
             assert(params['concat'] in ['true', 'false'])
+        if 'concat' in params and params['concat'] == 'true':
             if params['concat'] == 'true':
                 search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=os.path.join(output_directory_db, 'tide-search.pin'), parameterFile = self.param_file_row, concat = True, logPath=os.path.join(output_directory_db, 'tide-search.log.txt'), SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
-                return search_row
-        decoy_pin_path = os.path.join(output_directory_db, 'tide-search.decoy.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.decoy.pin')) else None
-        target_pin_path = os.path.join(output_directory_db, 'tide-search.target.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.target.pin')) else None
-        log_path = os.path.join(output_directory_db, 'tide-search.log.txt') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.log.txt')) else None
-        search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=target_pin_path, decoyPath=decoy_pin_path, parameterFile = self.param_file_row, logPath=log_path, SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
-        if lock:
-            lock.release()
-        return search_row
+        else:
+            decoy_pin_path = os.path.join(output_directory_db, 'tide-search.decoy.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.decoy.pin')) else None
+            target_pin_path = os.path.join(output_directory_db, 'tide-search.target.pin') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.target.pin')) else None
+            log_path = os.path.join(output_directory_db, 'tide-search.log.txt') if os.path.exists(os.path.join(output_directory_tide, 'tide-search.log.txt')) else None
+            search_row = DB.TideSearch(tideindex = index_row, mgf=mgf_row, targetPath=target_pin_path, decoyPath=decoy_pin_path, parameterFile = self.param_file_row, logPath=log_path, SearchName=tide_search_row_name, partOfIterativeSearch = partOfIterativeSearch)
+        if self.semaphore:
+            t = threading.Thread(target=run_process, args=(command, self.log_file_path, self.semaphore))
+            #whoever called this needs to start the thread
+            return (search_row, t)
+        else:
+            run_process(command, self.log_file_path)
+            return search_row
+
 
 class MaxQuantSearchRunner:
     def __init__(self, exe_file_location):
@@ -153,27 +151,36 @@ class MSGFPlusTrainingRunner:
         training_row = DB.MSGFPlusTrainingParams(**column_args)
         return training_row
 
-def run_process(log_file_path, command, semaphore):
-    with open(log_file_path, mode='w', buffering=1) as f:
+def run_process(command, log_file_path = None, semaphore = None):
+    f = sys.stdout
+    g = sys.stderr
+    if log_file_path:
+        f = open(log_file_path, mode='w', buffering=1)
+        g = f
+
+    if semaphore:
         semaphore.acquire()
-        try:
-            f.write('command: ' +  ' '.join([str(x) for x in command]) + '\n')
-            f.flush()
-            p = subprocess.call([str(x) for x in command], stdout=f, stderr=f, universal_newlines=True)
-        except subprocess.CalledProcessError as e:
-            f.write('Process finished with non-zero exit status: ' + str(e.returncode) + '\n')
-            f.flush()
-        finally:
+    try:
+        f.write('command: ' +  ' '.join([str(x) for x in command]) + '\n')
+        f.flush()
+        p = subprocess.call([str(x) for x in command], stdout=f, stderr=g, universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        f.write('Process finished with non-zero exit status: ' + str(e.returncode) + '\n')
+        f.flush()
+    finally:
+        if log_file_path:
+            f.close()
+        if semaphore:
             semaphore.release()
+
     
 
 class MSGFPlusSearchRunner:
     converter = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm', 'e': 'EnzymeID'}
     #output_file is a file object to send the output of MS-GF+ to. 
-    def __init__(self, args, jar_file_location, log_file_path, semaphore):
+    def __init__(self, args, jar_file_location, *, semaphore = None):
         self.jar_file_location = jar_file_location
         self.args = args
-        self.log_file_path = log_file_path
         self.semaphore = semaphore
     @staticmethod
     def get_search_options():
@@ -223,6 +230,7 @@ class MSGFPlusSearchRunner:
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
+        log_file_path = os.path.join(project_path, output_directory, 'log.txt')
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
             modification_file_location = os.path.join(project_path, modifications_file_row.MSGFPlusModificationFilePath)
@@ -244,11 +252,16 @@ class MSGFPlusSearchRunner:
                     column_args[column_name] = str(value)
                 else:
                     print('key: ' + key)
-                    #assert(column_name)        
-        t = threading.Thread(target=run_process, args=(self.log_file_path, command, self.semaphore))
-        search_row = DB.MSGFPlusSearch(**column_args)
-        #need to start thread
-        return (search_row, t)
+                    #assert(column_name)
+        if self.semaphore:
+            t = threading.Thread(target=run_process, args=(command, log_file_path, self.semaphore))
+            search_row = DB.MSGFPlusSearch(**column_args)
+            #whoever called this needs to start the thread
+            return (search_row, t)
+        else:
+            search_row = DB.MSGFPlusSearch(**column_args)
+            run_process(command, log_file_path)
+            return search_row
 
 
 class MSGFPlusIndexRunner:

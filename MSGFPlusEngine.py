@@ -80,7 +80,9 @@ class MSGFPlusEngine(AbstractEngine):
                     new_mgf_name = multistep_search_name + '_' + index_name + '_mgf'
                 search_name = multistep_search_name + '_' + index_name
                 filtered_name = search_name + '_msgf_filtered'
-                self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory, True)
+                rows = self.run_search(new_mgf_name, index_name, modifications_name, search_runner, search_name, memory, True)
+                for row in rows:
+                    self.db_session.add(row)
                 self.db_session.commit()
                 search_names.append(search_name)
                 
@@ -176,7 +178,11 @@ class MSGFPlusEngine(AbstractEngine):
             self.db_session.commit()
 
             
-    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, tpm_file = False, tpm_id_type = False, uniprot_mapper = False,  *,  msgf_param_name = None):
+    def run_search(self, mgf_name, index_name, modifications_name, search_runner, search_name, memory=None, partOfIterativeSearch = False, tpm_file = False, tpm_id_type = False, uniprot_mapper = False,  *,  msgf_param_name = None, threaded=False):
+        if threaded:
+            assert(search_runner.semaphore)
+        else:
+            assert(search_runner.semaphore is None)
         #modifications_name can be None if using default        
         mgf_row = self.db_session.query(DB.MGFfile).filter_by(MGFName = mgf_name).first()
         msgf_param_row = None
@@ -198,9 +204,14 @@ class MSGFPlusEngine(AbstractEngine):
         if uniprot_mapper:
             uniprot_mapper_row = self.db_session.query(DB.UniprotMapper).filter_by(UniprotMapperName = uniprot_mapper).first()
         output_directory = self.create_storage_directory('msgfplus_search_results')
-        new_search_row, thread = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row)
-        q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
-        return ([new_search_row, q_value_row], thread)
+        if threaded:
+            new_search_row, thread = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row)
+            q_value_row = DB.MSGFPlusQValue(searchbase = new_search_row)
+            return ([new_search_row, q_value_row], thread)
+        else:
+            new_search_row = search_runner.run_search_create_row(mgf_row, index_row, modifications_row, output_directory,  self.project_path, search_name, memory, partOfIterativeSearch, msgf_param_row, tpm_file_row, tpm_id_type, uniprot_mapper_row)
+            q_value_row = DB.MSGFPlusQValue(searchbase=new_search_row)
+            return [new_search_row, q_value_row]
             
     def list_indices(self):
         rows = self.db_session.query(DB.MSGFPlusIndex).all()

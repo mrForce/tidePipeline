@@ -36,6 +36,9 @@ if args.param_file:
 else:
     tide_search_runner = Runners.TideSearchRunner(crux_exec_path, project.project_path)
 print('got tide search runner')
-project.run_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name)
+rows = project.run_search(args.mgf_name, args.index_name, tide_search_runner, args.search_name)
+for row in rows:
+    project.db_session.add(row)
+project.db_session.commit()
 project.end_command_session()
 
