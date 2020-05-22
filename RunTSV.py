@@ -11,7 +11,7 @@ import Runners
 import MSGFPlusEngine
 import PostProcessing
 
-concurrent_searches = 7
+concurrent_searches = 1
 
 parser = argparse.ArgumentParser(description='Run the pipeline. Use a TSV to specify which MGF files to run, and meta information associated with them. This will import the MGF files into the project, search them against an index, and run Percolator.')
 parser.add_argument('project_folder', help='The location of the project folder')
@@ -166,7 +166,7 @@ for x in mgf_columns:
         if column in row and len(row[column].strip()) > 0:
             mgf_row = MGFRow(column, mgf_name_format, search_name_format, percolator_name_format, row)
             mgf_rows.append(mgf_row)
-"""
+
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 
@@ -182,7 +182,7 @@ print('added MGF files')
 
 
 project.end_command_session()
-"""
+
 print('Going to run searches')
 
 project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
@@ -252,4 +252,3 @@ for row in mgf_rows:
     project.percolator(row.get_search_name(), 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
     
 project.end_command_session()
-
