@@ -178,10 +178,9 @@ def run_process(command, log_file_path = None, semaphore = None):
 class MSGFPlusSearchRunner:
     converter = {'t': 'ParentMassTolerance', 'ti': 'IsotopeErrorRange', 'thread': 'NumOfThreads', 'm': 'FragmentationMethodID', 'inst': 'InstrumentID', 'minLength': 'minPepLength', 'maxLength': 'maxPepLength', 'minCharge': 'minPrecursorCharge', 'maxCharge': 'maxPrecursorCharge', 'ccm':  'ccm', 'e': 'EnzymeID'}
     #output_file is a file object to send the output of MS-GF+ to. 
-    def __init__(self, args, jar_file_location, *, log_file_path = None, semaphore = None):
+    def __init__(self, args, jar_file_location, *, semaphore = None):
         self.jar_file_location = jar_file_location
         self.args = args
-        self.log_file_path = log_file_path
         self.semaphore = semaphore
     @staticmethod
     def get_search_options():
@@ -231,6 +230,7 @@ class MSGFPlusSearchRunner:
         if memory:
             memory_string = '-Xmx' + str(memory) + 'M'
         command = ['java', memory_string, '-jar', self.jar_file_location, '-ignoreMetCleavage', '1', '-s', mgf_location, '-d', fasta_index_location, '-tda', tda, '-o', os.path.join(project_path, output_directory, 'search.mzid'), '-addFeatures', '1']
+        log_file_path = os.path.join(project_path, output_directory, 'log.txt')
         column_args = {'index': index_row, 'mgf': mgf_row, 'SearchName': search_row_name, 'resultFilePath': os.path.join(output_directory, 'search.mzid'), 'partOfIterativeSearch': partOfIterativeSearch}
         if modifications_file_row:
             modification_file_location = os.path.join(project_path, modifications_file_row.MSGFPlusModificationFilePath)
@@ -254,13 +254,13 @@ class MSGFPlusSearchRunner:
                     print('key: ' + key)
                     #assert(column_name)
         if self.semaphore:
-            t = threading.Thread(target=run_process, args=(command, self.log_file_path, self.semaphore))
+            t = threading.Thread(target=run_process, args=(command, log_file_path, self.semaphore))
             search_row = DB.MSGFPlusSearch(**column_args)
             #whoever called this needs to start the thread
             return (search_row, t)
         else:
             search_row = DB.MSGFPlusSearch(**column_args)
-            run_process(command, self.log_file_path)
+            run_process(command, log_file_path)
             return search_row
 
 

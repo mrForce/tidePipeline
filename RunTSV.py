@@ -202,8 +202,7 @@ if __name__ == '__main__':
     project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
     project.begin_command_session()
     for row in mgf_rows:
-        log_path = os.path.join(log_dir, str(i) + '.txt')
-        search_runner = Runners.MSGFPlusSearchRunner(search_arguments, msgfplus_jar, log_path, search_semaphore)
+        search_runner = Runners.MSGFPlusSearchRunner(search_arguments, msgfplus_jar, search_semaphore)
         rows = []
         thread = None
         mgf_name = row.get_mgf_name()
