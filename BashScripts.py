@@ -42,8 +42,9 @@ def concat_files_with_newline(input_paths, output_path):
         if proc.returncode != 0:
             raise NonZeroReturnCodeError(command, proc.returncode)
 
-def add_source_to_fasta_header(input_path, output_path, source_id, *, append=False):
-    command = ['sed', 's/^>.*$/&_source=' + source_id + '/', input_path]
+def add_source_to_fasta_accession(input_path, output_path, source_id, *, append=False):
+    #append is whether to append to a file
+    command = ['sed', 's/^>[[:graph:]]*$/_source=' + source_id + '/', input_path]
     if not os.path.isfile(input_path):
         raise FileDoesNotExistError(input_path)
     mode = 'w'
