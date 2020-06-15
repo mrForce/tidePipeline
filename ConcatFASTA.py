@@ -12,6 +12,7 @@ parser.add_argument('InputFASTAs', help='List of FASTA files to join', nargs=arg
 
 parser.add_argument('--FASTAComment', help='Comment about the FASTA file', type=str)
 
+parser.add_argument('--source', help='Add source integer. Start at 0.', action='store_true')
 args = parser.parse_args()
 
 assert(len(args.InputFASTAs) >= 2)
@@ -29,6 +30,9 @@ if args.FASTAComment:
 
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
-project.concat_fasta_files(name, args.InputFASTAs, comment)
+if args.source:
+    project.concat_fasta_files(name, args.InputFASTAs, comment, True)
+else:
+    project.concat_fasta_files(name, args.InputFASTAs, comment)
 project.end_command_session()
 

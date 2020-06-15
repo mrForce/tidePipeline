@@ -168,7 +168,7 @@ class Base:
     def get_msgf2pin_executable_path(self):
         return self.executables['msgf2pin']
 
-    def concat_fasta_files(self, concat_name, input_names, comment):
+    def concat_fasta_files(self, concat_name, input_names, comment, add_source=False):
         if self.get_fasta_row(concat_name):
             raise FASTAWithNameAlreadyExistsError(concat_name)
         rows = []
@@ -180,11 +180,17 @@ class Base:
                 raise NoSuchFASTAError(x)
         fasta_file_name = str(uuid.uuid4()) + '.fasta'
         while os.path.exists(os.path.join(self.project_path, 'FASTA', fasta_file_name)):
-            fasta_file_name = str(uuid.uuid4()) + '.fasta'                    
-        BashScripts.concat_files_with_newline([os.path.join(self.project_path, x.FASTAPath) for x in rows], os.path.join(self.project_path, 'FASTA', fasta_file_name))
-        assert(os.path.exists(os.path.join(self.project_path, 'FASTA', fasta_file_name)))
-        
-        
+            fasta_file_name = str(uuid.uuid4()) + '.fasta'
+        output_path = os.path.join(self.project_path, 'FASTA', fasta_file_name)
+        if add_source:
+            i = 0
+            for x in rows:
+                input_path = os.path.join(self.project_path, x.FASTAPath)
+                BashScripts.add_source_to_fasta_header(input_path, output_path, str(i), append=True)
+                i += 1
+        else:
+            BashScripts.concat_files_with_newline([os.path.join(self.project_path, x.FASTAPath) for x in rows], output_path)
+        assert(os.path.exists(output_path))
         fasta_record = DB.FASTA(Name = concat_name, FASTAPath = os.path.join('FASTA', fasta_file_name), Comment = comment, parent_fastas = rows)
         self.db_session.add(fasta_record)
         return fasta_record
