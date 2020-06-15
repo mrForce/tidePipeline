@@ -186,7 +186,7 @@ class Base:
             i = 0
             for x in rows:
                 input_path = os.path.join(self.project_path, x.FASTAPath)
-                BashScripts.add_source_to_fasta_header(input_path, output_path, str(i), append=True)
+                BashScripts.add_source_to_fasta_accession(input_path, output_path, str(i), append=True)
                 i += 1
         else:
             BashScripts.concat_files_with_newline([os.path.join(self.project_path, x.FASTAPath) for x in rows], output_path)
