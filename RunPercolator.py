@@ -15,6 +15,7 @@ parser.add_argument('search_name', help='The name of the search to percolator on
 parser.add_argument('percolator_name', help='The name of the percolator run')
 parser.add_argument('--param_file', help='Parameter file for percolator')
 parser.add_argument('--num_matches_per_spectrum', type=int, help='Number of matches per spectrum')
+parser.add_argument('--allele', help='NetMHC allele to use. If you have multiple alleles, the best score for the peptide will be inserted into the PIN', nargs='*')
 
 args = parser.parse_args()
 project_folder = args.project_folder
@@ -37,6 +38,6 @@ if args.param_file:
 else:
     percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
 percolator_name = args.percolator_name
-project.percolator(args.search_name, args.search_type, percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
+project.percolator(args.search_name, args.search_type, percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum, alleles=args.allele)
 project.end_command_session()
 
