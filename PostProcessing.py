@@ -3,6 +3,7 @@ import DB
 import ReportGeneration
 from tabulate import tabulate
 import collections
+import subprocess
 import Runners
 import TargetSetSourceCount
 import tempfile
@@ -232,7 +233,10 @@ class PostProcessing(Base):
                 targets_dict = file_to_dict(target_rank_path)
                 parser.insert_netmhc_ranks(hla + '-rank', targets_dict, decoys_dict)
         parser.write()
-    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False, *, commit=False, netmhc_ranking_information = False, use_ic50 = False, num_matches_per_spectrum = 1):
+    def _netmhc_score(self, alleles, input_pin, output_pin, directory):
+        p = subprocess.Popen(['python3', 'add_netmhc.py', self.executables['netmhc'], input_pin, output_pin, directory] + alleles + ['--best'])
+        assert(p.wait() == 0)
+    def percolator(self, search_name, search_type, percolator_runner, percolator_name, partOfIterativeSearch = False, *, commit=False, netmhc_ranking_information = False, use_ic50 = False, num_matches_per_spectrum = 1, alleles=None):
         """
         If netmhc_ranking_information is used, it should be a list of tuples of the form [(allele, (group1, group2...))]
         """
@@ -284,6 +288,11 @@ class PostProcessing(Base):
                     new_tail = tail[:fasta_index] + '.revCat.fasta'
                     fasta_files = [os.path.join(self.project_path, head, new_tail)]
                     self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_', num_matches_per_spectrum = num_matches_per_spectrum)
+                    if alleles:
+                        new_target_path = os.path.join(self.project_path, search_row.resultFilePath + '_netmhc.pin')
+                        self._netmhc_score(alleles, target_path, new_target_path, os.path.dirname(target_path))
+                        target_path = new_target_path
+                        
             new_row = percolator_runner.run_percolator_create_row(target_path, output_directory_tide, output_directory_db, percolator_name, search_row, partOfIterativeSearch, num_matches_per_spectrum = num_matches_per_spectrum)
             self.db_session.add(new_row)
             if commit:

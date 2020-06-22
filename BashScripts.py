@@ -41,7 +41,25 @@ def concat_files_with_newline(input_paths, output_path):
             raise AWKFailedError(command)
         if proc.returncode != 0:
             raise NonZeroReturnCodeError(command, proc.returncode)
-    
+
+def add_source_to_fasta_accession(input_path, output_path, source_id, *, append=False):
+    #append is whether to append to a file
+    command = ['sed', 's/^>[[:graph:]]*/&_source=' + source_id + '/', input_path]
+    if not os.path.isfile(input_path):
+        raise FileDoesNotExistError(input_path)
+    mode = 'w'
+    if append:
+        mode = 'a'
+    with open(output_path, mode) as f:
+        proc = subprocess.Popen(command, stdout=f)
+        try:
+            outs, errors = proc.communicate()
+        except:
+            raise SedFailedError(command)
+        if proc.returncode != 0:
+            raise NonZeroReturnCodeError(command, proc.returncode)
+        f.write('\n')
+        
 def call_target_netmhc_rank(peptides_location, output_location_ranked, output_location_affinity, parsed_netmhc_runs):
     if output_location_affinity == None:
         output_location_affinity = '/dev/null'

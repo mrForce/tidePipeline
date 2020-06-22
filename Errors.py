@@ -30,6 +30,12 @@ class AWKFailedError(Error):
     def __repr__(self):
         return 'awk command: ' + ' '.join(self.command) + ' failed'
 
+class SedFailedError(Error):
+    def __init__(self, command):
+        self.command = command
+    def __repr__(self):
+        return 'sed command: ' + ' '.join(self.command) + ' failed'
+
 
 
 class DifferentScoresForSamePeptidesError(Error):
