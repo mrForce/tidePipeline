@@ -29,6 +29,9 @@ parser.add_argument('instrument', type=int, choices=[0, 1, 2, 3], help='0: Low-r
 parser.add_argument('log_dir', help='Directory to save MS-GF+ search outputs')
 
 parser.add_argument('--MGFColumn', nargs=4, action='append', help='Need four things: A column that contains MGF file names, the format string for the MGF name, format string for search name, and format string for percolator name')
+parser.add_argument('--allelesColumn', help='The column containing the alleles')
+parser.add_argument('--Filtered', nargs=4, action='append', help='Need four things: rank cutoff, format string for the index name, format string for search name, and format string for percolator name')
+parser.add_argument('--NetMHCPercolator', help='Format string for percolator name when doing NetMHC in PIN file')
 
 parser.add_argument('--memory', help='The amount of memory to give the jar file when searching. Default is 3500 megabytes', type=int)
 parser.add_argument('--modifications_name', help='Name of the modifications file to use. Optional')
