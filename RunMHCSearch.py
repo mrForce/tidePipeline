@@ -24,7 +24,7 @@ parser.add_argument('Index', help='Unfiltered index to search against')
 
 parser.add_argument('fragmentation', type=int, choices=[0, 1, 2], help='0: CID, 1: ETD, 2: HCD')
 parser.add_argument('instrument', type=int, choices=[0, 1, 2, 3], help='0: Low-res LCQ/LTQ, 1: High-res LTQ, 2: TOF, 3: Q-Exactive')
-parser.add_argument('log_dir', help='Directory to save MS-GF+ search outputs')
+
 
 parser.add_argument('MGFColumn', help='Need the row that contains the MGF names.')
 parser.add_argument('allelesColumn', help='The column containing the alleles that will be passed to NetMHC. They should be seperated by commas')
@@ -77,8 +77,6 @@ project_folder = args.project_folder
 print('project folder: ' + project_folder)
 tsv_path = args.TSVPath
 mgf_directory = args.MGFDirectory
-log_dir = args.log_dir
-assert(os.path.isdir(log_dir))
 
 unfiltered_index = args.Index
 
