@@ -288,7 +288,10 @@ class PostProcessing(Base):
                     new_tail = tail[:fasta_index] + '.revCat.fasta'
                     fasta_files = [os.path.join(self.project_path, head, new_tail)]
                     self.call_msgf2pin( search_name, target_path, msgf2pin_runner, fasta_files, 'XXX_', num_matches_per_spectrum = num_matches_per_spectrum)
+                    print('checking alleles')
                     if alleles:
+                        print('in alleles')
+                        print('target path: ' + target_path)
                         new_target_path = os.path.join(self.project_path, search_row.resultFilePath + '_netmhc.pin')
                         self._netmhc_score(alleles, target_path, new_target_path, os.path.dirname(target_path))
                         target_path = new_target_path
