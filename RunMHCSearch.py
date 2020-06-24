@@ -112,7 +112,7 @@ for row in data:
     print('MGF location: ' + mgf_location)    
     assert(os.path.isfile(mgf_location))
 
-
+"""
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 
@@ -193,12 +193,16 @@ for row in data:
 
 print('created filtered indices')
 
+
 project.end_command_session()
+
+
+"""
 
 
 
 print('Going to run searches')
-
+"""
 
 msgfplus_jar = project.executables['msgfplus']
 
@@ -245,7 +249,7 @@ if __name__ == '__main__':
             project.db_session.add(row)
         project.db_session.commit()
     project.end_command_session()
-
+"""
 print('Going to run percolator')
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
@@ -270,13 +274,21 @@ for row in data:
     print('going to run percolator: ' + percolator_name)
     print(project)
     project.percolator(unfiltered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
+    if args.percolator_param_file:
+        percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, param_file_row)
+    else:
+        percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
     percolator_name = unfiltered_search_name + '_netmhc_percolator'
     print('going to run percolator: ' + percolator_name)
     project.percolator(unfiltered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum, alleles = row[alleles_column].split(','))
     filtered_search_name = mgf_name + '_filtered_index_search'
     percolator_name = filtered_search_name + '_percolator'
     print('going to run percolator: ' + percolator_name)
-    project.percolator(unfiltered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
+    if args.percolator_param_file:
+        percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, param_file_row)
+    else:
+        percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
+    project.percolator(filtered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
     
     
 project.end_command_session()
