@@ -136,18 +136,24 @@ for row in data:
 print('adding MGF files')
 for row in data:
     mgf_name = row[mgf_column].strip()
-    mgf_location = os.path.join(mgf_directory, mgf_name + '.mgf')
-    print('Adding mgf file: ' + mgf_location)
-    #8 is the enzyme; no cleavage. This gets overridden when we run the unfiltered search, because the index comes from a FASTA.
-    project.add_mgf_file(mgf_location, mgf_name, 8, fragmentation, instrument)
-    
+    if project.verify_row_existence(DB.MGFfile.MGFName, mgf_name):
+        print('mgf already imported: ' + mgf_name)
+    else:
+        mgf_location = os.path.join(mgf_directory, mgf_name + '.mgf')
+        print('Adding mgf file: ' + mgf_location)
+        #8 is the enzyme; no cleavage. This gets overridden when we run the unfiltered search, because the index comes from a FASTA.
+        project.add_mgf_file(mgf_location, mgf_name, 8, fragmentation, instrument)
+
 print('added MGF files')
 
 print('Going to filter NetMHC.')
 for netmhc_name, filtered_netmhc_name in netmhc_names.items():
     print('NetMHC name: ' + netmhc_name + ', filtered name: ' + filtered_netmhc_name)
-    project.filter_netmhc(rank, filtered_netmhc_name, [project.db_session.query(DB.NetMHC).filter_by(Name = netmhc_name).first()])
-    assert(project.verify_row_existence(DB.FilteredNetMHC.FilteredNetMHCName, filtered_netmhc_name))
+    if project.verify_row_existence(DB.FilteredNetMHC.FilteredNetMHCName, filtered_netmhc_name):
+        print('skipping filtered netmhc: ' + filtered_netmhc_name)
+    else:
+        project.filter_netmhc(rank, filtered_netmhc_name, [project.db_session.query(DB.NetMHC).filter_by(Name = netmhc_name).first()])
+        assert(project.verify_row_existence(DB.FilteredNetMHC.FilteredNetMHCName, filtered_netmhc_name))
 print('filtered NetMHC')
 project.end_command_session()
 
@@ -169,18 +175,25 @@ for row in data:
     index_name = mgf_name + '_filtered_index'
     print('going to create targetset: ' + targetset_name)
     print('filtered netmhc names: ' + ', '.join(filtered_netmhc_names))
-    project.add_targetset(filtered_netmhc_names, [], targetset_name)
-    mgf_to_targetset[mgf_name] = targetset_name
-    assert(project.verify_target_set(targetset_name))
-    print('going to create index: ' + index_name)
-    if args.memory:
-        project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name, [], args.memory)
+    if project.verify_target_set(targetset_name):
+        print('skipping targetset: ' + targetset_name + ' it already exists')
     else:
-        project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name)
-    assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))
+        project.add_targetset(filtered_netmhc_names, [], targetset_name)
+        assert(project.verify_target_set(targetset_name))
+    mgf_to_targetset[mgf_name] = targetset_name
+    print('going to create index: ' + index_name)
+    if project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name):
+        print('skipping index: ' + index_name + ' it already exists')
+    else:
+        if args.memory:
+            project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name, [], args.memory)
+        else:
+            project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name)
+        assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))
 
 print('created filtered indices')
 
+project.end_command_session()
 
 
 
@@ -207,9 +220,9 @@ if __name__ == '__main__':
         mgf_name = row[mgf_column]
         search_name = mgf_name + '_unfiltered_search'
         if args.memory:
-            rows, thread = project.run_search(mgf_name, unfiltered_index, modifications_name, unfiltered_search_runner, search_name, args.memory)
+            rows, thread = project.run_search(mgf_name, unfiltered_index, modifications_name, unfiltered_search_runner, search_name, args.memory, threaded=True)
         else:
-            rows, thread = project.run_search(mgf_name, unfiltered_index, modifications_name, unfiltered_search_runner, search_name)
+            rows, thread = project.run_search(mgf_name, unfiltered_index, modifications_name, unfiltered_search_runner, search_name, threaded = True)
         assert(rows)
         assert(thread)
         threads_and_rows.append((rows, thread))
@@ -217,9 +230,9 @@ if __name__ == '__main__':
         search_name = mgf_name + '_filtered_index_search'
         index_name = mgf_name + '_filtered_index'
         if args.memory:
-            rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name, args.memory)
+            rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name, args.memory, threaded=True)
         else:
-            rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name)
+            rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name, threaded=True)
         assert(rows)
         assert(thread)
         threads_and_rows.append((rows, thread))
