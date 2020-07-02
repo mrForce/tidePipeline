@@ -63,8 +63,8 @@ min_length = args.min_length
 max_length = args.max_length
 rank = args.rank_cutoff
 
-
-assert(rank >= 0.0 and rank <= 100.0)
+if rank:
+    assert(rank >= 0.0 and rank <= 100.0)
 if args.min_length:
     search_arguments['minLength'] = args.min_length
 
@@ -127,17 +127,18 @@ def get_netmhc_name(length, allele):
 def get_filtered_name(length, allele, rank):
     return 'Proteome' + str(length) + 'Mers_' + allele + '_' + str(rank) + '_filtered'
 
-print('checking NetMHC present')
-netmhc_names = {}
-for row in data:
-    alleles = row[alleles_column].split(',')
-    for allele in alleles:
-        for length in range(min_length, max_length + 1):
-            netmhc_name = get_netmhc_name(length, allele)
-            if netmhc_name not in netmhc_names:
-                print('checking for NetMHC: ' + netmhc_name)
-                assert(project.db_session.query(DB.NetMHC).filter_by(Name = netmhc_name).first())
-                netmhc_names[netmhc_name] = get_filtered_name(length, allele, rank)
+if filtered_search:
+    print('checking NetMHC present')
+    netmhc_names = {}
+    for row in data:
+        alleles = row[alleles_column].split(',')
+        for allele in alleles:
+            for length in range(min_length, max_length + 1):
+                netmhc_name = get_netmhc_name(length, allele)
+                if netmhc_name not in netmhc_names:
+                    print('checking for NetMHC: ' + netmhc_name)
+                    assert(project.db_session.query(DB.NetMHC).filter_by(Name = netmhc_name).first())
+                    netmhc_names[netmhc_name] = get_filtered_name(length, allele, rank)
 
 print('adding MGF files')
 for row in data:
