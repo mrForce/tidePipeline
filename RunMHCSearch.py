@@ -27,8 +27,8 @@ parser.add_argument('instrument', type=int, choices=[0, 1, 2, 3], help='0: Low-r
 
 
 parser.add_argument('MGFColumn', help='Need the row that contains the MGF names.')
-parser.add_argument('allelesColumn', help='The column containing the alleles that will be passed to NetMHC. They should be seperated by commas')
-parser.add_argument('rank_cutoff', help='The rank cutoff to use when creating the filtered index. Percent, so 2 is top two percent.', type=float)
+parser.add_argument('--allelesColumn', help='The column containing the alleles that will be passed to NetMHC. They should be seperated by commas')
+parser.add_argument('--rank_cutoff', help='The rank cutoff to use when creating the filtered index. Percent, so 2 is top two percent.', type=float)
 
 parser.add_argument('--memory', help='The amount of memory to give the jar file when searching. Default is 3500 megabytes', type=int)
 parser.add_argument('--modifications_name', help='Name of the modifications file to use. Optional')
@@ -62,6 +62,8 @@ search_arguments = {}
 min_length = args.min_length
 max_length = args.max_length
 rank = args.rank_cutoff
+
+
 assert(rank >= 0.0 and rank <= 100.0)
 if args.min_length:
     search_arguments['minLength'] = args.min_length
@@ -95,6 +97,10 @@ mgf_column = args.MGFColumn
 
 alleles_column = args.allelesColumn
 
+filtered_search = False
+if alleles_column and rank:
+    filtered_search = True
+
 data = []
 headers = None
 with open(tsv_path, 'r') as f:
@@ -112,7 +118,7 @@ for row in data:
     print('MGF location: ' + mgf_location)    
     assert(os.path.isfile(mgf_location))
 
-"""
+
 project = Base.Base(project_folder, ' '.join(sys.argv))
 project.begin_command_session()
 
@@ -145,64 +151,63 @@ for row in data:
         project.add_mgf_file(mgf_location, mgf_name, 8, fragmentation, instrument)
 
 print('added MGF files')
-
-print('Going to filter NetMHC.')
-for netmhc_name, filtered_netmhc_name in netmhc_names.items():
-    print('NetMHC name: ' + netmhc_name + ', filtered name: ' + filtered_netmhc_name)
-    if project.verify_row_existence(DB.FilteredNetMHC.FilteredNetMHCName, filtered_netmhc_name):
-        print('skipping filtered netmhc: ' + filtered_netmhc_name)
-    else:
-        project.filter_netmhc(rank, filtered_netmhc_name, [project.db_session.query(DB.NetMHC).filter_by(Name = netmhc_name).first()])
-        assert(project.verify_row_existence(DB.FilteredNetMHC.FilteredNetMHCName, filtered_netmhc_name))
-print('filtered NetMHC')
-project.end_command_session()
-
-project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
-project.begin_command_session()
-print('going to create TargetSet and index for each MGF file.')
-
-mgf_to_targetset = {}
-mgf_to_filtered_index = {}
-msgfplus_index_runner = Runners.MSGFPlusIndexRunner(project.get_msgfplus_executable_path())
-for row in data:
-    mgf_name = row[mgf_column].strip()
-    alleles = row[alleles_column].split(',')
-    filtered_netmhc_names = []
-    for allele in alleles:
-        for length in range(min_length, max_length + 1):
-            filtered_netmhc_names.append(get_filtered_name(length, allele, rank))
-    targetset_name = mgf_name + '_filtered_targetset'
-    index_name = mgf_name + '_filtered_index'
-    print('going to create targetset: ' + targetset_name)
-    print('filtered netmhc names: ' + ', '.join(filtered_netmhc_names))
-    if project.verify_target_set(targetset_name):
-        print('skipping targetset: ' + targetset_name + ' it already exists')
-    else:
-        project.add_targetset(filtered_netmhc_names, [], targetset_name)
-        assert(project.verify_target_set(targetset_name))
-    mgf_to_targetset[mgf_name] = targetset_name
-    print('going to create index: ' + index_name)
-    if project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name):
-        print('skipping index: ' + index_name + ' it already exists')
-    else:
-        if args.memory:
-            project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name, [], args.memory)
+if filtered_search:
+    print('Going to filter NetMHC.')
+    for netmhc_name, filtered_netmhc_name in netmhc_names.items():
+        print('NetMHC name: ' + netmhc_name + ', filtered name: ' + filtered_netmhc_name)
+        if project.verify_row_existence(DB.FilteredNetMHC.FilteredNetMHCName, filtered_netmhc_name):
+            print('skipping filtered netmhc: ' + filtered_netmhc_name)
         else:
-            project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name)
-        assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))
+            project.filter_netmhc(rank, filtered_netmhc_name, [project.db_session.query(DB.NetMHC).filter_by(Name = netmhc_name).first()])
+            assert(project.verify_row_existence(DB.FilteredNetMHC.FilteredNetMHCName, filtered_netmhc_name))
+    print('filtered NetMHC')
+    project.end_command_session()
+    project = MSGFPlusEngine.MSGFPlusEngine(project_folder, ' '.join(sys.argv))
+    project.begin_command_session()
+    print('going to create TargetSet and index for each MGF file.')
+    
+    mgf_to_targetset = {}
+    mgf_to_filtered_index = {}
+    msgfplus_index_runner = Runners.MSGFPlusIndexRunner(project.get_msgfplus_executable_path())
+    for row in data:
+        mgf_name = row[mgf_column].strip()
+        alleles = row[alleles_column].split(',')
+        filtered_netmhc_names = []
+        for allele in alleles:
+            for length in range(min_length, max_length + 1):
+                filtered_netmhc_names.append(get_filtered_name(length, allele, rank))
+        targetset_name = mgf_name + '_filtered_targetset'
+        index_name = mgf_name + '_filtered_index'
+        print('going to create targetset: ' + targetset_name)
+        print('filtered netmhc names: ' + ', '.join(filtered_netmhc_names))
+        if project.verify_target_set(targetset_name):
+            print('skipping targetset: ' + targetset_name + ' it already exists')
+        else:
+            project.add_targetset(filtered_netmhc_names, [], targetset_name)
+            assert(project.verify_target_set(targetset_name))
+        mgf_to_targetset[mgf_name] = targetset_name
+        print('going to create index: ' + index_name)
+        if project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name):
+            print('skipping index: ' + index_name + ' it already exists')
+        else:
+            if args.memory:
+                project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name, [], args.memory)
+            else:
+                project.create_index('TargetSet', targetset_name, msgfplus_index_runner, index_name)
+            assert(project.verify_row_existence(DB.MSGFPlusIndex.MSGFPlusIndexName, index_name))
+            
+    print('created filtered indices')
 
-print('created filtered indices')
+
+    project.end_command_session()
 
 
-project.end_command_session()
 
-
-"""
 
 
 
 print('Going to run searches')
-"""
+
 
 msgfplus_jar = project.executables['msgfplus']
 
@@ -230,16 +235,17 @@ if __name__ == '__main__':
         assert(rows)
         assert(thread)
         threads_and_rows.append((rows, thread))
-        filtered_search_runner = Runners.MSGFPlusSearchRunner({}, msgfplus_jar, semaphore = search_semaphore)
-        search_name = mgf_name + '_filtered_index_search'
-        index_name = mgf_name + '_filtered_index'
-        if args.memory:
-            rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name, args.memory, threaded=True)
-        else:
-            rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name, threaded=True)
-        assert(rows)
-        assert(thread)
-        threads_and_rows.append((rows, thread))
+        if filtered_search:
+            filtered_search_runner = Runners.MSGFPlusSearchRunner({}, msgfplus_jar, semaphore = search_semaphore)
+            search_name = mgf_name + '_filtered_index_search'
+            index_name = mgf_name + '_filtered_index'
+            if args.memory:
+                rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name, args.memory, threaded=True)
+            else:
+                rows, thread = project.run_search(mgf_name, index_name, modifications_name, filtered_search_runner, search_name, threaded=True)
+            assert(rows)
+            assert(thread)
+            threads_and_rows.append((rows, thread))
         
     for rows, thread in threads_and_rows:
         thread.start()
@@ -249,7 +255,7 @@ if __name__ == '__main__':
             project.db_session.add(row)
         project.db_session.commit()
     project.end_command_session()
-"""
+
 print('Going to run percolator')
 
 project = PostProcessing.PostProcessing(project_folder, ' '.join(sys.argv))
@@ -280,15 +286,19 @@ for row in data:
         percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
     percolator_name = unfiltered_search_name + '_netmhc_percolator'
     print('going to run percolator: ' + percolator_name)
-    project.percolator(unfiltered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum, alleles = row[alleles_column].split(','))
-    filtered_search_name = mgf_name + '_filtered_index_search'
-    percolator_name = filtered_search_name + '_percolator'
-    print('going to run percolator: ' + percolator_name)
-    if args.percolator_param_file:
-        percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, param_file_row)
-    else:
-        percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
-    project.percolator(filtered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
+    if alleles_column:
+        project.percolator(unfiltered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum, alleles = row[alleles_column].split(','))
+
+    if filtered_search:
+        filtered_search_name = mgf_name + '_filtered_index_search'
+        percolator_name = filtered_search_name + '_percolator'
+        print('going to run percolator: ' + percolator_name)
+        if args.percolator_param_file:
+            percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path, param_file_row)
+        else:
+            percolator_runner = Runners.PercolatorRunner(crux_exec_path, project.project_path)
+        project.percolator(filtered_search_name, 'msgfplus', percolator_runner, percolator_name, num_matches_per_spectrum = args.num_matches_per_spectrum)
+    
     
     
 project.end_command_session()
