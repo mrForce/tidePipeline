@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 import csv
+import math
 import re
 import subprocess
 
@@ -37,6 +38,7 @@ parser.add_argument('netmhc')
 parser.add_argument('pin_input')
 parser.add_argument('pin_output')
 parser.add_argument('directory')
+parser.add_argument('measure', choices=['IC50', 'logIC50', 'rank'])
 parser.add_argument('alleles', nargs='+')
 parser.add_argument('--inverse', action='store_true')
 parser.add_argument('--best', action='store_true')
@@ -49,7 +51,7 @@ else:
 """
 Returns a dictionary mapping the peptide to its affinity
 """
-def call_netmhc(netmhc_location, directory, peptides, hla, inverse):
+def call_netmhc(netmhc_location, directory, peptides, hla, inverse, measure):
     input_location = os.path.join(directory, 'netmhc_input.txt')
     f = open(input_location, 'w')
     output_location = os.path.join(directory, 'netmhc_output.txt')
@@ -66,14 +68,20 @@ def call_netmhc(netmhc_location, directory, peptides, hla, inverse):
         second_row = reader.__next__()
         assert(second_row[1] == 'Peptide')
         assert(second_row[3] == 'nM')
+        assert(second_row[4] == 'Rank')
         for row in reader:
             peptide = row[1]
-            affinity = row[3]
+            measure_value = None
+            if measure == 'IC50':
+                measure_value = float(row[3])
+            elif measure == 'logIC50':
+                measure_value = math.log10(float(row[3]))
+            elif measure == 'rank':
+                measure_value = float(row[4])
             if len(peptide.strip()) > 0:
-                x = float(affinity)
                 if inverse:
-                    affinity = str(1.0/x)
-                results[peptide.strip()] = affinity
+                    measure_value = 1.0/measure_value                    
+                results[peptide.strip()] = str(measure_value)
 
     return results
 
@@ -96,7 +104,7 @@ with open(args.pin_input, 'r') as f:
 
 peptide_affinity = {}
 for allele in netmhc_alleles:
-    peptide_affinity[allele] = call_netmhc(args.netmhc, args.directory, peptides, allele, args.inverse)
+    peptide_affinity[allele] = call_netmhc(args.netmhc, args.directory, peptides, allele, args.inverse, args.measure)
 
 
 
